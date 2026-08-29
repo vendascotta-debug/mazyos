@@ -208,13 +208,9 @@ function converter(linha, segmento, subsegmento, agora) {
     cnae_secundarios: "[]",
     delivery_apps: "[]",
     hours: null,
-    sources: JSON.stringify([
-      {
-        label: `Receita Federal — Dados Abertos do CNPJ (${SNAPSHOT})`,
-        kind: "cnpj",
-        collectedAt: agora,
-      },
-    ]),
+    // A procedência é derivada na leitura (ver fontes() em repo.ts): repetir a
+    // mesma frase em cada linha custava 85 MB na base completa.
+    sources: "[]",
     public_records: JSON.stringify({ qsa, mentions: [], employeesEstimate: funcionarios }),
     created_at: agora,
     updated_at: agora,

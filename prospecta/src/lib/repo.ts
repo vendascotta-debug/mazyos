@@ -30,6 +30,28 @@ const parseJson = <T,>(v: unknown, fallback: T): T => {
 /** Postgres devolve numeric/int8 como string em alguns agregados. */
 const toNum = (v: unknown): number => (typeof v === "number" ? v : Number(v ?? 0));
 
+/**
+ * Procedência da empresa.
+ *
+ * Guardar a mesma frase em cada linha custava 124 bytes por empresa — 85 MB na
+ * base completa, para repetir a mesma informação. Empresa vinda da Receita
+ * (id `rf-`) tem a fonte derivada aqui; o campo no banco fica para casos com
+ * procedência própria.
+ */
+const FONTE_RECEITA: Company["sources"] = [
+  {
+    label: "Receita Federal — Dados Abertos do CNPJ",
+    kind: "cnpj",
+    collectedAt: "2026-01-11",
+  },
+];
+
+function fontes(row: Row): Company["sources"] {
+  const gravadas = parseJson<Company["sources"]>(row.sources, []);
+  if (gravadas.length) return gravadas;
+  return String(row.id ?? "").startsWith("rf-") ? FONTE_RECEITA : [];
+}
+
 function toCompany(row: Row): Company {
   return {
     id: row.id as string,
@@ -66,7 +88,7 @@ function toCompany(row: Row): Company {
     cnaeSecundarios: parseJson<string[]>(row.cnae_secundarios, []),
     deliveryApps: parseJson<string[]>(row.delivery_apps, []),
     hours: (row.hours as string) ?? null,
-    sources: parseJson<Company["sources"]>(row.sources, []),
+    sources: fontes(row),
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };

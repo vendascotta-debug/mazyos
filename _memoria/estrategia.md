@@ -32,10 +32,24 @@ compartilhada. Testado em produção: isolamento entre contas confirmado.
 
 **Para usar local:** duplo clique em `prospecta/1-INICIAR.bat`.
 
-**Pendência conhecida:** a base é de DEMONSTRAÇÃO — empresas, sites, e-mails e
-LinkedIn são gerados, os links não abrem. Próximo passo grande: ligar os
-conectores reais em `src/lib/providers.ts` (Receita Federal/CNPJ via BrasilAPI,
-OpenStreetMap, avaliações de mapa).
+**DADOS REAIS (29/08/2026):** a base de demonstração saiu. Agora são **103.933
+empresas ativas de São Paulo** vindas dos Dados Abertos do CNPJ da Receita
+Federal (snapshot de jan/2026), em 629 cidades — 85 mil com sócios nominados,
+97 mil com telefone, 95 mil com e-mail.
+
+Pipeline em `prospecta/scripts/` (BigQuery via Base dos Dados). Chave da conta
+de serviço em `prospecta/google-bigquery.json` (fora do git).
+
+**Pendências:**
+1. Faltam 9 subsegmentos (clube, supermercado, resort, asilo, motel, hostel,
+   indústrias, gastronomia): a cota gratuita de 1 TB/mês do BigQuery acabou em
+   29/08. **Renova em 1º de setembro** — rodar então:
+   `node scripts/importar.mjs completar 90000`
+2. Mapa posiciona por cidade, não por rua (a Receita publica endereço, não
+   coordenada). Melhoria futura: geocodificar sob demanda.
+3. Site, Instagram e LinkedIn das empresas não vêm dessa fonte.
+4. **Painel de administrador** (pedido do Alessandro, ainda não feito): papel de
+   admin, gestão de contas, cortesia/cobrança e bloqueio de acesso.
 
 Nota: Alessandro achou o passo a passo confuso — retomar devagar, um passo por
 vez, sem despejar tudo de uma vez.
