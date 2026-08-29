@@ -16,7 +16,7 @@ import { SESSION_COOKIE } from "@/lib/session-cookie";
 const SESSION_DAYS = 30;
 
 function secret(): string {
-  const s = process.env.AUTH_SECRET;
+  const s = process.env.AUTH_SECRET?.trim();
   if (!s || s.length < 16) {
     throw new Error(
       "AUTH_SECRET não configurado (mínimo 16 caracteres). Defina no .env.local e nas variáveis da Vercel.",

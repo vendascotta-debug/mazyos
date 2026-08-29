@@ -9,8 +9,20 @@ import crypto from "node:crypto";
 
 export const GOOGLE_STATE_COOKIE = "prospecta_oauth_state";
 
+/**
+ * Lê variável de ambiente sem espaço nem quebra de linha nas pontas.
+ *
+ * Colar valor num painel web quase sempre traz uma quebra de linha junto, e o
+ * Google recusa um client_id terminado em %0A — um erro que só aparece na hora
+ * de logar, com mensagem que não ajuda em nada.
+ */
+const env = (nome: string): string | undefined => process.env[nome]?.trim() || undefined;
+
+const CLIENT_ID = () => env("GOOGLE_CLIENT_ID");
+const CLIENT_SECRET = () => env("GOOGLE_CLIENT_SECRET");
+
 export function googleConfigurado(): boolean {
-  return Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+  return Boolean(CLIENT_ID() && CLIENT_SECRET());
 }
 
 /** URL de callback registrada no Google Cloud. */
@@ -24,7 +36,7 @@ export function novoState(): string {
 
 export function urlDeAutorizacao(origin: string, state: string): string {
   const p = new URLSearchParams({
-    client_id: process.env.GOOGLE_CLIENT_ID!,
+    client_id: CLIENT_ID()!,
     redirect_uri: redirectUri(origin),
     response_type: "code",
     scope: "openid email profile",
@@ -49,8 +61,8 @@ export async function trocarCodigoPorPerfil(code: string, origin: string): Promi
     headers: { "content-type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       code,
-      client_id: process.env.GOOGLE_CLIENT_ID!,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+      client_id: CLIENT_ID()!,
+      client_secret: CLIENT_SECRET()!,
       redirect_uri: redirectUri(origin),
       grant_type: "authorization_code",
     }),
