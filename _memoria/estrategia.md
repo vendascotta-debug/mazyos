@@ -65,7 +65,9 @@ de serviço em `prospecta/google-bigquery.json` (fora do git).
 
 Feito em 29/08/2026: dados reais da Receita (104 mil empresas), classificação
 por nome corrigida, otimização de espaço, login com Google, olhinho na senha,
-ações de editar/excluir lead, deploy na Vercel.
+ações de editar/excluir lead, deploy na Vercel, layout adaptado a celular e
+tablet (abas embaixo, filtros em gaveta, leads em cartões), bloco de contatos
+mostrando todos os canais — os ausentes viram busca no Google/LinkedIn.
 
 Nota: Alessandro achou o passo a passo confuso — retomar devagar, um passo por
 vez, sem despejar tudo de uma vez.
