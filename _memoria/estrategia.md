@@ -41,15 +41,31 @@ Pipeline em `prospecta/scripts/` (BigQuery via Base dos Dados). Chave da conta
 de serviço em `prospecta/google-bigquery.json` (fora do git).
 
 **Pendências:**
-1. Faltam 9 subsegmentos (clube, supermercado, resort, asilo, motel, hostel,
-   indústrias, gastronomia): a cota gratuita de 1 TB/mês do BigQuery acabou em
-   29/08. **Renova em 1º de setembro** — rodar então:
-   `node scripts/importar.mjs completar 90000`
-2. Mapa posiciona por cidade, não por rua (a Receita publica endereço, não
+1. **COBERTURA: só 13% do disponível.** Erro de desenho meu — reparti cota igual
+   entre subsegmentos, então restaurante ficou com 6.896 de 107.745 e hotel com
+   98%. A cota do BigQuery (1 TB/mês) acabou em 29/08 e **renova em 1º de
+   setembro**. Rodar então uma varredura única com piso por subsegmento,
+   mirando ~500 mil empresas (~350 MB, cabe no plano gratuito):
+   `node scripts/importar.mjs completar 500000`
+   Antes de rodar, corrigir a repartição: garantir todos os subsegmentos com
+   menos de 15 mil disponíveis e preencher o resto por porte/capital.
+2. **Landing page de vendas** do Prospecta — página pública para vender o
+   produto (ainda não existe; hoje a raiz cai direto no login).
+3. **Painel de administrador**: papel de admin, lista de quem se cadastrou,
+   marcar conta como cortesia ou pagante, bloquear acesso e vencimento.
+4. Mapa posiciona por cidade, não por rua (a Receita publica endereço, não
    coordenada). Melhoria futura: geocodificar sob demanda.
-3. Site, Instagram e LinkedIn das empresas não vêm dessa fonte.
-4. **Painel de administrador** (pedido do Alessandro, ainda não feito): papel de
-   admin, gestão de contas, cortesia/cobrança e bloqueio de acesso.
+5. Site, Instagram e LinkedIn das empresas não vêm dessa fonte.
+
+## Fila de trabalho do Prospecta (ordem combinada em 29/08/2026)
+
+1. **1º de setembro:** carga completa dos dados (cota do BigQuery renova).
+2. **Landing page** de venda do produto.
+3. **Painel administrativo** de contas e cobrança.
+
+Feito em 29/08/2026: dados reais da Receita (104 mil empresas), classificação
+por nome corrigida, otimização de espaço, login com Google, olhinho na senha,
+ações de editar/excluir lead, deploy na Vercel.
 
 Nota: Alessandro achou o passo a passo confuso — retomar devagar, um passo por
 vez, sem despejar tudo de uma vez.
