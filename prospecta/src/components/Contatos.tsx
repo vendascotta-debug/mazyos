@@ -60,7 +60,18 @@ function Copiar({ valor, rotulo }: { valor: string; rotulo: string }) {
   );
 }
 
-const VAZIO = "chip cursor-default border-dashed border-ink-200 bg-ink-50/60 text-ink-400";
+
+/** Chip pontilhado que leva a uma busca — para o que a Receita não publica. */
+const PROCURAR = "chip border-dashed border-ink-300 bg-white text-ink-500 hover:bg-ink-50 hover:text-ink-800";
+
+/**
+ * A Receita não publica site nem rede social. Em vez de um campo morto na tela,
+ * cada canal ausente vira a busca que o vendedor faria na mão — já com o nome
+ * da empresa e a cidade, que é o que separa "Sodexo" de qualquer homônimo.
+ */
+function buscaGoogle(termos: string) {
+  return `https://www.google.com/search?q=${encodeURIComponent(termos)}`;
+}
 
 export function Contatos({ company: c, compacto = false }: { company: Company; compacto?: boolean }) {
   const zap = numeroWhatsApp(c.whatsapp ?? c.phone);
@@ -77,7 +88,15 @@ export function Contatos({ company: c, compacto = false }: { company: Company; c
           <Copiar valor={c.phone} rotulo="telefone" />
         </span>
       ) : (
-        <span className={VAZIO}><Phone size={11} /> sem telefone</span>
+        <a
+          href={buscaGoogle(`${c.name} ${c.city} telefone`)}
+          target="_blank"
+          rel="noreferrer noopener"
+          className={PROCURAR}
+          title="Sem telefone na base da Receita — procurar no Google"
+        >
+          <Phone size={11} /> procurar telefone
+        </a>
       )}
 
       {/* WhatsApp */}
@@ -91,9 +110,15 @@ export function Contatos({ company: c, compacto = false }: { company: Company; c
           <MessageCircle size={11} /> WhatsApp
         </a>
       ) : (
-        <span className={VAZIO} title="O telefone cadastrado é fixo — não dá para saber se tem WhatsApp">
-          <MessageCircle size={11} /> sem WhatsApp
-        </span>
+        <a
+          href={buscaGoogle(`${c.name} ${c.city} whatsapp`)}
+          target="_blank"
+          rel="noreferrer noopener"
+          className={PROCURAR}
+          title="O telefone cadastrado é fixo — procurar um WhatsApp da empresa"
+        >
+          <MessageCircle size={11} /> procurar WhatsApp
+        </a>
       )}
 
       {/* E-mail: endereço inteiro, sem cortar, com botão de copiar */}
@@ -106,7 +131,15 @@ export function Contatos({ company: c, compacto = false }: { company: Company; c
           <Copiar valor={c.email} rotulo="e-mail" />
         </span>
       ) : (
-        <span className={VAZIO}><Mail size={11} /> sem e-mail</span>
+        <a
+          href={buscaGoogle(`${c.name} ${c.city} email contato`)}
+          target="_blank"
+          rel="noreferrer noopener"
+          className={PROCURAR}
+          title="Sem e-mail na base da Receita — procurar no Google"
+        >
+          <Mail size={11} /> procurar e-mail
+        </a>
       )}
 
       {/* Site */}
@@ -120,7 +153,15 @@ export function Contatos({ company: c, compacto = false }: { company: Company; c
           <Globe size={11} /> {site}
         </a>
       ) : (
-        <span className={VAZIO}><Globe size={11} /> sem site</span>
+        <a
+          href={buscaGoogle(`${c.name} ${c.city} site oficial`)}
+          target="_blank"
+          rel="noreferrer noopener"
+          className={PROCURAR}
+          title="A Receita não publica site — procurar no Google"
+        >
+          <Globe size={11} /> procurar site
+        </a>
       )}
 
       {/* Instagram */}
@@ -134,7 +175,15 @@ export function Contatos({ company: c, compacto = false }: { company: Company; c
           <Instagram size={11} /> {c.instagram}
         </a>
       ) : (
-        <span className={VAZIO}><Instagram size={11} /> sem Instagram</span>
+        <a
+          href={buscaGoogle(`site:instagram.com "${c.name}" ${c.city}`)}
+          target="_blank"
+          rel="noreferrer noopener"
+          className={PROCURAR}
+          title="A Receita não publica redes sociais — procurar o perfil no Instagram"
+        >
+          <Instagram size={11} /> procurar Instagram
+        </a>
       )}
 
       {/* LinkedIn da empresa */}
@@ -152,10 +201,10 @@ export function Contatos({ company: c, compacto = false }: { company: Company; c
           href={`https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(c.name)}`}
           target="_blank"
           rel="noreferrer noopener"
-          className="chip border-dashed border-ink-200 bg-ink-50/60 text-ink-500 hover:bg-ink-100 hover:text-[#0a66c2]"
+          className={PROCURAR}
           title="A Receita não publica redes sociais — procurar a empresa no LinkedIn"
         >
-          <Linkedin size={11} /> procurar
+          <Linkedin size={11} /> procurar LinkedIn
         </a>
       )}
     </div>
