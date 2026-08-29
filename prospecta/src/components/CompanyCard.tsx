@@ -1,10 +1,11 @@
 import Link from "next/link";
 import clsx from "clsx";
-import { MapPin, Phone, Star, UserRound, Linkedin, Building2, Globe, Instagram, Mail, MessageCircle } from "lucide-react";
+import { MapPin, Phone, Star, UserRound, Linkedin, Building2 } from "lucide-react";
 import type { CompanyResult } from "@/lib/types";
 import { ScoreBadge, StageBadge, ConfidenceBadge } from "@/components/ui";
 import { ROLE_LABEL, bestDecisionMaker } from "@/lib/decisores";
 import { SaveLeadButton } from "@/components/SaveLeadButton";
+import { Contatos } from "@/components/Contatos";
 import { getSegment } from "@/lib/segments";
 
 export function CompanyCard({
@@ -64,63 +65,8 @@ export function CompanyCard({
         {!compact && <SaveLeadButton companyId={c.id} savedLeadId={savedLeadId} lists={lists} />}
       </div>
 
-      {/* Contatos da empresa direto no resultado — sem precisar abrir a ficha. */}
-      {(c.whatsapp || c.email || c.website || c.instagram || c.linkedin) && (
-        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-          {c.whatsapp && (
-            <a
-              href={`https://wa.me/55${c.whatsapp.replace(/\D/g, "")}`}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="chip border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-              title={`WhatsApp ${c.whatsapp}`}
-            >
-              <MessageCircle size={11} /> WhatsApp
-            </a>
-          )}
-          {c.email && (
-            <a
-              href={`mailto:${c.email}`}
-              className="chip border-ink-200 bg-white text-ink-600 hover:bg-ink-50"
-              title={c.email}
-            >
-              <Mail size={11} /> {c.email.length > 26 ? "e-mail" : c.email}
-            </a>
-          )}
-          {c.website && (
-            <a
-              href={c.website}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="chip border-ink-200 bg-white text-ink-600 hover:bg-ink-50"
-              title={c.website}
-            >
-              <Globe size={11} /> {c.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
-            </a>
-          )}
-          {c.instagram && (
-            <a
-              href={`https://instagram.com/${c.instagram.replace("@", "")}`}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="chip border-pink-200 bg-pink-50 text-pink-700 hover:bg-pink-100"
-            >
-              <Instagram size={11} /> {c.instagram}
-            </a>
-          )}
-          {c.linkedin && (
-            <a
-              href={c.linkedin}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="chip border-[#0a66c2]/25 bg-[#0a66c2]/5 text-[#0a66c2] hover:bg-[#0a66c2]/10"
-              title="Página da empresa no LinkedIn"
-            >
-              <Linkedin size={11} /> empresa
-            </a>
-          )}
-        </div>
-      )}
+      {/* Todos os canais, inclusive os que faltam: vazio também é informação. */}
+      <Contatos company={c} compacto={compact} />
 
       {/* Bloco de decisor: o dado que o usuário veio buscar, já na lista. */}
       <div

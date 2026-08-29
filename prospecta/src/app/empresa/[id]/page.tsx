@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  ArrowLeft, Building2, Clock, ExternalLink, Globe, Instagram, Linkedin, Mail,
-  MapPin, Phone, Search, Star, UserRound, MessageCircle,
+  ArrowLeft, Building2, Clock, ExternalLink, Linkedin, Mail,
+  MapPin, Search, Star, UserRound,
 } from "lucide-react";
 import clsx from "clsx";
 import { requireUser } from "@/lib/auth";
@@ -14,6 +14,7 @@ import { ConfidenceBadge, ScoreBadge, StageBadge, brl } from "@/components/ui";
 import { SaveLeadButton } from "@/components/SaveLeadButton";
 import { LeadControls } from "@/components/LeadControls";
 import { MapPanel } from "@/components/MapPanel";
+import { Contatos } from "@/components/Contatos";
 
 export const dynamic = "force-dynamic";
 
@@ -273,70 +274,13 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
         <aside className="space-y-5">
           <section className="card p-5">
             <h2 className="mb-3 font-semibold text-ink-900">Contato</h2>
-            <ul className="space-y-2 text-sm">
-              {c.whatsapp && (
-                <li>
-                  <a
-                    className="flex items-center gap-2 text-ink-700 hover:text-brand-600"
-                    href={`https://wa.me/55${c.whatsapp.replace(/\D/g, "")}`}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                  >
-                    <MessageCircle size={14} className="text-emerald-600" /> {c.whatsapp}
-                  </a>
-                </li>
-              )}
-              {c.phone && (
-                <li>
-                  <a className="flex items-center gap-2 text-ink-700 hover:text-brand-600" href={`tel:${c.phone.replace(/\D/g, "")}`}>
-                    <Phone size={14} /> {c.phone}
-                  </a>
-                </li>
-              )}
-              {c.email && (
-                <li>
-                  <a className="flex items-center gap-2 text-ink-700 hover:text-brand-600" href={`mailto:${c.email}`}>
-                    <Mail size={14} /> {c.email}
-                  </a>
-                </li>
-              )}
-              {c.website && (
-                <li>
-                  <a className="flex items-center gap-2 text-ink-700 hover:text-brand-600" href={c.website} target="_blank" rel="noreferrer noopener">
-                    <Globe size={14} /> {c.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
-                  </a>
-                </li>
-              )}
-              {c.instagram && (
-                <li>
-                  <a
-                    className="flex items-center gap-2 text-ink-700 hover:text-brand-600"
-                    href={`https://instagram.com/${c.instagram.replace("@", "")}`}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                  >
-                    <Instagram size={14} /> {c.instagram}
-                  </a>
-                </li>
-              )}
-              {c.linkedin && (
-                <li>
-                  <a
-                    className="flex items-center gap-2 text-ink-700 hover:text-[#0a66c2]"
-                    href={c.linkedin}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                  >
-                    <Linkedin size={14} /> página da empresa
-                  </a>
-                </li>
-              )}
-              {c.hours && (
-                <li className="flex items-center gap-2 text-ink-500">
-                  <Clock size={14} /> {c.hours}
-                </li>
-              )}
-            </ul>
+            <Contatos company={c} />
+
+            {c.hours && (
+              <p className="mt-3 flex items-center gap-2 text-sm text-ink-500">
+                <Clock size={14} /> {c.hours}
+              </p>
+            )}
           </section>
 
           <section className="card overflow-hidden">
