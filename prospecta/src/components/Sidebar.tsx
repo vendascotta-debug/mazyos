@@ -46,7 +46,7 @@ function Nav() {
 
 export function Sidebar({ userName }: { userName: string }) {
   return (
-    <aside className="w-60 shrink-0 bg-ink-950 flex flex-col py-5 sticky top-0 h-screen">
+    <aside className="hidden lg:flex w-60 shrink-0 bg-ink-950 flex-col py-5 sticky top-0 h-screen">
       <Link href="/buscar" className="px-5 mb-7 flex items-center gap-2.5">
         <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand-500">
           <Radar size={18} className="text-white" strokeWidth={2.4} />

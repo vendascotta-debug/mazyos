@@ -45,7 +45,7 @@ export default async function ListasPage({
         </div>
       </PageHeader>
 
-      <div className="space-y-4 p-6">
+      <div className="space-y-4 p-4 sm:p-6">
         {lists.length === 0 ? (
           <EmptyState
             title="Nenhuma lista neste segmento"

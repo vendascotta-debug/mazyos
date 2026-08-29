@@ -47,7 +47,7 @@ export default async function DashboardPage({
         </div>
       </PageHeader>
 
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 p-4 sm:p-6">
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Stat label="Leads salvos" value={m.savedLeads} hint={`score médio ${m.avgScore}/100`} />
           <Stat label="Pipeline aberto" value={brl(m.pipelineValue)} hint="potencial mensal fora de 'Cliente'" accent />

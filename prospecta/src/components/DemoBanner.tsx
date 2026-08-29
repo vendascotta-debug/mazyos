@@ -7,7 +7,7 @@ import { Database } from "lucide-react";
  */
 export function DemoBanner() {
   return (
-    <div className="flex items-start gap-2.5 border-b border-sky-200 bg-sky-50 px-7 py-2.5">
+    <div className="flex items-start gap-2.5 border-b border-sky-200 bg-sky-50 px-4 py-2.5 sm:px-7">
       <Database size={15} className="mt-0.5 shrink-0 text-sky-600" />
       <p className="text-xs leading-relaxed text-sky-900">
         <strong className="font-semibold">Dados reais da Receita Federal</strong> —

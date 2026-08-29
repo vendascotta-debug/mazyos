@@ -70,7 +70,7 @@ export default async function BuscarPage({ searchParams }: { searchParams: Promi
           </div>
         </PageHeader>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {outcome.total === 0 ? (
             <EmptyState
               title="Nenhuma empresa nesse recorte"
@@ -83,10 +83,10 @@ export default async function BuscarPage({ searchParams }: { searchParams: Promi
             />
           ) : view === "mapa" ? (
             <div className="grid gap-5 lg:grid-cols-[1fr_380px]">
-              <div className="h-[calc(100vh-190px)] min-h-[420px]">
+              <div className="h-[55vh] min-h-[320px] lg:h-[calc(100vh-190px)] lg:min-h-[420px]">
                 <MapPanel points={outcome.mapPoints} center={outcome.center} radiusKm={filters.radiusKm} />
               </div>
-              <div className="h-[calc(100vh-190px)] min-h-[420px] space-y-3 overflow-y-auto thin-scroll pr-1">
+              <div className="space-y-3 lg:h-[calc(100vh-190px)] lg:min-h-[420px] lg:overflow-y-auto lg:pr-1 thin-scroll">
                 {outcome.results.map((r) => (
                   <CompanyCard key={r.company.id} result={r} lists={lists} compact />
                 ))}

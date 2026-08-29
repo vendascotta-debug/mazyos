@@ -64,7 +64,7 @@ export default async function CrmPage({
         </div>
       </PageHeader>
 
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         {cards.length === 0 ? (
           <EmptyState
             title={`Nenhum lead de ${segment.name} no CRM`}

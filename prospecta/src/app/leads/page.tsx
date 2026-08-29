@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Download, Linkedin, Search } from "lucide-react";
+import { Download, Linkedin, Phone, Search } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { listLeads, listLists } from "@/lib/repo";
 import { getSegment, SEGMENTS } from "@/lib/segments";
@@ -56,7 +56,7 @@ export default async function LeadsPage({
         </div>
       </PageHeader>
 
-      <div className="p-6 space-y-4">
+      <div className="space-y-4 p-4 sm:p-6">
         <div className="flex flex-wrap items-center gap-1.5">
           <Link
             href={`/leads?segment=${segmentSlug}`}
@@ -86,7 +86,7 @@ export default async function LeadsPage({
             }
           />
         ) : (
-          <div className="card overflow-x-auto">
+          <div className="card hidden overflow-x-auto md:block">
             <table className="w-full min-w-[900px] text-sm">
               <thead>
                 <tr className="border-b border-ink-200 text-left text-[11px] uppercase tracking-wider text-ink-500">
@@ -161,6 +161,55 @@ export default async function LeadsPage({
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Celular: a tabela vira cartões. Rolar 900px de largura com o polegar
+            não é trabalho, é castigo. */}
+        {leads.length > 0 && (
+          <div className="space-y-3 md:hidden">
+            {leads.map((l) => {
+              const d = bestDecisionMaker(l.decisionMakers);
+              return (
+                <article key={l.id} className="card p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <Link href={`/empresa/${l.companyId}`} className="font-medium leading-snug text-ink-900">
+                      {l.company.name}
+                    </Link>
+                    <ScoreBadge score={l.score} tier={l.tier} size="sm" />
+                  </div>
+
+                  <p className="mt-1 text-xs text-ink-500">
+                    {l.company.neighborhood}, {l.company.city}/{l.company.uf}
+                  </p>
+
+                  {d && (
+                    <p className="mt-2 text-xs text-ink-600">
+                      <span className={d.name ? "font-medium text-ink-800" : "italic"}>
+                        {d.name ?? d.role}
+                      </span>
+                      <span className="text-ink-400"> · {ROLE_LABEL[d.roleCategory]}</span>
+                    </p>
+                  )}
+
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    {l.company.whatsapp || l.company.phone ? (
+                      <a
+                        href={`tel:${(l.company.whatsapp ?? l.company.phone ?? "").replace(/\D/g, "")}`}
+                        className="chip border-emerald-200 bg-emerald-50 py-1.5 text-emerald-700"
+                      >
+                        <Phone size={12} /> Ligar
+                      </a>
+                    ) : null}
+                    <span className="chip border-ink-200 bg-ink-50 text-ink-600">{brl(l.estimatedValue)}</span>
+                  </div>
+
+                  <div className="mt-3 border-t border-ink-100 pt-3">
+                    <LeadRowActions leadId={l.id} stage={l.stage} companyName={l.company.name} />
+                  </div>
+                </article>
+              );
+            })}
           </div>
         )}
 

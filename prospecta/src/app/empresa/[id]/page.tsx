@@ -37,7 +37,7 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
 
   return (
     <div>
-      <header className="border-b border-ink-200 bg-white px-7 py-5">
+      <header className="border-b border-ink-200 bg-white px-4 py-4 sm:px-7 sm:py-5">
         <Link href={`/buscar?segment=${c.segmentSlug}`} className="mb-3 inline-flex items-center gap-1.5 text-xs text-ink-500 hover:text-ink-800">
           <ArrowLeft size={13} /> voltar para a busca
         </Link>
@@ -73,7 +73,7 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
         </div>
       </header>
 
-      <div className="grid gap-6 p-6 xl:grid-cols-[1fr_340px]">
+      <div className="grid gap-5 p-4 sm:p-6 xl:grid-cols-[1fr_340px]">
         <div className="space-y-6">
           {/* ---------------- Decisores ---------------- */}
           <section className="card overflow-hidden">

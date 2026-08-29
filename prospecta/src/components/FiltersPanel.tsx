@@ -1,9 +1,9 @@
 "use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { useCallback, useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 import clsx from "clsx";
-import { Loader2, RotateCcw } from "lucide-react";
+import { Loader2, RotateCcw, SlidersHorizontal, X } from "lucide-react";
 import type { SearchFilters } from "@/lib/types";
 
 interface Props {
@@ -27,6 +27,8 @@ export function FiltersPanel({ filters, segments, subsegments, cities, neighborh
   const pathname = usePathname();
   const params = useSearchParams();
   const [pending, start] = useTransition();
+  // No celular o painel vira gaveta: 288px fixos ao lado do conteudo nao cabem.
+  const [aberto, setAberto] = useState(false);
 
   /** Toda mudança de filtro é uma navegação — a URL é o estado da busca. */
   const setParam = useCallback(
@@ -37,6 +39,7 @@ export function FiltersPanel({ filters, segments, subsegments, cities, neighborh
         else next.set(k, v);
       }
       next.delete("pagina");
+      setAberto(false);
       start(() => router.push(`${pathname}?${next.toString()}`, { scroll: false }));
     },
     [params, pathname, router],
@@ -50,9 +53,63 @@ export function FiltersPanel({ filters, segments, subsegments, cities, neighborh
 
   const activeSub = filters.subsegments;
 
+  // Contador no botão do celular: com o painel fechado, é o único jeito de
+  // saber que a lista está filtrada.
+  const ativos =
+    activeSub.length +
+    filters.porte.length +
+    (filters.city ? 1 : 0) +
+    (filters.neighborhood ? 1 : 0) +
+    (filters.radiusKm ? 1 : 0) +
+    (filters.query ? 1 : 0) +
+    (filters.minScore > 0 ? 1 : 0) +
+    (filters.onlyWithDecisionMaker ? 1 : 0) +
+    (filters.onlyWithPhone ? 1 : 0) +
+    (filters.hideSaved ? 1 : 0);
+
   return (
-    <aside className="w-72 shrink-0 border-r border-ink-200 bg-white">
-      <div className="sticky top-0 max-h-screen overflow-y-auto thin-scroll p-5 space-y-6">
+    <>
+      {/* Celular: botão que abre os filtros, com contador do que está ativo. */}
+      <button
+        onClick={() => setAberto(true)}
+        className="sticky top-14 z-20 flex w-full items-center justify-center gap-2 border-b border-ink-200 bg-white py-3 text-sm font-medium text-ink-700 lg:hidden"
+      >
+        <SlidersHorizontal size={16} />
+        Filtros
+        {ativos > 0 && (
+          <span className="rounded-full bg-brand-500 px-2 py-0.5 text-[11px] font-semibold text-white">
+            {ativos}
+          </span>
+        )}
+        <span className="text-ink-400">· {total.toLocaleString("pt-BR")} empresas</span>
+      </button>
+
+      {/* Fundo escuro que fecha a gaveta ao toque. */}
+      {aberto && (
+        <div
+          className="fixed inset-0 z-40 bg-ink-950/50 lg:hidden"
+          onClick={() => setAberto(false)}
+          aria-hidden
+        />
+      )}
+
+      <aside
+        className={clsx(
+          "border-ink-200 bg-white",
+          // Desktop: coluna fixa. Celular: gaveta que entra pela esquerda.
+          "lg:w-72 lg:shrink-0 lg:border-r lg:static lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 w-[85vw] max-w-sm border-r transition-transform duration-200 lg:z-auto",
+          aberto ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+        )}
+      >
+        <div className="flex items-center justify-between border-b border-ink-200 px-5 py-3 lg:hidden">
+          <span className="font-semibold text-ink-900">Filtros</span>
+          <button onClick={() => setAberto(false)} aria-label="Fechar filtros" className="p-1 text-ink-500">
+            <X size={20} />
+          </button>
+        </div>
+
+      <div className="sticky top-0 max-h-screen overflow-y-auto thin-scroll p-5 pb-24 space-y-6 lg:pb-5">
         {/* Segmento — a chave da arquitetura multi-mercado */}
         <div>
           <span className="label">Segmento</span>
@@ -257,6 +314,7 @@ export function FiltersPanel({ filters, segments, subsegments, cities, neighborh
           </button>
         </div>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }
