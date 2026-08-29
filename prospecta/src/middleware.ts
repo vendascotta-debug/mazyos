@@ -18,8 +18,10 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Tudo é protegido, menos o próprio fluxo de login e os arquivos estáticos.
+  // Protege as telas. As rotas de API ficam de fora porque cada uma já checa a
+  // sessão e responde 401 — redirecionar um fetch para HTML de login faria o
+  // front receber uma página onde esperava JSON.
   matcher: [
-    "/((?!entrar|cadastrar|api/auth|api/seed|_next/static|_next/image|favicon.ico).*)",
+    "/((?!entrar|cadastrar|api|_next/static|_next/image|favicon.ico).*)",
   ],
 };
