@@ -24,7 +24,7 @@ export function CompanyCard({
 
   return (
     <article className={clsx("card transition-shadow hover:shadow-md", compact ? "p-3.5" : "p-5")}>
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <Link
@@ -62,7 +62,11 @@ export function CompanyCard({
           </p>
         </div>
 
-        {!compact && <SaveLeadButton companyId={c.id} savedLeadId={savedLeadId} lists={lists} />}
+        {!compact && (
+          <div className="shrink-0">
+            <SaveLeadButton companyId={c.id} savedLeadId={savedLeadId} lists={lists} />
+          </div>
+        )}
       </div>
 
       {/* Todos os canais, inclusive os que faltam: vazio também é informação. */}

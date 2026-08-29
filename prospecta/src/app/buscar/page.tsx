@@ -31,7 +31,10 @@ export default async function BuscarPage({ searchParams }: { searchParams: Promi
   const recorte = [filters.neighborhood, filters.city].filter(Boolean).join(", ") || "todas as praças";
 
   return (
-    <div className="flex">
+    // No celular o botão de filtros fica ACIMA do conteúdo; no desktop, o painel
+    // fica ao lado. Sem o flex-col, o botão entrava na mesma linha e espremia a
+    // lista numa coluna estreita.
+    <div className="flex flex-col lg:flex-row">
       <FiltersPanel
         filters={filters}
         segments={SEGMENTS.map((s) => ({ slug: s.slug, name: s.name, emoji: s.emoji, tagline: s.tagline }))}

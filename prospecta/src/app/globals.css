@@ -28,6 +28,9 @@ html, body {
 }
 
 body {
+  /* Nada de rolagem lateral da pagina inteira no celular: conteudo largo
+     (tabela, kanban) rola dentro do proprio container. */
+  overflow-x: hidden;
   background: var(--color-ink-50);
   color: var(--color-ink-900);
   font-family: var(--font-sans);

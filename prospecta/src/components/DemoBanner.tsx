@@ -9,13 +9,18 @@ export function DemoBanner() {
   return (
     <div className="flex items-start gap-2.5 border-b border-sky-200 bg-sky-50 px-4 py-2.5 sm:px-7">
       <Database size={15} className="mt-0.5 shrink-0 text-sky-600" />
+      {/* No celular, seis linhas de aviso empurram os resultados para fora da
+          tela — a explicação completa fica para o desktop. */}
       <p className="text-xs leading-relaxed text-sky-900">
-        <strong className="font-semibold">Dados reais da Receita Federal</strong> —
-        103 mil empresas ativas de São Paulo, com CNPJ, telefone, e-mail e quadro
-        societário verdadeiros (base de janeiro/2026).{" "}
-        <span className="text-sky-700">
-          O mapa posiciona pela cidade, não pela rua: a Receita publica endereço,
-          não coordenada. Site e redes sociais ainda não vêm dessa fonte.
+        <strong className="font-semibold">Dados reais da Receita Federal</strong>
+        <span className="hidden sm:inline">
+          {" "}— 103 mil empresas ativas de São Paulo, com CNPJ, telefone, e-mail e
+          quadro societário verdadeiros (base de janeiro/2026).
+        </span>
+        <span className="sm:hidden"> · 103 mil empresas de SP (jan/2026)</span>
+        <span className="hidden text-sky-700 sm:inline">
+          {" "}O mapa posiciona pela cidade, não pela rua: a Receita publica
+          endereço, não coordenada. Site e redes sociais ainda não vêm dessa fonte.
         </span>
       </p>
     </div>
