@@ -176,6 +176,12 @@ CREATE TABLE IF NOT EXISTS leads (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+-- Conta criada pelo Google não tem senha, e ganha id e foto do provedor.
+ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google ON users(google_id);
+
 -- Multiusuário: cada lead e cada lista pertencem a alguém.
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS user_id TEXT;
 ALTER TABLE lead_lists ADD COLUMN IF NOT EXISTS user_id TEXT;

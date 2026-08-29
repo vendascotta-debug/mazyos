@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { Radar } from "lucide-react";
 import { currentUser } from "@/lib/auth";
 import { AuthForm } from "@/components/AuthForm";
+import { GoogleButton } from "@/components/GoogleButton";
+import { googleConfigurado } from "@/lib/google";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +27,8 @@ export default async function CadastrarPage() {
             A base de empresas é compartilhada. Seus leads, listas e anotações são
             só seus.
           </p>
+
+          {googleConfigurado() && <GoogleButton texto="Criar conta com Google" />}
 
           <AuthForm modo="cadastro" />
 

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 export function AuthForm({ modo }: { modo: "login" | "cadastro" }) {
   const router = useRouter();
@@ -11,6 +11,7 @@ export function AuthForm({ modo }: { modo: "login" | "cadastro" }) {
   const [nome, setNome] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [verSenha, setVerSenha] = useState(false);
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
@@ -69,17 +70,28 @@ export function AuthForm({ modo }: { modo: "login" | "cadastro" }) {
 
       <div>
         <label className="label" htmlFor="senha">Senha</label>
-        <input
-          id="senha"
-          type="password"
-          required
-          minLength={8}
-          className="input"
-          value={senha}
-          autoComplete={modo === "login" ? "current-password" : "new-password"}
-          placeholder={modo === "cadastro" ? "mínimo 8 caracteres" : ""}
-          onChange={(e) => setSenha(e.target.value)}
-        />
+        <div className="relative">
+          <input
+            id="senha"
+            type={verSenha ? "text" : "password"}
+            required
+            minLength={8}
+            className="input pr-10"
+            value={senha}
+            autoComplete={modo === "login" ? "current-password" : "new-password"}
+            placeholder={modo === "cadastro" ? "mínimo 8 caracteres" : ""}
+            onChange={(e) => setSenha(e.target.value)}
+          />
+          <button
+            type="button"
+            onClick={() => setVerSenha((v) => !v)}
+            aria-label={verSenha ? "Ocultar senha" : "Mostrar senha"}
+            title={verSenha ? "Ocultar senha" : "Mostrar senha"}
+            className="absolute inset-y-0 right-0 flex items-center px-3 text-ink-400 transition-colors hover:text-ink-700"
+          >
+            {verSenha ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        </div>
       </div>
 
       {erro && (

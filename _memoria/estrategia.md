@@ -22,12 +22,20 @@ projetos ativos e os dois (`autovault-mvp`, `Vicmotors`) estão em uso e não
 podem ser pausados. Projeto Neon: `prospecta` (free, us-east-2), schema
 `prospecta`, conexão pooled. Credenciais em `prospecta/.env.local`.
 
-**Para usar:** duplo clique em `prospecta/1-INICIAR.bat` e esperar o navegador
-abrir sozinho. O `2-CARREGAR-DADOS.bat` já rodou — não precisa de novo.
+**NO AR:** https://prospecta-two-beta.vercel.app (Vercel, plano Hobby, projeto
+`prospecta` sob a conta vendascotta-2685; repositório `vendascotta-debug/mazyos`,
+Root Directory = `prospecta`, deploy automático a cada push na main).
 
-**Próximo passo quando quiser publicar:** deploy na Vercel (mesmas variáveis do
-`.env.local` nas Environment Variables). Antes de mandar o link pra alguém,
-falta autenticação — hoje o app não tem login.
+Tem **login de verdade**: contas por usuário (scrypt + cookie de sessão
+assinado), leads/listas/histórico privados por conta, base de 750 empresas
+compartilhada. Testado em produção: isolamento entre contas confirmado.
+
+**Para usar local:** duplo clique em `prospecta/1-INICIAR.bat`.
+
+**Pendência conhecida:** a base é de DEMONSTRAÇÃO — empresas, sites, e-mails e
+LinkedIn são gerados, os links não abrem. Próximo passo grande: ligar os
+conectores reais em `src/lib/providers.ts` (Receita Federal/CNPJ via BrasilAPI,
+OpenStreetMap, avaliações de mapa).
 
 Nota: Alessandro achou o passo a passo confuso — retomar devagar, um passo por
 vez, sem despejar tudo de uma vez.

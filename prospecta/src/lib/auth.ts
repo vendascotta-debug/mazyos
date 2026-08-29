@@ -105,12 +105,57 @@ export async function createUser(email: string, senha: string, nome: string | nu
   return { id, email: mail, name: nome, createdAt: criado };
 }
 
+/**
+ * Entrada pelo Google. Se já existe conta com aquele e-mail (criada com senha),
+ * vinculamos o Google a ela em vez de criar uma segunda conta — senão a pessoa
+ * entraria num Prospecta vazio, sem os leads que já tinha.
+ */
+export async function findOrCreateGoogleUser(perfil: {
+  googleId: string;
+  email: string;
+  name: string | null;
+  avatar: string | null;
+}): Promise<User> {
+  const mail = NORMALIZE_EMAIL(perfil.email);
+
+  const porGoogle = await q1<{ id: string; email: string; name: string | null; created_at: string }>(
+    "SELECT id, email, name, created_at FROM users WHERE google_id = ?",
+    [perfil.googleId],
+  );
+  if (porGoogle) {
+    return { id: porGoogle.id, email: porGoogle.email, name: porGoogle.name, createdAt: porGoogle.created_at };
+  }
+
+  const porEmail = await q1<{ id: string; email: string; name: string | null; created_at: string }>(
+    "SELECT id, email, name, created_at FROM users WHERE email = ?",
+    [mail],
+  );
+  if (porEmail) {
+    await q("UPDATE users SET google_id = ?, avatar_url = COALESCE(avatar_url, ?) WHERE id = ?", [
+      perfil.googleId,
+      perfil.avatar,
+      porEmail.id,
+    ]);
+    return { id: porEmail.id, email: porEmail.email, name: porEmail.name, createdAt: porEmail.created_at };
+  }
+
+  const id = uid("usr-");
+  const criado = nowIso();
+  await q(
+    "INSERT INTO users (id, email, name, password_hash, google_id, avatar_url, created_at) VALUES (?,?,?,?,?,?,?)",
+    [id, mail, perfil.name, null, perfil.googleId, perfil.avatar, criado],
+  );
+  return { id, email: mail, name: perfil.name, createdAt: criado };
+}
+
 export async function authenticate(email: string, senha: string): Promise<User | null> {
-  const row = await q1<{ id: string; email: string; name: string | null; password_hash: string; created_at: string }>(
+  const row = await q1<{ id: string; email: string; name: string | null; password_hash: string | null; created_at: string }>(
     "SELECT * FROM users WHERE email = ?",
     [NORMALIZE_EMAIL(email)],
   );
   if (!row) return null;
+  // Conta criada pelo Google não tem senha — só entra pelo Google.
+  if (!row.password_hash) return null;
   if (!verifyPassword(senha, row.password_hash)) return null;
   return { id: row.id, email: row.email, name: row.name, createdAt: row.created_at };
 }
