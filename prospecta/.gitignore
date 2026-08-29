@@ -4,3 +4,7 @@ out/
 .env*.local
 next-env.d.ts
 *.tsbuildinfo
+
+# Chave de servico do Google (BigQuery) - NUNCA versionar
+google-bigquery.json
+*-service-account*.json
