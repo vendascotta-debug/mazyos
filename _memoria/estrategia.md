@@ -53,9 +53,15 @@ de serviço em `prospecta/google-bigquery.json` (fora do git).
    produto (ainda não existe; hoje a raiz cai direto no login).
 3. **Painel de administrador**: papel de admin, lista de quem se cadastrou,
    marcar conta como cortesia ou pagante, bloquear acesso e vencimento.
-4. Mapa posiciona por cidade, não por rua (a Receita publica endereço, não
+4. **DESEMPENHO da busca** (descoberto em 29/08 no teste de telas): a busca
+   carrega TODAS as empresas do segmento na memória (68 mil em Food Service)
+   para calcular score e decisores em JavaScript. Levou mais de 30s em
+   desenvolvimento. Precisa empurrar filtro, ordenação e paginação para o SQL —
+   vai piorar quando a base completa entrar (500 mil). Ver `searchCompanies`
+   em `src/lib/repo.ts`.
+5. Mapa posiciona por cidade, não por rua (a Receita publica endereço, não
    coordenada). Melhoria futura: geocodificar sob demanda.
-5. Site, Instagram e LinkedIn das empresas não vêm dessa fonte.
+6. Site, Instagram e LinkedIn das empresas não vêm dessa fonte.
 
 ## Fila de trabalho do Prospecta (ordem combinada em 29/08/2026)
 
