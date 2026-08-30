@@ -49,6 +49,11 @@ de serviço em `prospecta/google-bigquery.json` (fora do git).
    `node scripts/importar.mjs completar 500000`
    Antes de rodar, corrigir a repartição: garantir todos os subsegmentos com
    menos de 15 mil disponíveis e preencher o resto por porte/capital.
+
+   **Teste de aceite combinado com o Alessandro:** depois da carga, procurar
+   "juarez" com a busca ampla. O Bar do Juarez (rede tradicional de SP — Itaim,
+   Pinheiros, Brooklin, Moema) tem de aparecer com os sócios certos. Hoje ele
+   não está na base: só 6.896 dos 55.068 bares foram importados.
 2. **Landing page de vendas** do Prospecta — página pública para vender o
    produto (ainda não existe; hoje a raiz cai direto no login).
 3. **Painel de administrador**: papel de admin, lista de quem se cadastrou,
