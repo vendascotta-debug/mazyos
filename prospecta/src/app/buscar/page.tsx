@@ -77,7 +77,19 @@ export default async function BuscarPage({ searchParams }: { searchParams: Promi
         <div className="p-4 sm:p-6">
           <FiltrosAtivos filters={filters} />
           {outcome.total === 0 ? (
-            outcome.emOutrosSegmentos ? (
+            filters.query && outcome.emOutrosSegmentos === 0 ? (
+              // O nome não existe em lugar nenhum da base. Como a carga ainda é
+              // parcial, dizer isso evita a conclusão de que o sistema falhou.
+              <EmptyState
+                title={`"${filters.query}" não está na base`}
+                description="A base ainda não cobre todas as empresas de São Paulo — essa pode ser uma das que faltam. Procurar por uma palavra só (o nome principal, sem 'bar do', 'restaurante') costuma achar mais."
+                action={
+                  <Link href={`/buscar?segment=${filters.segment}`} className="btn-ghost mt-2">
+                    Limpar busca
+                  </Link>
+                }
+              />
+            ) : outcome.emOutrosSegmentos ? (
               // O nome existe, só está fora do recorte. Dizer isso evita a
               // conclusão errada de que a empresa não está na base.
               <EmptyState

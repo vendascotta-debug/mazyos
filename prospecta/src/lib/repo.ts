@@ -179,6 +179,40 @@ export interface SearchOutcome {
   emOutrosSegmentos: number | null;
 }
 
+/** Preposições e artigos: aparecem no nome de fantasia, não identificam nada. */
+const IRRELEVANTES = new Set(["de", "da", "do", "das", "dos", "e", "a", "o", "as", "os", "em", "no", "na"]);
+
+/**
+ * Condições SQL para a busca por nome.
+ *
+ * Procura por palavra, não pela frase inteira: quem digita "bar do juarez"
+ * precisa achar "JUAREZ BAR E RESTAURANTE LTDA", que é como a empresa costuma
+ * estar registrada na Receita. Cada palavra tem de aparecer no nome fantasia ou
+ * na razão social; a ordem não importa.
+ */
+function condicoesBusca(query: string, params: unknown[]): string[] {
+  const digitos = query.replace(/\D/g, "");
+
+  // CNPJ: quem cola um número quer aquela empresa, não uma busca textual.
+  if (digitos.length >= 8) {
+    params.push(`%${digitos}%`);
+    return ["REPLACE(REPLACE(REPLACE(c.cnpj, '.', ''), '/', ''), '-', '') LIKE ?"];
+  }
+
+  const palavras = query
+    .toLowerCase()
+    .split(/\s+/)
+    .map((p) => p.replace(/[^\p{L}\p{N}]/gu, ""))
+    .filter((p) => p.length >= 2 && !IRRELEVANTES.has(p));
+
+  if (!palavras.length) return [];
+
+  return palavras.map((p) => {
+    params.push(`%${p}%`, `%${p}%`);
+    return "(LOWER(c.name) LIKE ? OR LOWER(c.legal_name) LIKE ?)";
+  });
+}
+
 export async function searchCompanies(f: SearchFilters, userId: string): Promise<SearchOutcome> {
   const segment = getSegment(f.segment);
 
@@ -201,9 +235,7 @@ export async function searchCompanies(f: SearchFilters, userId: string): Promise
   if (f.uf) { where.push("c.uf = ?"); params.push(f.uf); }
   if (f.neighborhood) { where.push("c.neighborhood = ?"); params.push(f.neighborhood); }
   if (f.query) {
-    where.push("(LOWER(c.name) LIKE ? OR LOWER(c.legal_name) LIKE ? OR c.cnpj LIKE ?)");
-    const term = `%${f.query.toLowerCase()}%`;
-    params.push(term, term, `%${f.query}%`);
+    for (const cond of condicoesBusca(f.query, params)) where.push(cond);
   }
   if (f.onlyWithPhone) where.push("(c.phone IS NOT NULL OR c.whatsapp IS NOT NULL)");
 
@@ -289,14 +321,16 @@ export async function searchCompanies(f: SearchFilters, userId: string): Promise
   // Busca por nome sem resultado: vale conferir se o texto existe fora deste
   // recorte antes de dizer ao usuário que não há nada.
   let emOutrosSegmentos: number | null = null;
-  if (total === 0 && f.query && !f.allSegments) {
-    const termo = `%${f.query.toLowerCase()}%`;
-    const r = await q1<{ n: number }>(
-      `SELECT COUNT(*)::int AS n FROM companies
-       WHERE LOWER(name) LIKE ? OR LOWER(legal_name) LIKE ? OR cnpj LIKE ?`,
-      [termo, termo, `%${f.query}%`],
-    );
-    emOutrosSegmentos = r?.n ?? 0;
+  if (total === 0 && f.query) {
+    const p: unknown[] = [];
+    const conds = condicoesBusca(f.query, p).map((c) => c.replace(/c\./g, ""));
+    if (conds.length) {
+      const r = await q1<{ n: number }>(
+        `SELECT COUNT(*)::int AS n FROM companies WHERE ${conds.join(" AND ")}`,
+        p,
+      );
+      emOutrosSegmentos = r?.n ?? 0;
+    }
   }
 
   return {
