@@ -8,6 +8,7 @@ import { SEGMENTS, getSegment } from "@/lib/segments";
 import { CompanyCard } from "@/components/CompanyCard";
 import { FiltersPanel } from "@/components/FiltersPanel";
 import { MapPanel } from "@/components/MapPanel";
+import { FiltrosAtivos } from "@/components/FiltrosAtivos";
 import { EmptyState, PageHeader } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -46,8 +47,8 @@ export default async function BuscarPage({ searchParams }: { searchParams: Promi
 
       <div className="min-w-0 flex-1">
         <PageHeader
-          title={`${segment.emoji} ${segment.name}`}
-          subtitle={`${outcome.total.toLocaleString("pt-BR")} ${segment.labels.companyPlural} em ${recorte}${filters.radiusKm ? ` · raio de ${filters.radiusKm} km` : ""}`}
+          title={filters.allSegments ? "🔎 Toda a base" : `${segment.emoji} ${segment.name}`}
+          subtitle={`${outcome.total.toLocaleString("pt-BR")} ${filters.allSegments ? "empresas em todos os segmentos" : segment.labels.companyPlural + " em " + recorte}${filters.radiusKm ? ` · raio de ${filters.radiusKm} km` : ""}`}
         >
           <div className="flex items-center gap-2">
             <div className="flex overflow-hidden rounded-lg border border-ink-200">
@@ -74,16 +75,34 @@ export default async function BuscarPage({ searchParams }: { searchParams: Promi
         </PageHeader>
 
         <div className="p-4 sm:p-6">
+          <FiltrosAtivos filters={filters} />
           {outcome.total === 0 ? (
-            <EmptyState
-              title="Nenhuma empresa nesse recorte"
-              description="Tente ampliar o raio, limpar o filtro de bairro ou baixar o Lead Score mínimo."
-              action={
-                <Link href={`/buscar?segment=${filters.segment}`} className="btn-ghost mt-2">
-                  Limpar filtros
-                </Link>
-              }
-            />
+            outcome.emOutrosSegmentos ? (
+              // O nome existe, só está fora do recorte. Dizer isso evita a
+              // conclusão errada de que a empresa não está na base.
+              <EmptyState
+                title={`"${filters.query}" não aparece neste recorte`}
+                description={`Mas existe${outcome.emOutrosSegmentos > 1 ? "m" : ""} ${outcome.emOutrosSegmentos.toLocaleString("pt-BR")} empresa${outcome.emOutrosSegmentos > 1 ? "s" : ""} com esse nome em outros segmentos ou subsegmentos da base.`}
+                action={
+                  <Link
+                    href={`/buscar?segment=${filters.segment}&q=${encodeURIComponent(filters.query ?? "")}&tudo=1`}
+                    className="btn-brand mt-2"
+                  >
+                    Buscar em toda a base
+                  </Link>
+                }
+              />
+            ) : (
+              <EmptyState
+                title="Nenhuma empresa nesse recorte"
+                description="Tente ampliar o raio, limpar o filtro de bairro ou baixar o Lead Score mínimo."
+                action={
+                  <Link href={`/buscar?segment=${filters.segment}`} className="btn-ghost mt-2">
+                    Limpar filtros
+                  </Link>
+                }
+              />
+            )
           ) : view === "mapa" ? (
             <div className="grid gap-5 lg:grid-cols-[1fr_380px]">
               <div className="h-[55vh] min-h-[320px] lg:h-[calc(100vh-190px)] lg:min-h-[420px]">

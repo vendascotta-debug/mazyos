@@ -1,7 +1,7 @@
 import { nowIso, q, q1, uid } from "@/lib/db";
 import { derivarDecisores, type PublicRecords } from "@/lib/decisores";
 import { calcularScore } from "@/lib/scoring";
-import { getSegment } from "@/lib/segments";
+import { SEGMENTS, getSegment } from "@/lib/segments";
 import {
   STAGES,
   type Activity,
@@ -171,17 +171,31 @@ export interface SearchOutcome {
   /** Todos os pontos do recorte (sem paginar), pro mapa não “sumir” página a página. */
   mapPoints: { id: string; name: string; lat: number; lng: number; score: number; tier: string; saved: boolean }[];
   facets: { subsegments: { slug: string; name: string; count: number }[] };
+  /**
+   * Quantas empresas o mesmo texto acharia na base inteira. Só é calculado
+   * quando a busca por nome não devolveu nada — serve para dizer "existe, mas
+   * está fora do filtro" em vez de deixar o usuário achar que não existe.
+   */
+  emOutrosSegmentos: number | null;
 }
 
 export async function searchCompanies(f: SearchFilters, userId: string): Promise<SearchOutcome> {
   const segment = getSegment(f.segment);
 
-  const where: string[] = ["c.segment_slug = ?"];
-  const params: unknown[] = [f.segment];
+  // `allSegments` existe porque procurar uma empresa pelo nome é uma pergunta
+  // sobre a base inteira: quem digita "juarez" quer achar o Bar do Juarez, não
+  // descobrir que ele estava filtrado fora por um subsegmento aberto na tela.
+  const where: string[] = [];
+  const params: unknown[] = [];
 
-  if (f.subsegments.length) {
-    where.push(`c.subsegment_slug IN (${f.subsegments.map(() => "?").join(",")})`);
-    params.push(...f.subsegments);
+  if (!f.allSegments) {
+    where.push("c.segment_slug = ?");
+    params.push(f.segment);
+
+    if (f.subsegments.length) {
+      where.push(`c.subsegment_slug IN (${f.subsegments.map(() => "?").join(",")})`);
+      params.push(...f.subsegments);
+    }
   }
   if (f.city) { where.push("c.city = ?"); params.push(f.city); }
   if (f.uf) { where.push("c.uf = ?"); params.push(f.uf); }
@@ -205,7 +219,7 @@ export async function searchCompanies(f: SearchFilters, userId: string): Promise
       `SELECT c.*, l.id AS lead_id, l.stage AS lead_stage
        FROM companies c
        LEFT JOIN leads l ON l.company_id = c.id AND l.user_id = ?
-       WHERE ${where.join(" AND ")}`,
+       WHERE ${where.length ? where.join(" AND ") : "1=1"}`,
       [userId, ...params],
     ),
     f.centerLat != null && f.centerLng != null
@@ -241,8 +255,11 @@ export async function searchCompanies(f: SearchFilters, userId: string): Promise
   for (const e of enriched) {
     facetMap.set(e.company.subsegmentSlug, (facetMap.get(e.company.subsegmentSlug) ?? 0) + 1);
   }
+  // Na busca global o resultado mistura segmentos, então as facetas precisam
+  // conhecer os subsegmentos de todos eles.
+  const catalogo = f.allSegments ? SEGMENTS.flatMap((s) => s.subsegments) : segment.subsegments;
   const facets = {
-    subsegments: segment.subsegments
+    subsegments: catalogo
       .map((s) => ({ slug: s.slug, name: s.name, count: facetMap.get(s.slug) ?? 0 }))
       .filter((s) => s.count > 0 || f.subsegments.includes(s.slug)),
   };
@@ -268,7 +285,28 @@ export async function searchCompanies(f: SearchFilters, userId: string): Promise
 
   const total = enriched.length;
   const start = (f.page - 1) * f.pageSize;
-  return { results: enriched.slice(start, start + f.pageSize), total, center, mapPoints, facets };
+
+  // Busca por nome sem resultado: vale conferir se o texto existe fora deste
+  // recorte antes de dizer ao usuário que não há nada.
+  let emOutrosSegmentos: number | null = null;
+  if (total === 0 && f.query && !f.allSegments) {
+    const termo = `%${f.query.toLowerCase()}%`;
+    const r = await q1<{ n: number }>(
+      `SELECT COUNT(*)::int AS n FROM companies
+       WHERE LOWER(name) LIKE ? OR LOWER(legal_name) LIKE ? OR cnpj LIKE ?`,
+      [termo, termo, `%${f.query}%`],
+    );
+    emOutrosSegmentos = r?.n ?? 0;
+  }
+
+  return {
+    results: enriched.slice(start, start + f.pageSize),
+    total,
+    center,
+    mapPoints,
+    facets,
+    emOutrosSegmentos,
+  };
 }
 
 export async function getCompany(id: string, userId: string) {

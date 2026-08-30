@@ -151,6 +151,23 @@ export function FiltersPanel({ filters, segments, subsegments, cities, neighborh
           />
         </div>
 
+        {/* Procurar empresa pelo nome e uma pergunta sobre a base inteira, nao
+            sobre o segmento aberto na tela. */}
+        <label className="-mt-3 flex cursor-pointer items-start gap-2.5 text-sm text-ink-700">
+          <input
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 rounded border-ink-300 accent-brand-500"
+            checked={filters.allSegments}
+            onChange={(e) => setParam({ tudo: e.target.checked ? "1" : null })}
+          />
+          <span>
+            Buscar em toda a base
+            <span className="block text-[11px] leading-tight text-ink-500">
+              Ignora segmento e subsegmento
+            </span>
+          </span>
+        </label>
+
         <div>
           <span className="label">Subsegmento</span>
           <div className="flex flex-wrap gap-1.5">
@@ -166,7 +183,11 @@ export function FiltersPanel({ filters, segments, subsegments, cities, neighborh
                 )}
               >
                 {s.name}
-                <span className="opacity-60">{s.count}</span>
+                {activeSub.includes(s.slug) ? (
+                  <X size={11} className="opacity-80" />
+                ) : (
+                  <span className="opacity-60">{s.count}</span>
+                )}
               </button>
             ))}
           </div>
@@ -259,6 +280,7 @@ export function FiltersPanel({ filters, segments, subsegments, cities, neighborh
                 )}
               >
                 {p.label}
+                {filters.porte.includes(p.value as never) && <X size={11} className="opacity-80" />}
               </button>
             ))}
           </div>

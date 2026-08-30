@@ -40,6 +40,7 @@ export function parseFilters(params: RawParams): SearchFilters {
     onlyWithDecisionMaker: first(params.decisor) === "1",
     onlyWithPhone: first(params.fone) === "1",
     hideSaved: first(params.novos) === "1",
+    allSegments: first(params.tudo) === "1",
     porte: many(params.porte).filter((p): p is Porte => PORTES.includes(p as Porte)),
     sort: (first(params.ordem) as SearchFilters["sort"]) ?? "score",
     page: Math.max(1, num(first(params.pagina), 1) ?? 1),
@@ -60,6 +61,7 @@ export function toQuery(f: Partial<SearchFilters> & { segment: string }): string
   if (f.onlyWithDecisionMaker) p.set("decisor", "1");
   if (f.onlyWithPhone) p.set("fone", "1");
   if (f.hideSaved) p.set("novos", "1");
+  if (f.allSegments) p.set("tudo", "1");
   if (f.porte?.length) p.set("porte", f.porte.join(","));
   if (f.sort && f.sort !== "score") p.set("ordem", f.sort);
   if (f.page && f.page > 1) p.set("pagina", String(f.page));

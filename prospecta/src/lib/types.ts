@@ -219,6 +219,8 @@ export interface SearchFilters {
   onlyWithDecisionMaker: boolean;
   onlyWithPhone: boolean;
   hideSaved: boolean;
+  /** Ignora segmento e subsegmento: busca por nome em toda a base. */
+  allSegments: boolean;
   porte: Porte[];
   sort: "score" | "name" | "reviews" | "distance" | "recent";
   page: number;
