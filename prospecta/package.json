@@ -29,6 +29,7 @@
     "@types/react-dom": "^19.0.0",
     "playwright": "^1.62.1",
     "tailwindcss": "^4.0.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "unzipper": "^0.12.5"
   }
 }

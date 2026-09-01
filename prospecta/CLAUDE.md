@@ -44,10 +44,34 @@ npm run db:status            # estado do banco
 O schema se cria sozinho no primeiro acesso (`ensureSchema`). Passo detalhado
 no `README.md`.
 
+## Dados
+
+A base vem dos Dados Abertos do CNPJ da Receita Federal. **Não usar BigQuery**:
+a franquia gratuita do projeto foi consumida e conta a partir da criação do
+projeto, não do mês do calendário.
+
+O caminho atual é `scripts/receita.mjs`, que baixa os ZIPs da Receita e lê em
+streaming, sem descompactar nada em disco:
+
+```bash
+node --max-old-space-size=6144 scripts/receita.mjs             # tudo
+node --max-old-space-size=6144 scripts/receita.mjs utensilios  # um segmento
+```
+
+Duas armadilhas já pagas, para não repetir:
+- Nunca pendurar `on("data")` num stream que também é `pipe`ado: isso liga o
+  modo flowing, mata o controle de fluxo e o download enche a memória.
+- CNAE não é subsegmento. Restaurante, pizzaria e churrascaria dividem o
+  5611-2/01 — quem separa é `scripts/classificador.mjs`, pelo nome.
+
 ## Deploy
 
-Vercel + Supabase. Variáveis na Vercel: `DATABASE_URL` e `SEED_TOKEN`. Depois
-do primeiro deploy, rodar o seed uma vez:
+Vercel + Neon (não Supabase). Variáveis na Vercel: `DATABASE_URL`, `DB_SCHEMA`,
+`AUTH_SECRET`, `SEED_TOKEN`, `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`.
+Endereço: prospecta-two-beta.vercel.app
+
+O seed de demonstração só serve para banco vazio — a base real vem do script
+da Receita:
 
 ```bash
 curl -X POST https://SEU-APP.vercel.app/api/seed -H "x-seed-token: SEU_TOKEN"
