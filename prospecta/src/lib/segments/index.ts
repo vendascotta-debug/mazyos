@@ -1,11 +1,11 @@
 import type { SegmentConfig, Subsegment } from "./types";
 import { foodService } from "./food-service";
 import { saude } from "./saude";
-import { distribuidores } from "./distribuidores";
 import { arquitetura } from "./arquitetura";
+import { utensilios } from "./utensilios";
 
 /** Registro de segmentos. Adicione o novo mercado aqui e ele aparece no app. */
-export const SEGMENTS: SegmentConfig[] = [foodService, arquitetura, distribuidores, saude];
+export const SEGMENTS: SegmentConfig[] = [foodService, arquitetura, utensilios, saude];
 
 export const DEFAULT_SEGMENT = foodService.slug;
 

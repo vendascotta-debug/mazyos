@@ -41,6 +41,16 @@ export const REFINOS = {
   representante: {
     exigeNome: ["REPRESENT", "ALIMENT", "FOOD", "BEBIDA"],
   },
+  // Varejo de artigos domesticos e amplo demais: pega qualquer loja de casa.
+  "loja-utensilios": {
+    exigeNome: ["UTENSILIO", "COZINHA", "CASA", "UTILIDADE", "MESA", "INOX", "CHEF", "GASTRONOM"],
+  },
+  "atacado-utensilios": {
+    exigeNome: ["UTENSILIO", "COZINHA", "INOX", "EQUIPAMENTO", "GASTRONOM", "REFRIGERA", "HOTEL", "BAR"],
+  },
+  "importadora-utensilios": {
+    exigeNome: ["IMPORT", "UTENSILIO", "COZINHA", "INOX", "CASA", "TRADING"],
+  },
   // Ambulantes: volume alto e ticket baixo, fora do foco inicial.
   "food-truck": {
     ignorar: true,

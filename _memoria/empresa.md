@@ -50,7 +50,11 @@ feiras Fispal Food Service (fispalfoodservice.com.br) e Equipotel
   que desenham restaurantes. Não compram para consumo: **especificam**. O
   objetivo é entrar no caderno de especificações, não vender pedido avulso.
   Referências: goakira.com.br, otengenharia.com.br, namesa.com.br.
-- **Distribuidores e Canal** — distribuidoras, revendas e representantes. São
-  concorrentes na venda de utensílios, mas são o público para **vender dados e
-  o próprio Prospecta**. Segmento separado justamente para não misturar com o
-  funil comercial.
+- **Distribuidores de Alimentos** — atacado de alimentos e bebidas e
+  representantes do setor. São concorrentes/canal, não compradores de utensílio:
+  o público para **vender dados e o próprio Prospecta**.
+- **Utensílios e Equipamentos** (criado em 01/09/2026) — fabricantes,
+  importadores, atacadistas e lojas de utensílios e equipamentos de cozinha.
+  Aqui o Alessandro é o **comprador**: serve para achar fornecedor para
+  representar/comprar e para mapear a concorrência. O decisor é o **gerente
+  comercial**, que abre cadastro de revenda e passa tabela de distribuidor.
