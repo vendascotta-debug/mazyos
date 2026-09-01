@@ -40,39 +40,36 @@ Federal (snapshot de jan/2026), em 629 cidades — 85 mil com sócios nominados,
 Pipeline em `prospecta/scripts/` (BigQuery via Base dos Dados). Chave da conta
 de serviço em `prospecta/google-bigquery.json` (fora do git).
 
-**Pendências:**
-1. **COBERTURA: só 13% do disponível.** Erro de desenho meu — reparti cota igual
-   entre subsegmentos, então restaurante ficou com 6.896 de 107.745 e hotel com
-   98%. A cota do BigQuery (1 TB/mês) acabou em 29/08 e **renova em 1º de
-   setembro**. Rodar então uma varredura única com piso por subsegmento,
-   mirando ~500 mil empresas (~350 MB, cabe no plano gratuito):
-   `node scripts/importar.mjs completar 500000`
-   Antes de rodar, corrigir a repartição: garantir todos os subsegmentos com
-   menos de 15 mil disponíveis e preencher o resto por porte/capital.
+**Pendências (atualizado 01/09/2026):**
 
-   **Teste de aceite combinado com o Alessandro:** depois da carga, procurar
-   "juarez" com a busca ampla. O Bar do Juarez (rede tradicional de SP — Itaim,
-   Pinheiros, Brooklin, Moema) tem de aparecer com os sócios certos. Hoje ele
-   não está na base: só 6.896 dos 55.068 bares foram importados.
-2. **Landing page de vendas** do Prospecta — página pública para vender o
-   produto (ainda não existe; hoje a raiz cai direto no login).
-3. **Painel de administrador**: papel de admin, lista de quem se cadastrou,
-   marcar conta como cortesia ou pagante, bloquear acesso e vencimento.
-4. **DESEMPENHO da busca** (descoberto em 29/08 no teste de telas): a busca
-   carrega TODAS as empresas do segmento na memória (68 mil em Food Service)
-   para calcular score e decisores em JavaScript. Levou mais de 30s em
-   desenvolvimento. Precisa empurrar filtro, ordenação e paginação para o SQL —
-   vai piorar quando a base completa entrar (500 mil). Ver `searchCompanies`
-   em `src/lib/repo.ts`.
-5. Mapa posiciona por cidade, não por rua (a Receita publica endereço, não
-   coordenada). Melhoria futura: geocodificar sob demanda.
-6. Site, Instagram e LinkedIn das empresas não vêm dessa fonte.
+1. **CARGA DE DADOS — em andamento.** O BigQuery saiu de cena: a franquia
+   gratuita conta a partir da criação do projeto (29/08), não do calendário, e
+   está esgotada até ~29/09. O caminho novo é `scripts/receita.mjs`, que baixa
+   os ZIPs de Dados Abertos da Receita e lê em streaming — sem cota, sem chave.
+   Se a carga não tiver terminado, rodar de novo (é idempotente):
+   `cd prospecta && node --max-old-space-size=6144 scripts/receita.mjs`
+   Leva ~25 min. Teste de aceite: buscar "juarez" com "Buscar em toda a base".
+2. **DESEMPENHO da busca** — subiu de prioridade. `searchCompanies` em
+   `src/lib/repo.ts` carrega todas as empresas do segmento na memória para
+   calcular score. Com meio milhão de empresas isso trava. Precisa empurrar
+   filtro, ordenação e paginação para o SQL.
+3. Mapa posiciona por cidade, não por rua (a Receita publica endereço, não
+   coordenada).
+4. Site, Instagram e LinkedIn não vêm dessa fonte — a interface oferece busca
+   pronta no Google/LinkedIn no lugar.
 
 ## Fila de trabalho do Prospecta (ordem combinada em 29/08/2026)
 
-1. **1º de setembro:** carga completa dos dados (cota do BigQuery renova).
+1. Terminar a carga da Receita (ver pendência 1) e validar com o teste do
+   Bar do Juarez.
 2. **Landing page** de venda do produto.
 3. **Painel administrativo** de contas e cobrança.
+4. Desempenho da busca (ver pendência 2).
+
+Feito em 01/09/2026: segmento "Utensílios e Equipamentos" (fornecedores do
+Alessandro — fabricantes, importadores, atacado e lojas), remoção do segmento
+de distribuidoras de alimentos, busca por palavra em vez de frase, barra de
+filtros ativos com ✕, e o carregador direto da Receita Federal.
 
 Feito em 29/08/2026: dados reais da Receita (104 mil empresas), classificação
 por nome corrigida, otimização de espaço, login com Google, olhinho na senha,
