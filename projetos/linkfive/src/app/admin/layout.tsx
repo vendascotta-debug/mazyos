@@ -15,6 +15,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const abas = [
     { href: "/admin", label: "Visão geral" },
     { href: "/admin/clientes", label: "Clientes" },
+    { href: "/admin/cobranca", label: "Cobrança" },
   ];
 
   return (

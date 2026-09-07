@@ -409,6 +409,15 @@ export default function Landing() {
       <footer className="border-t border-ink-100 py-8">
         <div className="mx-auto flex max-w-[1120px] flex-wrap items-center justify-between gap-4 px-5">
           <Logo size={24} />
+          <nav className="flex flex-wrap items-center gap-4 text-sm text-ink-500">
+            <Link href="/termos" className="hover:text-ink-900">
+              Termos de uso
+            </Link>
+            <Link href="/privacidade" className="hover:text-ink-900">
+              Privacidade
+            </Link>
+          </nav>
+
           <p className="text-sm text-ink-400">
             © {new Date().getFullYear()} LINKFIVE. Todos os direitos reservados.
           </p>

@@ -47,7 +47,7 @@ recriar, copie o `.env.example` e preencha.
 
 ## O que já funciona
 
-Testado ponta a ponta em 07/09/2026 — 62 verificações, todas passando
+Testado ponta a ponta em 07/09/2026 — 75 verificações, todas passando
 (`npm run teste`):
 
 - [x] Landing page completa
@@ -77,11 +77,15 @@ Testado ponta a ponta em 07/09/2026 — 62 verificações, todas passando
       visitas, cliques, leads e última atividade; conceder plano, promover
       admin e suspender página
 - [x] **Plano Cortesia**: não aparece na página de preços, só o admin concede
+- [x] **Formulário de captura de leads** na página pública, com escolha de campos
+- [x] **Cobrança pelo Lastlink**: página de assinatura, webhook com registro do
+      payload cru, liberação e revogação automáticas de plano, e aplicação da
+      compra feita antes do cadastro
+- [x] **Termos de uso e política de privacidade** (rascunho, pendente de revisão jurídica)
 
 ## O que ainda não entrou
 
-**Fase 2:** formulário de captura na página pública, tela de leads alimentada de
-verdade, produtos e serviços com foto e preço.
+**Fase 2:** produtos e serviços com foto e preço.
 
 **Fase 3:** cobrança (a estrutura de assinatura já existe, falta o gateway),
 equipes.

@@ -487,5 +487,177 @@ checa("pagina reativada volta ao ar", r.status === 200, `status ${r.status}`);
 
 await sqlDireto.end();
 
+
+// Conexao propria para os testes de cobranca (a do bloco de admin ja foi fechada).
+const requireLocal2 = (await import("node:module")).createRequire(
+  "C:/Users/User/MazyOS/projetos/linkfive/package.json",
+);
+const postgres2 = requireLocal2("postgres");
+const envMapTeste = Object.fromEntries(
+  fs
+    .readFileSync("C:/Users/User/MazyOS/projetos/linkfive/.env.local", "utf8")
+    .split(/\r?\n/)
+    .filter((l) => l.includes("=") && !l.trim().startsWith("#"))
+    .map((l) => {
+      const i = l.indexOf("=");
+      return [l.slice(0, i).trim(), l.slice(i + 1).trim().replace(/^["']|["']$/g, "")];
+    }),
+);
+const connTeste = new URL(envMapTeste.DATABASE_URL);
+connTeste.searchParams.delete("channel_binding");
+const sqlDireto2 = postgres2(connTeste.toString(), {
+  prepare: false,
+  ssl: "require",
+  onnotice: () => {},
+});
+const esquemaTeste = envMapTeste.DB_SCHEMA || "public";
+
+
+// --- FORMULARIO DE LEADS ----------------------------------------------------
+
+// A conta B esta no Cortesia (concedida no teste do admin), entao tem
+// formularios liberados. Publica a pagina dela e adiciona o bloco.
+const infoB2 = await (await b("/api/pagina")).json();
+await b("/api/pagina/publicar", {
+  method: "POST",
+  body: JSON.stringify({ pageId: infoB2.pageId, publicar: true }),
+});
+
+r = await b("/api/links", {
+  method: "POST",
+  body: JSON.stringify({
+    pageId: infoB2.pageId,
+    type: "form",
+    title: "Quero receber informações",
+    config: { campos: ["name", "whatsapp", "email"], formTitulo: "Fale com a gente" },
+  }),
+});
+const blocoForm = (await r.json()).link;
+checa("cria o bloco de formulario", r.ok && blocoForm?.type === "form");
+
+// Visitante envia o formulario.
+r = await fetch(`${BASE}/api/leads`, {
+  method: "POST",
+  headers: { "content-type": "application/json", "user-agent": "Mozilla/5.0 (iPhone)" },
+  body: JSON.stringify({
+    slug: slugB,
+    linkId: blocoForm.id,
+    name: "Maria Cliente",
+    whatsapp: "11988887777",
+    email: "maria@exemplo.com",
+  }),
+});
+checa("visitante envia o formulario", r.ok, `status ${r.status}`);
+
+// O lead chegou pro dono?
+r = await b("/api/pagina");
+const totaisB = (await r.json()).totais;
+checa("o lead foi contado no painel", totaisB.leads >= 1, `leads=${totaisB.leads}`);
+
+// Sem contato nenhum o lead e recusado.
+r = await fetch(`${BASE}/api/leads`, {
+  method: "POST",
+  headers: { "content-type": "application/json", "user-agent": "Mozilla/5.0 (iPhone)" },
+  body: JSON.stringify({ slug: slugB, linkId: blocoForm.id, name: "Sem Contato" }),
+});
+checa("lead sem contato e recusado", r.status === 400, `status ${r.status}`);
+
+// Bloco de outra pagina nao grava lead na conta errada.
+r = await fetch(`${BASE}/api/leads`, {
+  method: "POST",
+  headers: { "content-type": "application/json", "user-agent": "Mozilla/5.0 (iPhone)" },
+  body: JSON.stringify({
+    slug: slugA,
+    linkId: blocoForm.id,
+    name: "Invasor",
+    whatsapp: "11999999999",
+  }),
+});
+checa("bloco de outra pagina e recusado", r.status === 404, `status ${r.status}`);
+
+// Pagina publica mostra o formulario.
+r = await fetch(`${BASE}/${slugB}`);
+const htmlB = await r.text();
+checa("formulario aparece na pagina publica", htmlB.includes("Fale com a gente"));
+
+// --- COBRANCA (webhook do Lastlink) -----------------------------------------
+
+// Sem token nao passa.
+r = await fetch(`${BASE}/api/webhooks/lastlink`, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ event: "purchase_approved", email: "x@y.com" }),
+});
+checa("webhook sem token e recusado", r.status === 401 || r.status === 503, `status ${r.status}`);
+
+// Com token certo, evento de compra libera o plano.
+const tokenWebhook = envMapTeste.LASTLINK_WEBHOOK_SECRET;
+if (tokenWebhook) {
+  const emailCompra = `comprador-${marca}@teste.com`;
+
+  r = await fetch(`${BASE}/api/webhooks/lastlink`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-lastlink-token": tokenWebhook },
+    body: JSON.stringify({
+      Event: "Purchase_Order_Confirmed",
+      Data: {
+        Buyer: { Email: emailCompra, Name: "Comprador Teste" },
+        Products: [{ Id: "prod-teste-pro" }],
+        Id: "pedido-123",
+      },
+    }),
+  });
+  const respWebhook = await r.json();
+  checa("webhook aceita o token certo", r.ok, `status ${r.status}`);
+  checa(
+    "webhook encontra o e-mail aninhado no payload",
+    respWebhook.acao === "concedido" || (respWebhook.aviso ?? "").includes("produto"),
+    JSON.stringify(respWebhook).slice(0, 120),
+  );
+
+  // Quem paga ANTES de ter conta recebe o plano ao se cadastrar.
+  const e2 = sessao();
+  r = await e2("/api/auth/cadastro", {
+    method: "POST",
+    body: JSON.stringify({
+      nome: "Comprador Teste",
+      email: emailCompra,
+      senha: "senha12345",
+      slug: `comprador-${marca}`,
+    }),
+  });
+  const respCadastro = await r.json();
+  checa("cadastro de quem ja tinha pago funciona", r.ok, `status ${r.status}`);
+  checa(
+    "plano comprado antes do cadastro e aplicado",
+    respCadastro.plano === "pro",
+    `plano=${respCadastro.plano}`,
+  );
+
+  // Cancelamento devolve pro Free.
+  r = await fetch(`${BASE}/api/webhooks/lastlink`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-lastlink-token": tokenWebhook },
+    body: JSON.stringify({
+      Event: "Subscription_Canceled",
+      Data: { Buyer: { Email: emailCompra }, Id: "pedido-123" },
+    }),
+  });
+  checa("webhook aceita cancelamento", r.ok, `status ${r.status}`);
+
+  r = await e2("/api/pagina");
+  // O plano nao vem nessa rota; conferimos pelo banco.
+  const [depoisCancelar] = await sqlDireto2.unsafe(
+    `SELECT plan FROM ${esquemaTeste}.users WHERE email = $1`,
+    [emailCompra],
+  );
+  checa(
+    "cancelamento devolve a conta ao Free",
+    depoisCancelar?.plan === "free",
+    `plano=${depoisCancelar?.plan}`,
+  );
+  await sqlDireto2.end();
+}
+
 console.log(falhas === 0 ? "\nTUDO PASSOU" : `\n${falhas} FALHA(S)`);
 process.exit(falhas === 0 ? 0 : 1);

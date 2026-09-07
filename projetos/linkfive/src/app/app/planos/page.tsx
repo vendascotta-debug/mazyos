@@ -1,38 +1,43 @@
 import { Check, Minus } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { ORDEM_PLANOS, PLANOS, precoFormatado } from "@/lib/limites";
+import { checkoutDoPlano, cobrancaConfigurada } from "@/lib/cobranca";
+import type { PlanId } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function Planos() {
   const user = await requireUser();
+  const temCobranca = cobrancaConfigurada();
 
-  const linhas = [
-    { label: "Páginas", valor: (id: string) => String(PLANOS[id as keyof typeof PLANOS].maxPaginas) },
+  // O link de checkout sai do servidor: assim a URL do Lastlink fica em
+  // variável de ambiente e não precisa de deploy pra ser trocada.
+  const checkouts: Record<string, string | null> = {};
+  for (const id of ORDEM_PLANOS) checkouts[id] = checkoutDoPlano(id);
+
+  const linhas: { label: string; valor: (id: PlanId) => string | boolean }[] = [
+    { label: "Páginas", valor: (id) => String(PLANOS[id].maxPaginas) },
     {
-      label: "Links diretos (WhatsApp)",
-      valor: (id: string) => {
-        const m = PLANOS[id as keyof typeof PLANOS].maxCurtos;
+      label: "Links diretos (WhatsApp e URL)",
+      valor: (id) => {
+        const m = PLANOS[id].maxCurtos;
         return m === null ? "Ilimitados" : String(m);
       },
     },
     {
-      label: "Links",
-      valor: (id: string) => {
-        const m = PLANOS[id as keyof typeof PLANOS].maxLinks;
+      label: "Links na página",
+      valor: (id) => {
+        const m = PLANOS[id].maxLinks;
         return m === null ? "Ilimitados" : String(m);
       },
     },
     { label: "QR Code", valor: () => true },
-    { label: "Analytics", valor: (id: string) => `${PLANOS[id as keyof typeof PLANOS].analyticsDias} dias` },
-    { label: "Escolher tema", valor: (id: string) => PLANOS[id as keyof typeof PLANOS].temas },
-    { label: "Formulário e leads", valor: (id: string) => PLANOS[id as keyof typeof PLANOS].formularios },
-    {
-      label: "Personalização avançada",
-      valor: (id: string) => PLANOS[id as keyof typeof PLANOS].personalizacaoAvancada,
-    },
-    { label: "Sem marca LINKFIVE", valor: (id: string) => !PLANOS[id as keyof typeof PLANOS].marca },
-    { label: "Equipe", valor: (id: string) => PLANOS[id as keyof typeof PLANOS].equipe },
+    { label: "Analytics", valor: (id) => `${PLANOS[id].analyticsDias} dias` },
+    { label: "Escolher tema", valor: (id) => PLANOS[id].temas },
+    { label: "Formulário e leads", valor: (id) => PLANOS[id].formularios },
+    { label: "Personalização avançada", valor: (id) => PLANOS[id].personalizacaoAvancada },
+    { label: "Sem marca LINKFIVE", valor: (id) => !PLANOS[id].marca },
+    { label: "Equipe", valor: (id) => PLANOS[id].equipe },
   ];
 
   return (
@@ -61,6 +66,8 @@ export default async function Planos() {
         {ORDEM_PLANOS.map((id) => {
           const p = PLANOS[id];
           const atual = user.plan === id;
+          const checkout = checkouts[id];
+
           return (
             <div
               key={id}
@@ -77,9 +84,7 @@ export default async function Planos() {
               <p className="font-semibold">{p.nome}</p>
               <p className="mt-1.5 text-2xl font-bold tracking-tight">
                 {precoFormatado(p)}
-                {p.precoCents > 0 && (
-                  <span className="text-sm font-medium text-ink-400">/mês</span>
-                )}
+                {p.precoCents > 0 && <span className="text-sm font-medium text-ink-400">/mês</span>}
               </p>
 
               <ul className="mt-4 flex-1 space-y-2 text-sm text-ink-600">
@@ -98,23 +103,60 @@ export default async function Planos() {
                 })}
               </ul>
 
-              <button
-                className={`mt-5 ${atual ? "btn-ghost" : "btn-brand"}`}
-                disabled
-                title="A cobrança ainda não está ativa"
-              >
-                {atual ? "Plano atual" : "Em breve"}
-              </button>
+              {atual ? (
+                <button className="btn-ghost mt-5" disabled>
+                  Plano atual
+                </button>
+              ) : p.precoCents === 0 ? (
+                <button className="btn-ghost mt-5" disabled>
+                  Plano gratuito
+                </button>
+              ) : checkout ? (
+                <a
+                  href={checkout}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`mt-5 ${p.destaque ? "btn-brand" : "btn-dark"}`}
+                >
+                  Assinar {p.nome}
+                </a>
+              ) : (
+                <button className="btn-ghost mt-5" disabled title="Checkout ainda não configurado">
+                  Em breve
+                </button>
+              )}
             </div>
           );
         })}
       </div>
 
-      <p className="mt-5 flex items-center gap-2 text-sm text-ink-500">
-        <Minus size={14} />
-        A cobrança ainda não está ativa. A estrutura de assinatura já existe no sistema, faltando só
-        ligar o meio de pagamento.
-      </p>
+      {temCobranca ? (
+        <div className="card mt-5 p-5">
+          <h2 className="font-semibold">Como funciona a assinatura</h2>
+          <ol className="mt-3 space-y-2 text-sm text-ink-600">
+            <li className="flex gap-2">
+              <span className="font-semibold text-brand-600">1.</span>
+              Você escolhe o plano e finaliza o pagamento no checkout.
+            </li>
+            <li className="flex gap-2">
+              <span className="font-semibold text-brand-600">2.</span>
+              <span>
+                O acesso é liberado automaticamente, <strong>no e-mail usado na compra</strong>.
+                Use o mesmo e-mail desta conta ({user.email}) para não precisar de ajuste manual.
+              </span>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-semibold text-brand-600">3.</span>
+              Se algo não liberar em alguns minutos, fale com a gente — resolvemos na mão.
+            </li>
+          </ol>
+        </div>
+      ) : (
+        <p className="mt-5 flex items-start gap-2 text-sm text-ink-500">
+          <Minus size={14} className="mt-0.5 shrink-0" />A cobrança ainda não está ativa. A
+          estrutura de assinatura já existe no sistema; falta ligar o checkout.
+        </p>
+      )}
     </div>
   );
 }

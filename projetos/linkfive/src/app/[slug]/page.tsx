@@ -7,6 +7,7 @@ import { q1 } from "@/lib/db";
 import { varsCss } from "@/lib/temas";
 import { Rastreador } from "@/components/publica/Rastreador";
 import { BotaoLink } from "@/components/publica/BotaoLink";
+import { FormularioLead } from "@/components/publica/FormularioLead";
 import type { PlanId } from "@/lib/types";
 import { iniciais as calcularIniciais } from "@/lib/iniciais";
 
@@ -57,7 +58,12 @@ export default async function PaginaPublica({ params }: Props) {
 
   // O plano do dono decide se a assinatura do LINKFIVE aparece no rodapé.
   const dono = await q1<{ plan: string }>("SELECT plan FROM users WHERE id = ?", [page.userId]);
-  const mostrarMarca = plano(dono?.plan as PlanId).marca;
+  const planoDono = plano(dono?.plan as PlanId);
+  const mostrarMarca = planoDono.marca;
+
+  // Bloco de formulario so aparece se o plano do dono permite. Se ele caiu de
+  // plano, o bloco some da pagina em vez de ficar la sem gravar nada.
+  const linksVisiveis = links.filter((l) => l.type !== "form" || planoDono.formularios);
 
   const iniciais = calcularIniciais(page.title || slug);
 
@@ -110,12 +116,18 @@ export default async function PaginaPublica({ params }: Props) {
           </header>
 
           <div className="mt-8 flex flex-col gap-3">
-            {links.length === 0 ? (
+            {linksVisiveis.length === 0 ? (
               <p className="text-center text-sm" style={{ color: "var(--lf-textoSuave)" }}>
                 Esta página ainda não tem links.
               </p>
             ) : (
-              links.map((l) => <BotaoLink key={l.id} link={l} />)
+              linksVisiveis.map((l) =>
+                l.type === "form" ? (
+                  <FormularioLead key={l.id} link={l} slug={slug} />
+                ) : (
+                  <BotaoLink key={l.id} link={l} />
+                ),
+              )
             )}
           </div>
 

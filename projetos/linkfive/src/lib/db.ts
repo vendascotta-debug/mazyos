@@ -39,6 +39,7 @@ const TABLES = [
   "settings",
   "short_links",
   "short_clicks",
+  "webhook_events",
 ] as const;
 
 /**
@@ -323,6 +324,35 @@ CREATE TABLE IF NOT EXISTS short_clicks (
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_short_clicks ON short_clicks(short_id, created_at);
+
+-- Tudo que chega de um gateway de pagamento fica gravado aqui, cru, ANTES de
+-- ser interpretado. Dois motivos:
+--
+-- 1. Se o formato mudar ou vier algo inesperado, nada se perde — dá pra
+--    reprocessar depois olhando o que realmente chegou.
+-- 2. Pagamento é dinheiro. Um evento perdido é um cliente que pagou e não
+--    recebeu acesso, e ele reclama antes de a gente descobrir sozinho.
+CREATE TABLE IF NOT EXISTS webhook_events (
+  id TEXT PRIMARY KEY,
+  gateway TEXT NOT NULL,
+  evento TEXT,
+  email TEXT,
+  external_id TEXT,
+  plano TEXT,
+  payload TEXT NOT NULL,
+  processado INTEGER NOT NULL DEFAULT 0,
+  erro TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_webhook_data ON webhook_events(created_at);
+CREATE INDEX IF NOT EXISTS idx_webhook_email ON webhook_events(email);
+
+-- A assinatura ganha o e-mail do comprador: no Lastlink o pagamento acontece
+-- fora do nosso sistema e pode chegar ANTES de a pessoa ter conta aqui.
+-- Guardamos o e-mail para casar depois, quando ela se cadastrar.
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE subscriptions ALTER COLUMN user_id DROP NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_subs_email ON subscriptions(email, status);
 `;
 
 /** Cria o schema se ainda não existir. Memoizado por processo. */

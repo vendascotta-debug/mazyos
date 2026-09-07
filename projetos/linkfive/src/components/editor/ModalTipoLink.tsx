@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ArrowLeft, Loader2, X } from "lucide-react";
-import type { LinkConfig, LinkType } from "@/lib/types";
+import type { LeadField, LinkConfig, LinkType } from "@/lib/types";
 import {
   MENSAGEM_PADRAO,
   ORDEM_TIPOS,
@@ -21,6 +21,16 @@ import {
  * trabalho de montar link de WhatsApp na mão, que é justamente o que o produto
  * promete resolver.
  */
+/** Campos possíveis do formulário. Nome e WhatsApp são fixos: sem contato o
+ *  lead não serve para nada. */
+const CAMPOS_LEAD: { id: LeadField; label: string; fixo?: boolean }[] = [
+  { id: "name", label: "Nome", fixo: true },
+  { id: "whatsapp", label: "WhatsApp", fixo: true },
+  { id: "email", label: "E-mail" },
+  { id: "company", label: "Empresa" },
+  { id: "message", label: "Mensagem" },
+];
+
 export function ModalTipoLink({
   onFechar,
   onCriar,
@@ -35,6 +45,8 @@ export function ModalTipoLink({
   const [mensagem, setMensagem] = useState(MENSAGEM_PADRAO);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  // Nome e WhatsApp por padrão: é o mínimo pra conseguir responder alguém.
+  const [campos, setCampos] = useState<LeadField[]>(["name", "whatsapp"]);
 
   function escolher(t: LinkType) {
     setTipo(t);
@@ -62,7 +74,9 @@ export function ModalTipoLink({
     setSalvando(true);
     const config: LinkConfig = ehWhats
       ? { numero: normalizarTelefone(entrada), mensagem: mensagem.trim() || undefined }
-      : {};
+      : ehForm
+        ? { campos, formTitulo: titulo.trim() || undefined }
+        : {};
     const ok = await onCriar(tipo, titulo.trim() || TIPOS[tipo].label, entrada, config);
     setSalvando(false);
     if (ok) onFechar();
@@ -174,9 +188,44 @@ export function ModalTipoLink({
             )}
 
             {ehForm && (
-              <p className="rounded-[10px] bg-brand-50 px-3.5 py-3 text-sm text-ink-700">
-                O formulário aparece na página e os contatos recebidos vão para a aba Leads.
-              </p>
+              <>
+                <div>
+                  <span className="label">Campos que o visitante preenche</span>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {CAMPOS_LEAD.map(({ id, label, fixo }) => {
+                      const marcado = campos.includes(id);
+                      return (
+                        <label
+                          key={id}
+                          className={`flex cursor-pointer items-center gap-2 rounded-[10px] border px-3 py-2 text-sm ${
+                            marcado ? "border-brand-500 bg-brand-50" : "border-ink-200"
+                          } ${fixo ? "cursor-not-allowed opacity-70" : ""}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={marcado}
+                            disabled={fixo}
+                            onChange={(e) =>
+                              setCampos((cs) =>
+                                e.target.checked ? [...cs, id] : cs.filter((c) => c !== id),
+                              )
+                            }
+                            className="accent-brand-500"
+                          />
+                          {label}
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-1.5 text-xs text-ink-400">
+                    Menos campos, mais contatos. Cada pergunta a mais faz alguém desistir.
+                  </p>
+                </div>
+
+                <p className="rounded-[10px] bg-brand-50 px-3.5 py-3 text-sm text-ink-700">
+                  Os contatos recebidos aparecem na aba Leads.
+                </p>
+              </>
             )}
 
             {erro && <p className="erro">{erro}</p>}

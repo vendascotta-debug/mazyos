@@ -3,6 +3,7 @@ import { z } from "zod";
 import { criarUsuario, emailEmUso, setSessionCookie } from "@/lib/auth";
 import { criarPagina, slugDisponivel } from "@/lib/repo";
 import { normalizarSlug, validarSlug } from "@/lib/slug";
+import { aplicarAssinaturaPendente } from "@/lib/cobranca";
 
 const Corpo = z.object({
   nome: z.string().trim().min(2, "Digite seu nome."),
@@ -42,7 +43,13 @@ export async function POST(req: Request) {
   // A página nasce junto com a conta, em rascunho. Assim o editor e o
   // onboarding nunca precisam lidar com "usuário sem página".
   await criarPagina(user.id, slug, nome);
+
+  // Quem pagou antes de criar a conta — o caminho normal num checkout externo
+  // — já entra com o plano que comprou, em vez de cair no Free depois de ter
+  // pago.
+  const planoPago = await aplicarAssinaturaPendente(user.id, email);
+
   await setSessionCookie(user.id);
 
-  return NextResponse.json({ ok: true, destino: "/onboarding" });
+  return NextResponse.json({ ok: true, destino: "/onboarding", plano: planoPago ?? "free" });
 }
