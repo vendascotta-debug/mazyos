@@ -18,6 +18,8 @@ export interface Plano {
   precoCents: number;
   /** `null` = ilimitado. */
   maxLinks: number | null;
+  /** Links curtos diretos (/w/abc123). `null` = ilimitado. */
+  maxCurtos: number | null;
   maxPaginas: number;
   /** Até quantos dias atrás o analytics mostra. */
   analyticsDias: number;
@@ -39,6 +41,7 @@ export const PLANOS: Record<PlanId, Plano> = {
     nome: "Free",
     precoCents: 0,
     maxLinks: 5,
+    maxCurtos: 1,
     maxPaginas: 1,
     analyticsDias: 7,
     formularios: false,
@@ -52,6 +55,7 @@ export const PLANOS: Record<PlanId, Plano> = {
     nome: "Starter",
     precoCents: 990,
     maxLinks: 25,
+    maxCurtos: 5,
     maxPaginas: 1,
     analyticsDias: 30,
     formularios: false,
@@ -65,6 +69,7 @@ export const PLANOS: Record<PlanId, Plano> = {
     nome: "Pro",
     precoCents: 1990,
     maxLinks: null,
+    maxCurtos: 50,
     maxPaginas: 1,
     analyticsDias: 90,
     formularios: true,
@@ -79,6 +84,7 @@ export const PLANOS: Record<PlanId, Plano> = {
     nome: "Business",
     precoCents: 3990,
     maxLinks: null,
+    maxCurtos: null,
     maxPaginas: 5,
     analyticsDias: 365,
     formularios: true,
@@ -126,6 +132,21 @@ export function podeCriarLink(planId: PlanId, atuais: number): Veredito {
   return {
     permitido: false,
     motivo: `O plano ${p.nome} permite ${p.maxLinks} links. Você já usou todos.`,
+    upgrade: up?.id ?? "pro",
+  };
+}
+
+/** Pode criar mais um link curto direto (/w/abc123)? */
+export function podeCriarCurto(planId: PlanId, atuais: number): Veredito {
+  const p = plano(planId);
+  if (p.maxCurtos === null || atuais < p.maxCurtos) return { permitido: true };
+  const up = proximoPlano(planId);
+  return {
+    permitido: false,
+    motivo:
+      p.maxCurtos === 1
+        ? `O plano ${p.nome} permite um link direto. Para criar mais, mude de plano.`
+        : `O plano ${p.nome} permite ${p.maxCurtos} links diretos. Você já usou todos.`,
     upgrade: up?.id ?? "pro",
   };
 }

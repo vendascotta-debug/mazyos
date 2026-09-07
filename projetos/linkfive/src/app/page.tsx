@@ -8,6 +8,7 @@ import {
   Palette,
   QrCode,
   Users,
+  Zap,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { ORDEM_PLANOS, PLANOS, precoFormatado } from "@/lib/limites";
@@ -38,6 +39,12 @@ const COMO_FUNCIONA = [
 ];
 
 const RECURSOS = [
+  {
+    icone: Zap,
+    titulo: "Link direto pro WhatsApp",
+    texto:
+      "Além da página, você cria endereços curtos que abrem a conversa na hora, sem passar por tela nenhuma. Cada um com seu QR Code e seu contador.",
+  },
   {
     icone: MessageCircle,
     titulo: "WhatsApp com mensagem pronta",
@@ -115,6 +122,10 @@ const FAQ = [
   {
     p: "Posso usar de graça?",
     r: "Sim. O plano gratuito tem uma página, cinco links, QR Code e analytics. Sem cartão de crédito e sem prazo para acabar.",
+  },
+  {
+    p: "Qual a diferença entre a página e o link direto?",
+    r: "A página reúne todos os seus canais num endereço só — serve pra bio do Instagram e pro cartão. O link direto abre a conversa no WhatsApp na hora, sem tela no meio — serve pro anúncio e pro QR Code do balcão. Você usa os dois, cada um no seu lugar.",
   },
   {
     p: "Consigo mudar o endereço da página depois?",
@@ -302,6 +313,10 @@ export default function Landing() {
                     <li className="flex gap-2">
                       <Check size={15} className="mt-0.5 shrink-0 text-ok-500" />
                       {p.maxLinks === null ? "Links ilimitados" : `${p.maxLinks} links`}
+                    </li>
+                    <li className="flex gap-2">
+                      <Check size={15} className="mt-0.5 shrink-0 text-ok-500" />
+                      {p.maxCurtos === null ? "Links diretos ilimitados" : `${p.maxCurtos} ${p.maxCurtos === 1 ? "link direto" : "links diretos"}`}
                     </li>
                     <li className="flex gap-2">
                       <Check size={15} className="mt-0.5 shrink-0 text-ok-500" />

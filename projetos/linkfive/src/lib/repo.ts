@@ -1,5 +1,6 @@
 import { nowIso, q, q1, today, uid } from "@/lib/db";
 import type { DailyStat, Lead, LinkConfig, LinkType, Page, PageLink } from "@/lib/types";
+import type { ShortLink } from "@/lib/curtos";
 
 // ---------------------------------------------------------------------------
 // Acesso a dados.
@@ -571,4 +572,158 @@ export async function registrarLead(
     ],
   );
   await somarNoDia(pageId, "leads_count");
+}
+
+// ---------------------------------------------------------------------------
+// LINKS CURTOS DIRETOS (/w/abc123)
+//
+// Mesma regra do resto do arquivo: tudo que é privado recebe `userId` como
+// primeiro argumento. A exceção é `curtoPorCodigo`, usada pelo redirecionador
+// público, e ela devolve só o que o redirecionamento precisa.
+// ---------------------------------------------------------------------------
+
+interface ShortRow {
+  id: string;
+  user_id: string;
+  code: string;
+  title: string;
+  numero: string;
+  mensagem: string | null;
+  destino: string;
+  active: number;
+  clicks_total: number;
+  created_at: string;
+  updated_at: string;
+}
+
+function toShort(r: ShortRow): ShortLink {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    code: r.code,
+    title: r.title,
+    numero: r.numero,
+    mensagem: r.mensagem,
+    destino: r.destino,
+    active: Boolean(r.active),
+    clicksTotal: Number(r.clicks_total),
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
+export async function codigoDisponivel(code: string): Promise<boolean> {
+  const r = await q1("SELECT 1 AS x FROM short_links WHERE LOWER(code) = LOWER(?)", [code]);
+  return !r;
+}
+
+export async function curtosDoUsuario(userId: string): Promise<ShortLink[]> {
+  const rows = await q<ShortRow>(
+    "SELECT * FROM short_links WHERE user_id = ? ORDER BY created_at DESC",
+    [userId],
+  );
+  return rows.map(toShort);
+}
+
+export async function contarCurtos(userId: string): Promise<number> {
+  const r = await q1<{ n: string }>(
+    "SELECT COUNT(*) AS n FROM short_links WHERE user_id = ?",
+    [userId],
+  );
+  return Number(r?.n ?? 0);
+}
+
+export async function curtoDoDono(userId: string, id: string): Promise<ShortLink | null> {
+  const row = await q1<ShortRow>("SELECT * FROM short_links WHERE id = ? AND user_id = ?", [
+    id,
+    userId,
+  ]);
+  return row ? toShort(row) : null;
+}
+
+export async function criarCurto(
+  userId: string,
+  dados: { code: string; title: string; numero: string; mensagem: string | null; destino: string },
+): Promise<ShortLink | null> {
+  const id = uid("s_");
+  const agora = nowIso();
+  await q(
+    `INSERT INTO short_links (id, user_id, code, title, numero, mensagem, destino,
+                              active, clicks_total, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?)`,
+    [id, userId, dados.code, dados.title, dados.numero, dados.mensagem, dados.destino, agora, agora],
+  );
+  return curtoDoDono(userId, id);
+}
+
+export async function atualizarCurto(
+  userId: string,
+  id: string,
+  campos: { title?: string; numero?: string; mensagem?: string | null; destino?: string; active?: boolean },
+): Promise<ShortLink | null> {
+  if (!(await curtoDoDono(userId, id))) return null;
+
+  const sets: string[] = [];
+  const vals: unknown[] = [];
+  const mapa: Record<string, unknown> = {
+    title: campos.title,
+    numero: campos.numero,
+    mensagem: campos.mensagem,
+    destino: campos.destino,
+    active: campos.active === undefined ? undefined : campos.active ? 1 : 0,
+  };
+  for (const [col, val] of Object.entries(mapa)) {
+    if (val !== undefined) {
+      sets.push(`${col} = ?`);
+      vals.push(val);
+    }
+  }
+  if (!sets.length) return curtoDoDono(userId, id);
+
+  sets.push("updated_at = ?");
+  vals.push(nowIso(), id, userId);
+  await q(`UPDATE short_links SET ${sets.join(", ")} WHERE id = ? AND user_id = ?`, vals);
+  return curtoDoDono(userId, id);
+}
+
+export async function excluirCurto(userId: string, id: string): Promise<boolean> {
+  if (!(await curtoDoDono(userId, id))) return false;
+  await q("DELETE FROM short_links WHERE id = ? AND user_id = ?", [id, userId]);
+  return true;
+}
+
+/**
+ * Leitura pública, usada pelo redirecionador.
+ *
+ * Devolve só o necessário para redirecionar. Link pausado volta como null: o
+ * visitante vê "link indisponível" em vez de cair numa conversa que o dono
+ * desligou de propósito.
+ */
+export async function curtoPorCodigo(
+  code: string,
+): Promise<{ id: string; destino: string; userId: string } | null> {
+  const row = await q1<{ id: string; destino: string; user_id: string; active: number }>(
+    "SELECT id, destino, user_id, active FROM short_links WHERE LOWER(code) = LOWER(?)",
+    [code],
+  );
+  if (!row || !row.active) return null;
+  return { id: row.id, destino: row.destino, userId: row.user_id };
+}
+
+/**
+ * Registra o clique no link curto.
+ *
+ * O INSERT do evento e a soma do total vão juntos: dois cliques ao mesmo tempo
+ * não se perdem, o que aconteceria num "lê, soma, grava" em duas idas ao banco.
+ */
+export async function registrarCliqueCurto(
+  shortId: string,
+  device: string | null,
+  referrer: string | null,
+): Promise<void> {
+  await q(
+    "INSERT INTO short_clicks (id, short_id, device, referrer, created_at) VALUES (?, ?, ?, ?, ?)",
+    [uid("sc_"), shortId, device, referrer, nowIso()],
+  );
+  await q("UPDATE short_links SET clicks_total = clicks_total + 1 WHERE id = ?", [shortId]);
 }

@@ -10,6 +10,13 @@ export default async function Planos() {
   const linhas = [
     { label: "Páginas", valor: (id: string) => String(PLANOS[id as keyof typeof PLANOS].maxPaginas) },
     {
+      label: "Links diretos (WhatsApp)",
+      valor: (id: string) => {
+        const m = PLANOS[id as keyof typeof PLANOS].maxCurtos;
+        return m === null ? "Ilimitados" : String(m);
+      },
+    },
+    {
       label: "Links",
       valor: (id: string) => {
         const m = PLANOS[id as keyof typeof PLANOS].maxLinks;

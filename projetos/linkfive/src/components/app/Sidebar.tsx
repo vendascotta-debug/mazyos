@@ -6,6 +6,7 @@ import {
   BarChart3,
   LayoutDashboard,
   Link2,
+  Zap,
   Palette,
   QrCode,
   Settings,
@@ -18,6 +19,7 @@ import { Logo } from "@/components/ui/Logo";
 const ITENS = [
   { href: "/app", label: "Dashboard", icone: LayoutDashboard },
   { href: "/app/pagina", label: "Minha Página", icone: UserSquare2 },
+  { href: "/app/curtos", label: "Links diretos", icone: Zap },
   { href: "/app/links", label: "Links", icone: Link2 },
   { href: "/app/leads", label: "Leads", icone: Users },
   { href: "/app/analytics", label: "Analytics", icone: BarChart3 },
@@ -28,7 +30,7 @@ const ITENS = [
 ];
 
 /** No celular, os 5 principais viram abas fixas embaixo. */
-const PRINCIPAIS = ["/app", "/app/pagina", "/app/links", "/app/analytics", "/app/qrcode"];
+const PRINCIPAIS = ["/app", "/app/pagina", "/app/curtos", "/app/analytics", "/app/qrcode"];
 
 export function Sidebar() {
   const path = usePathname();

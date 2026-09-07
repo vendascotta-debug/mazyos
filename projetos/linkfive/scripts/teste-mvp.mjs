@@ -203,5 +203,131 @@ checa("QR Code gera PNG", r.ok && r.headers.get("content-type") === "image/png")
 r = await fetch(`${BASE}/api/links?pageId=${infoA.pageId}`);
 checa("sem sessao a API recusa", r.status === 401, `status ${r.status}`);
 
+
+// --- LINKS CURTOS DIRETOS (/w/abc123) --------------------------------------
+
+r = await a("/api/curtos", {
+  method: "POST",
+  body: JSON.stringify({
+    title: "Anuncio de teste",
+    numero: "11973933648",
+    mensagem: "Vim pelo anuncio.",
+  }),
+});
+const curtoCriado = (await r.json()).curto;
+checa("cria link curto direto", r.ok && Boolean(curtoCriado?.code));
+
+// O codigo sorteado nao usa caracteres que se confundem lidos em voz alta.
+checa(
+  "codigo curto evita 0/O e 1/l",
+  curtoCriado && !/[0O1lI]/.test(curtoCriado.code),
+  curtoCriado?.code,
+);
+
+// Redireciona para o WhatsApp, sem pagina no meio.
+r = await fetch(`${BASE}/w/${curtoCriado.code}`, { redirect: "manual" });
+const destino = r.headers.get("location") ?? "";
+checa("link curto redireciona (307)", r.status === 307, `status ${r.status}`);
+checa("redireciona para o wa.me certo", destino.startsWith("https://wa.me/5511973933648"), destino);
+checa("leva a mensagem pronta junto", destino.includes("text="));
+
+// Codigo personalizado.
+// Usa a conta B: a conta A ja gastou o unico link curto do plano Free, e a
+// checagem de cota acontece antes da checagem de codigo.
+r = await b("/api/curtos", {
+  method: "POST",
+  body: JSON.stringify({ title: "Promo", numero: "11973933648", code: "promo-teste-" + marca }),
+});
+const curtoPersonalizado = (await r.json()).curto;
+checa("aceita codigo personalizado", r.ok && curtoPersonalizado?.code === "promo-teste-" + marca);
+
+// Codigo repetido e recusado — precisa de uma terceira conta com cota livre.
+const c = sessao();
+r = await c("/api/auth/cadastro", {
+  method: "POST",
+  body: JSON.stringify({
+    nome: "Terceira Conta",
+    email: `c-${marca}@teste.com`,
+    senha: "senha12345",
+    slug: `teste-c-${marca}`,
+  }),
+});
+checa("cadastro da conta C", r.ok);
+
+r = await c("/api/curtos", {
+  method: "POST",
+  body: JSON.stringify({ title: "Roubo", numero: "11999998888", code: "promo-teste-" + marca }),
+});
+checa("codigo repetido e recusado", r.status === 409, `status ${r.status}`);
+
+// Numero invalido e recusado
+r = await a("/api/curtos", {
+  method: "POST",
+  body: JSON.stringify({ title: "Torto", numero: "123" }),
+});
+checa("numero invalido e recusado", r.status === 400, `status ${r.status}`);
+
+// ISOLAMENTO: B nao consegue mexer no link de A
+r = await b(`/api/curtos/${curtoCriado.id}`, {
+  method: "PATCH",
+  body: JSON.stringify({ title: "Sequestrado" }),
+});
+checa("B NAO edita link curto de A", r.status === 404, `status ${r.status}`);
+
+r = await b(`/api/curtos/${curtoCriado.id}`, { method: "DELETE" });
+checa("B NAO exclui link curto de A", r.status === 404, `status ${r.status}`);
+
+// O clique foi contado?
+r = await a("/api/curtos");
+const listaCurtos = (await r.json()).curtos;
+const oCurto = listaCurtos.find((c) => c.id === curtoCriado.id);
+checa("contador do link curto subiu", oCurto?.clicksTotal >= 1, `cliques=${oCurto?.clicksTotal}`);
+
+// Bot nao infla o contador
+await fetch(`${BASE}/w/${curtoCriado.code}`, {
+  redirect: "manual",
+  headers: { "user-agent": "WhatsApp/2.2 A" },
+});
+r = await a("/api/curtos");
+const depoisBot = (await r.json()).curtos.find((c) => c.id === curtoCriado.id);
+checa(
+  "pre-visualizacao do WhatsApp nao conta clique",
+  depoisBot?.clicksTotal === oCurto?.clicksTotal,
+  `antes=${oCurto?.clicksTotal} depois=${depoisBot?.clicksTotal}`,
+);
+
+// Link pausado nao redireciona
+await a(`/api/curtos/${curtoCriado.id}`, {
+  method: "PATCH",
+  body: JSON.stringify({ active: false }),
+});
+r = await fetch(`${BASE}/w/${curtoCriado.code}`, { redirect: "manual" });
+checa(
+  "link pausado nao leva ao WhatsApp",
+  (r.headers.get("location") ?? "").includes("link=indisponivel"),
+  r.headers.get("location") ?? "",
+);
+
+// QR por link curto
+r = await a(`/api/qrcode?curto=${curtoCriado.id}&formato=svg`);
+const svgCurto = await r.text();
+checa("QR do link curto sai em SVG", r.ok && svgCurto.includes("<svg"));
+
+// QR de link de outra conta e recusado
+r = await b(`/api/qrcode?curto=${curtoCriado.id}&formato=svg`);
+checa("B NAO baixa o QR do link de A", r.status === 404, `status ${r.status}`);
+
+// Limite do plano Free: 1 link curto
+r = await a("/api/curtos", {
+  method: "POST",
+  body: JSON.stringify({ title: "Terceiro", numero: "11973933648" }),
+});
+checa("plano Free barra o link curto extra", r.status === 402, `status ${r.status}`);
+
+// O slug "w" nao pode ser registrado por ninguem
+r = await fetch(`${BASE}/api/slug/disponivel?slug=w`);
+const slugW = await r.json();
+checa("slug 'w' nao pode ser registrado", slugW.disponivel === false, slugW.erro ?? "");
+
 console.log(falhas === 0 ? "\nTUDO PASSOU" : `\n${falhas} FALHA(S)`);
 process.exit(falhas === 0 ? 0 : 1);

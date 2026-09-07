@@ -37,6 +37,8 @@ const TABLES = [
   "teams",
   "team_members",
   "settings",
+  "short_links",
+  "short_clicks",
 ] as const;
 
 /**
@@ -270,6 +272,39 @@ CREATE TABLE IF NOT EXISTS settings (
   value TEXT,
   PRIMARY KEY (user_id, key)
 );
+
+-- Links curtos diretos: linkfive.com.br/w/abc123 redireciona na hora para a
+-- conversa do WhatsApp, sem abrir página nenhuma. É o formato do w.app, e
+-- convive com a página de links — são usos diferentes do mesmo produto.
+--
+-- Não referencia a tabela pages: o link curto é independente da página. Quem só
+-- quer o link do WhatsApp não precisa montar página nenhuma.
+CREATE TABLE IF NOT EXISTS short_links (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  code TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL DEFAULT '',
+  numero TEXT NOT NULL,
+  mensagem TEXT,
+  destino TEXT NOT NULL,
+  active INTEGER NOT NULL DEFAULT 1,
+  -- Total desnormalizado, só para a listagem não varrer short_clicks a cada
+  -- carregamento. É incrementado na mesma instrução do INSERT do clique, então
+  -- não dessincroniza. Nenhuma regra de cota depende dele.
+  clicks_total INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_short_user ON short_links(user_id, created_at);
+
+CREATE TABLE IF NOT EXISTS short_clicks (
+  id TEXT PRIMARY KEY,
+  short_id TEXT NOT NULL REFERENCES short_links(id) ON DELETE CASCADE,
+  device TEXT,
+  referrer TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_short_clicks ON short_clicks(short_id, created_at);
 `;
 
 /** Cria o schema se ainda não existir. Memoizado por processo. */

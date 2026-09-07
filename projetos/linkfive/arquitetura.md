@@ -57,8 +57,35 @@ próprio mudando uma variável de ambiente.
 /admin/usuarios            Lista de usuários         ├─ só role = admin
 /admin/paginas             Lista de páginas         ─┘
 
+/w/[codigo]                LINK DIRETO → redireciona pro WhatsApp
 /[slug]                    PÁGINA PÚBLICA do usuário
 ```
+
+### Os dois formatos, e por que ambos existem
+
+Decisão tomada em 07/09/2026, depois de comparar com o W.app.
+
+O produto entrega **duas formas** de mandar alguém pro WhatsApp, e elas não
+competem entre si:
+
+| | Página (`/oficinadocarlos`) | Link direto (`/w/tDhwE3`) |
+|---|---|---|
+| O que faz | Reúne todos os canais numa tela | Abre a conversa na hora |
+| Onde se usa | Bio do Instagram, cartão, assinatura | Anúncio, QR do balcão, etiqueta |
+| Passos até falar | 2 (abre, clica) | 1 (abre) |
+| Formato do concorrente | Linktree | W.app |
+
+O Linktree não faz a segunda. O W.app não faz a primeira. Fazer as duas é o
+diferencial, e custou pouco: o link direto é uma Route Handler de 40 linhas e
+duas tabelas.
+
+**Por que uma Route Handler e não uma página:** não há nada pra desenhar. O
+visitante sai do anúncio e chega no WhatsApp; qualquer HTML no meio é tempo
+perdido no 4G.
+
+**Por que 307 e não 301:** o 301 fica no cache do navegador para sempre. Trocar
+o número do WhatsApp depois deixaria o visitante preso no destino antigo — e o
+dono do negócio nunca ficaria sabendo.
 
 ### O problema do `/[slug]` — e como resolvemos
 
