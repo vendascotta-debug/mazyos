@@ -17,8 +17,16 @@ WhatsApp e geração de leads. Cada cliente tem uma página pública
 formulário. Concorre com Linktree e W.app, mirando quem vende: empresas,
 profissionais e criadores.
 
-**Status: MVP construído e testado em 07/09/2026** — 24 verificações
-automatizadas passando (`npm run teste`), build de produção limpo.
+**Status: NO AR desde 07/09/2026** — https://linkfive-seven.vercel.app
+(exemplo: `/oficinadocarlos`). Vercel, projeto `linkfive`, Root Directory
+`projetos/linkfive`, GitHub conectado: todo push na `main` publica sozinho.
+
+24 verificações automatizadas passando (`npm run teste`), rodadas **também
+contra produção** (`LINKFIVE_URL=... node scripts/teste-mvp.mjs`).
+
+Atenção: produção e desenvolvimento dividem o mesmo banco. Rodar o teste cria
+contas reais em produção. Inofensivo enquanto não há usuário; é o primeiro
+motivo para separar os bancos no lançamento.
 
 É um produto **independente do Prospecta**: código, deploy, domínio e clientes
 separados. Divide só a instância Neon, em schema `linkfive` — decisão de custo,

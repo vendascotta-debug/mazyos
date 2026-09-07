@@ -1,7 +1,10 @@
 # LINKFIVE
 
 SaaS de páginas de links com foco em vendas e geração de clientes.
-Domínio pretendido: **linkfive.com.br**
+
+**NO AR:** https://linkfive-seven.vercel.app
+**Exemplo de página:** https://linkfive-seven.vercel.app/oficinadocarlos
+**Domínio definitivo (a registrar):** linkfive.com.br
 
 - **Arquitetura e decisões técnicas:** [arquitetura.md](arquitetura.md) — leia antes de mexer
 - **Briefing original:** [briefing.md](briefing.md)
@@ -73,6 +76,24 @@ equipes.
 
 ## Deploy
 
-Vercel, projeto separado do Prospecta, com **Root Directory = `projetos/linkfive`**.
-Variáveis a configurar lá: `DATABASE_URL`, `DB_SCHEMA=linkfive`, `AUTH_SECRET`,
-`NEXT_PUBLIC_SITE_URL`.
+Já configurado. Vercel, projeto `linkfive` (conta `vendascotta-2685`), separado
+do Prospecta, com **Root Directory = `projetos/linkfive`** e GitHub conectado —
+**todo push na `main` publica sozinho**.
+
+Variáveis em produção: `DATABASE_URL`, `DB_SCHEMA=linkfive`, `AUTH_SECRET`
+(diferente do local, de propósito) e `NEXT_PUBLIC_SITE_URL`.
+
+A Deployment Protection foi desligada: a Vercel liga por padrão em projeto novo
+e ela redireciona todo visitante para o login da Vercel — o que faz sentido num
+painel interno e inviabiliza um SaaS público.
+
+Para rodar a bateria de testes contra produção:
+
+```bash
+LINKFIVE_URL=https://linkfive-seven.vercel.app node scripts/teste-mvp.mjs
+```
+
+⚠️ **Produção e desenvolvimento dividem o mesmo banco.** Rodar o teste cria
+contas de verdade no banco de produção. Enquanto não houver usuário real isso é
+inofensivo, mas é o primeiro motivo para separar os bancos quando o produto
+lançar.
