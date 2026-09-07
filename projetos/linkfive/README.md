@@ -1,0 +1,78 @@
+# LINKFIVE
+
+SaaS de páginas de links com foco em vendas e geração de clientes.
+Domínio pretendido: **linkfive.com.br**
+
+- **Arquitetura e decisões técnicas:** [arquitetura.md](arquitetura.md) — leia antes de mexer
+- **Briefing original:** [briefing.md](briefing.md)
+- **Regras do projeto:** [CLAUDE.md](CLAUDE.md)
+
+---
+
+## Rodar na sua máquina
+
+```bash
+cd projetos/linkfive
+npm install
+npm run dev
+```
+
+Abre em http://localhost:3000
+
+O `.env.local` já está configurado, apontando para o mesmo banco Neon do
+Prospecta, no schema `linkfive` (as tabelas não se misturam). Se precisar
+recriar, copie o `.env.example` e preencha.
+
+## Comandos
+
+| Comando | O que faz |
+|---|---|
+| `npm run dev` | Sobe o servidor de desenvolvimento |
+| `npm run build` | Build de produção |
+| `npm run teste` | Teste ponta a ponta do MVP (precisa do `dev` rodando) |
+| `npm run db:status` | Mostra em qual schema está e quantas linhas tem cada tabela |
+
+## O que já funciona
+
+Testado ponta a ponta em 07/09/2026 — 24 verificações, todas passando
+(`npm run teste`):
+
+- [x] Landing page completa
+- [x] Cadastro com endereço (slug) validado e checado em tempo real
+- [x] Login, logout, proteção de rotas
+- [x] Isolamento entre contas (uma conta não lê nem escreve na página da outra)
+- [x] Editor de página com preview ao vivo em moldura de celular
+- [x] Criar, editar, ativar/desativar, excluir e reordenar links (arrastando)
+- [x] 13 tipos de link
+- [x] Gerador de link do WhatsApp com mensagem pronta
+- [x] Página pública responsiva em `/<slug>`
+- [x] Publicar e despublicar
+- [x] Contador de visualizações e de cliques, com rollup diário
+- [x] Dashboard com métricas, gráficos e ranking de links
+- [x] Analytics com filtro de período
+- [x] QR Code (ver, baixar PNG, imprimir SVG)
+- [x] 5 temas visuais
+- [x] Onboarding de 5 etapas
+- [x] Limites de plano aplicados no servidor
+- [x] Painel de planos
+
+## O que ainda não entrou
+
+**Fase 2:** formulário de captura na página pública, tela de leads alimentada de
+verdade, produtos e serviços com foto e preço.
+
+**Fase 3:** cobrança (a estrutura de assinatura já existe, falta o gateway),
+equipes.
+
+**Pendências que dependem de decisão:**
+
+1. Registrar o domínio `linkfive.com.br`
+2. Serviço de e-mail para a recuperação de senha (sugestão: Resend)
+3. Política de privacidade e termos — o sistema guarda leads de terceiros (LGPD)
+4. Upload de imagem (hoje o avatar é URL colada; Vercel Blob resolve)
+
+## Deploy
+
+Vercel, projeto separado do Prospecta, com **Root Directory = `projetos/linkfive`**.
+Variáveis a configurar lá: `DATABASE_URL`, `DB_SCHEMA=linkfive`, `AUTH_SECRET`,
+`NEXT_PUBLIC_SITE_URL`.

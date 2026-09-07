@@ -9,6 +9,29 @@
 Negócio em fase inicial (pré-lançamento) — solopreneur começando com
 site com IA / ecossistema de IA.
 
+## Segunda frente: LINKFIVE (desde 07/09/2026)
+
+**LINKFIVE** (`projetos/linkfive/`) — SaaS de páginas de links com foco em
+WhatsApp e geração de leads. Cada cliente tem uma página pública
+(`linkfive.com.br/nomedonegocio`) reunindo WhatsApp, redes, mapa, catálogo e
+formulário. Concorre com Linktree e W.app, mirando quem vende: empresas,
+profissionais e criadores.
+
+**Status: MVP construído e testado em 07/09/2026** — 24 verificações
+automatizadas passando (`npm run teste`), build de produção limpo.
+
+É um produto **independente do Prospecta**: código, deploy, domínio e clientes
+separados. Divide só a instância Neon, em schema `linkfive` — decisão de custo,
+não de arquitetura. Separar é trocar duas variáveis de ambiente, e a hora de
+fazer isso é quando entrar o primeiro cliente pagante ou o Neon avisar de
+limite.
+
+Pendências que travam o lançamento: registrar `linkfive.com.br`, serviço de
+e-mail para recuperação de senha, política de privacidade e termos (LGPD, o
+sistema guarda leads de terceiros) e upload de imagem.
+
+Documento de arquitetura: `projetos/linkfive/arquitetura.md`.
+
 ## Prioridade principal
 
 Prospecta (SaaS próprio, pasta `prospecta/`) — MVP construído em 28/08/2026.

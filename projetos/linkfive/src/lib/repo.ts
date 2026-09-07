@@ -1,0 +1,574 @@
+import { nowIso, q, q1, today, uid } from "@/lib/db";
+import type { DailyStat, Lead, LinkConfig, LinkType, Page, PageLink } from "@/lib/types";
+
+// ---------------------------------------------------------------------------
+// Acesso a dados.
+//
+// REGRA INEGOCIÁVEL: toda função que toca dado privado recebe `userId` como
+// PRIMEIRO argumento e o usa na cláusula WHERE. Nenhuma rota monta SQL na mão.
+//
+// O motivo é simples: a aplicação conecta no Postgres com um único usuário de
+// banco, então não existe RLS pra salvar ninguém. Se o `user_id` sumir de um
+// WHERE, um cliente vê o lead do outro. As funções abaixo são a única barreira,
+// e por isso a assinatura delas obriga a passar o dono.
+//
+// As funções de leitura pública (página do visitante) são a exceção explícita e
+// estão agrupadas no fim, sob um cabeçalho próprio.
+// ---------------------------------------------------------------------------
+
+// --- Conversão de linha ----------------------------------------------------
+
+interface PageRow {
+  id: string;
+  user_id: string;
+  slug: string;
+  title: string;
+  bio: string | null;
+  avatar_url: string | null;
+  theme_id: string;
+  theme_overrides: string;
+  published: number;
+  suspended: number;
+  seo_title: string | null;
+  seo_description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** JSON guardado como TEXT: um valor corrompido não pode derrubar a página. */
+function parseJson<T>(raw: string | null, fallback: T): T {
+  if (!raw) return fallback;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function toPage(r: PageRow): Page {
+  return {
+    id: r.id,
+    userId: r.user_id,
+    slug: r.slug,
+    title: r.title,
+    bio: r.bio,
+    avatarUrl: r.avatar_url,
+    themeId: r.theme_id,
+    themeOverrides: parseJson<Record<string, string>>(r.theme_overrides, {}),
+    published: Boolean(r.published),
+    suspended: Boolean(r.suspended),
+    seoTitle: r.seo_title,
+    seoDescription: r.seo_description,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
+interface LinkRow {
+  id: string;
+  page_id: string;
+  type: string;
+  title: string;
+  url: string;
+  icon: string | null;
+  config: string;
+  position: number;
+  active: number;
+  created_at: string;
+}
+
+function toLink(r: LinkRow): PageLink {
+  return {
+    id: r.id,
+    pageId: r.page_id,
+    type: r.type as LinkType,
+    title: r.title,
+    url: r.url,
+    icon: r.icon,
+    config: parseJson<LinkConfig>(r.config, {}),
+    position: r.position,
+    active: Boolean(r.active),
+    createdAt: r.created_at,
+  };
+}
+
+// --- Páginas ---------------------------------------------------------------
+
+export async function slugDisponivel(slug: string): Promise<boolean> {
+  const r = await q1("SELECT 1 AS x FROM pages WHERE slug = ?", [slug]);
+  return !r;
+}
+
+export async function criarPagina(userId: string, slug: string, title: string): Promise<Page> {
+  const id = uid("p_");
+  const agora = nowIso();
+  await q(
+    `INSERT INTO pages (id, user_id, slug, title, theme_id, theme_overrides,
+                        published, suspended, created_at, updated_at)
+     VALUES (?, ?, ?, ?, 'clean', '{}', 0, 0, ?, ?)`,
+    [id, userId, slug, title, agora, agora],
+  );
+  const row = await q1<PageRow>("SELECT * FROM pages WHERE id = ?", [id]);
+  return toPage(row!);
+}
+
+/** A página do usuário. No MVP é uma só; a query já ordena pra virar lista. */
+export async function paginaDoUsuario(userId: string): Promise<Page | null> {
+  const row = await q1<PageRow>(
+    "SELECT * FROM pages WHERE user_id = ? ORDER BY created_at LIMIT 1",
+    [userId],
+  );
+  return row ? toPage(row) : null;
+}
+
+export async function paginasDoUsuario(userId: string): Promise<Page[]> {
+  const rows = await q<PageRow>("SELECT * FROM pages WHERE user_id = ? ORDER BY created_at", [
+    userId,
+  ]);
+  return rows.map(toPage);
+}
+
+export async function contarPaginas(userId: string): Promise<number> {
+  const r = await q1<{ n: string }>("SELECT COUNT(*) AS n FROM pages WHERE user_id = ?", [userId]);
+  return Number(r?.n ?? 0);
+}
+
+/**
+ * Busca a página garantindo que ela é do usuário. Devolve null se for de outro
+ * — nunca lança, pra rota poder responder 404 em vez de vazar que existe.
+ */
+export async function paginaDoDono(userId: string, pageId: string): Promise<Page | null> {
+  const row = await q1<PageRow>("SELECT * FROM pages WHERE id = ? AND user_id = ?", [
+    pageId,
+    userId,
+  ]);
+  return row ? toPage(row) : null;
+}
+
+export type CamposPagina = Partial<
+  Pick<Page, "title" | "bio" | "avatarUrl" | "themeId" | "seoTitle" | "seoDescription">
+> & { themeOverrides?: Record<string, string> };
+
+export async function atualizarPagina(
+  userId: string,
+  pageId: string,
+  campos: CamposPagina,
+): Promise<Page | null> {
+  const dono = await paginaDoDono(userId, pageId);
+  if (!dono) return null;
+
+  // Monta o UPDATE só com o que veio — assim um PATCH parcial não apaga campo
+  // que o formulário não enviou.
+  const sets: string[] = [];
+  const vals: unknown[] = [];
+  const mapa: Record<string, unknown> = {
+    title: campos.title,
+    bio: campos.bio,
+    avatar_url: campos.avatarUrl,
+    theme_id: campos.themeId,
+    seo_title: campos.seoTitle,
+    seo_description: campos.seoDescription,
+    theme_overrides: campos.themeOverrides ? JSON.stringify(campos.themeOverrides) : undefined,
+  };
+  for (const [col, val] of Object.entries(mapa)) {
+    if (val !== undefined) {
+      sets.push(`${col} = ?`);
+      vals.push(val);
+    }
+  }
+  if (!sets.length) return dono;
+
+  sets.push("updated_at = ?");
+  vals.push(nowIso(), pageId, userId);
+  await q(`UPDATE pages SET ${sets.join(", ")} WHERE id = ? AND user_id = ?`, vals);
+  return paginaDoDono(userId, pageId);
+}
+
+export async function publicarPagina(
+  userId: string,
+  pageId: string,
+  publicar: boolean,
+): Promise<boolean> {
+  const r = await q("UPDATE pages SET published = ?, updated_at = ? WHERE id = ? AND user_id = ?", [
+    publicar ? 1 : 0,
+    nowIso(),
+    pageId,
+    userId,
+  ]);
+  return Array.isArray(r);
+}
+
+export async function trocarSlug(userId: string, pageId: string, slug: string): Promise<boolean> {
+  if (!(await slugDisponivel(slug))) return false;
+  await q("UPDATE pages SET slug = ?, updated_at = ? WHERE id = ? AND user_id = ?", [
+    slug,
+    nowIso(),
+    pageId,
+    userId,
+  ]);
+  return true;
+}
+
+// --- Links -----------------------------------------------------------------
+
+export async function linksDaPagina(userId: string, pageId: string): Promise<PageLink[]> {
+  // O JOIN com pages é o que amarra o link ao dono: sem ele, bastaria adivinhar
+  // um pageId pra listar os links de outra conta.
+  const rows = await q<LinkRow>(
+    `SELECT links.* FROM links
+       JOIN pages ON pages.id = links.page_id
+      WHERE links.page_id = ? AND pages.user_id = ?
+      ORDER BY links.position, links.created_at`,
+    [pageId, userId],
+  );
+  return rows.map(toLink);
+}
+
+export async function contarLinks(userId: string, pageId: string): Promise<number> {
+  const r = await q1<{ n: string }>(
+    `SELECT COUNT(*) AS n FROM links
+       JOIN pages ON pages.id = links.page_id
+      WHERE links.page_id = ? AND pages.user_id = ?`,
+    [pageId, userId],
+  );
+  return Number(r?.n ?? 0);
+}
+
+export interface NovoLink {
+  type: LinkType;
+  title: string;
+  url?: string;
+  icon?: string | null;
+  config?: LinkConfig;
+}
+
+export async function criarLink(
+  userId: string,
+  pageId: string,
+  dados: NovoLink,
+): Promise<PageLink | null> {
+  if (!(await paginaDoDono(userId, pageId))) return null;
+
+  const r = await q1<{ n: number | null }>(
+    "SELECT MAX(position) AS n FROM links WHERE page_id = ?",
+    [pageId],
+  );
+  const position = Number(r?.n ?? -1) + 1;
+
+  const id = uid("l_");
+  await q(
+    `INSERT INTO links (id, page_id, type, title, url, icon, config, position, active, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
+    [
+      id,
+      pageId,
+      dados.type,
+      dados.title,
+      dados.url ?? "",
+      dados.icon ?? null,
+      JSON.stringify(dados.config ?? {}),
+      position,
+      nowIso(),
+    ],
+  );
+  const row = await q1<LinkRow>("SELECT * FROM links WHERE id = ?", [id]);
+  return row ? toLink(row) : null;
+}
+
+export type CamposLink = Partial<Pick<PageLink, "title" | "url" | "icon" | "active">> & {
+  config?: LinkConfig;
+};
+
+export async function atualizarLink(
+  userId: string,
+  linkId: string,
+  campos: CamposLink,
+): Promise<PageLink | null> {
+  const atual = await linkDoDono(userId, linkId);
+  if (!atual) return null;
+
+  const sets: string[] = [];
+  const vals: unknown[] = [];
+  const mapa: Record<string, unknown> = {
+    title: campos.title,
+    url: campos.url,
+    icon: campos.icon,
+    active: campos.active === undefined ? undefined : campos.active ? 1 : 0,
+    config: campos.config ? JSON.stringify(campos.config) : undefined,
+  };
+  for (const [col, val] of Object.entries(mapa)) {
+    if (val !== undefined) {
+      sets.push(`${col} = ?`);
+      vals.push(val);
+    }
+  }
+  if (!sets.length) return atual;
+
+  vals.push(linkId);
+  await q(`UPDATE links SET ${sets.join(", ")} WHERE id = ?`, vals);
+  return linkDoDono(userId, linkId);
+}
+
+/** Link + confirmação de dono, via JOIN. Null se pertencer a outra conta. */
+export async function linkDoDono(userId: string, linkId: string): Promise<PageLink | null> {
+  const row = await q1<LinkRow>(
+    `SELECT links.* FROM links
+       JOIN pages ON pages.id = links.page_id
+      WHERE links.id = ? AND pages.user_id = ?`,
+    [linkId, userId],
+  );
+  return row ? toLink(row) : null;
+}
+
+export async function excluirLink(userId: string, linkId: string): Promise<boolean> {
+  if (!(await linkDoDono(userId, linkId))) return false;
+  await q("DELETE FROM links WHERE id = ?", [linkId]);
+  return true;
+}
+
+/**
+ * Grava a ordem nova depois de um arrastar-e-soltar.
+ *
+ * Recebe a lista inteira de ids na ordem final e regrava a posição de cada um.
+ * Só mexe nos links que são mesmo do usuário — um id estranho no meio da lista
+ * é ignorado, não derruba a operação inteira.
+ */
+export async function reordenarLinks(
+  userId: string,
+  pageId: string,
+  ids: string[],
+): Promise<boolean> {
+  if (!(await paginaDoDono(userId, pageId))) return false;
+  for (let i = 0; i < ids.length; i++) {
+    await q("UPDATE links SET position = ? WHERE id = ? AND page_id = ?", [i, ids[i], pageId]);
+  }
+  return true;
+}
+
+// --- Analytics -------------------------------------------------------------
+
+/**
+ * Soma um evento no rollup do dia.
+ *
+ * O UPSERT deixa a operação atômica: dois cliques simultâneos não se perdem,
+ * o que aconteceria num "SELECT, soma, UPDATE" feito em duas idas ao banco.
+ */
+async function somarNoDia(
+  pageId: string,
+  campo: "views" | "clicks" | "whatsapp_clicks" | "leads_count",
+): Promise<void> {
+  await q(
+    `INSERT INTO daily_stats (page_id, day, ${campo}) VALUES (?, ?, 1)
+     ON CONFLICT (page_id, day) DO UPDATE SET ${campo} = daily_stats.${campo} + 1`,
+    [pageId, today()],
+  );
+}
+
+export async function registrarView(
+  pageId: string,
+  device: string | null,
+  referrer: string | null,
+): Promise<void> {
+  await q(
+    "INSERT INTO page_views (id, page_id, device, referrer, created_at) VALUES (?, ?, ?, ?, ?)",
+    [uid("v_"), pageId, device, referrer, nowIso()],
+  );
+  await somarNoDia(pageId, "views");
+}
+
+export async function registrarClique(
+  linkId: string,
+  pageId: string,
+  tipo: string,
+  device: string | null,
+  referrer: string | null,
+): Promise<void> {
+  await q(
+    `INSERT INTO link_clicks (id, link_id, page_id, device, referrer, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [uid("c_"), linkId, pageId, device, referrer, nowIso()],
+  );
+  await somarNoDia(pageId, "clicks");
+  if (tipo === "whatsapp") await somarNoDia(pageId, "whatsapp_clicks");
+}
+
+/** Série diária do rollup, já com os dias sem movimento preenchidos com zero. */
+export async function serieDiaria(
+  userId: string,
+  pageId: string,
+  dias: number,
+): Promise<DailyStat[]> {
+  if (!(await paginaDoDono(userId, pageId))) return [];
+
+  const rows = await q<{
+    day: string;
+    views: number;
+    clicks: number;
+    whatsapp_clicks: number;
+    leads_count: number;
+  }>(
+    `SELECT ds.day, ds.views, ds.clicks, ds.whatsapp_clicks, ds.leads_count
+       FROM daily_stats ds
+       JOIN pages ON pages.id = ds.page_id
+      WHERE ds.page_id = ? AND pages.user_id = ? AND ds.day >= ?
+      ORDER BY ds.day`,
+    [pageId, userId, diasAtras(dias)],
+  );
+
+  // O gráfico precisa de um ponto por dia, senão uma semana parada vira uma
+  // linha reta enganosa entre dois pontos distantes.
+  const porDia = new Map(rows.map((r) => [r.day, r]));
+  const saida: DailyStat[] = [];
+  for (let i = dias - 1; i >= 0; i--) {
+    const dia = diasAtras(i + 1);
+    const r = porDia.get(dia);
+    saida.push({
+      day: dia,
+      views: Number(r?.views ?? 0),
+      clicks: Number(r?.clicks ?? 0),
+      whatsappClicks: Number(r?.whatsapp_clicks ?? 0),
+      leads: Number(r?.leads_count ?? 0),
+    });
+  }
+  return saida;
+}
+
+/** Data de N dias atrás no formato YYYY-MM-DD (N=1 é hoje). */
+function diasAtras(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - (n - 1));
+  return d.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+}
+
+export interface Totais {
+  views: number;
+  clicks: number;
+  whatsappClicks: number;
+  leads: number;
+  /** Cliques ÷ visualizações, em porcentagem. */
+  conversao: number;
+}
+
+export function somarTotais(serie: DailyStat[]): Totais {
+  const t = serie.reduce(
+    (acc, d) => ({
+      views: acc.views + d.views,
+      clicks: acc.clicks + d.clicks,
+      whatsappClicks: acc.whatsappClicks + d.whatsappClicks,
+      leads: acc.leads + d.leads,
+    }),
+    { views: 0, clicks: 0, whatsappClicks: 0, leads: 0 },
+  );
+  return { ...t, conversao: t.views ? Math.round((t.clicks / t.views) * 1000) / 10 : 0 };
+}
+
+/** Ranking dos links mais clicados no período. */
+export async function ranking(
+  userId: string,
+  pageId: string,
+  dias: number,
+  limite = 5,
+): Promise<{ id: string; title: string; type: string; cliques: number }[]> {
+  if (!(await paginaDoDono(userId, pageId))) return [];
+  const rows = await q<{ id: string; title: string; type: string; cliques: string }>(
+    `SELECT links.id, links.title, links.type, COUNT(link_clicks.id) AS cliques
+       FROM links
+       JOIN pages ON pages.id = links.page_id
+       LEFT JOIN link_clicks
+         ON link_clicks.link_id = links.id AND link_clicks.created_at >= ?
+      WHERE links.page_id = ? AND pages.user_id = ?
+      GROUP BY links.id, links.title, links.type
+      ORDER BY cliques DESC, links.position
+      LIMIT ${Number(limite)}`,
+    [diasAtras(dias), pageId, userId],
+  );
+  return rows.map((r) => ({ ...r, cliques: Number(r.cliques) }));
+}
+
+// --- Leads -----------------------------------------------------------------
+
+export async function leadsDaPagina(
+  userId: string,
+  pageId: string,
+  limite = 100,
+): Promise<Lead[]> {
+  const rows = await q<{
+    id: string;
+    page_id: string;
+    link_id: string | null;
+    name: string | null;
+    whatsapp: string | null;
+    email: string | null;
+    company: string | null;
+    message: string | null;
+    source: string | null;
+    created_at: string;
+  }>(
+    `SELECT leads.* FROM leads
+       JOIN pages ON pages.id = leads.page_id
+      WHERE leads.page_id = ? AND pages.user_id = ?
+      ORDER BY leads.created_at DESC
+      LIMIT ${Number(limite)}`,
+    [pageId, userId],
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    pageId: r.page_id,
+    linkId: r.link_id,
+    name: r.name,
+    whatsapp: r.whatsapp,
+    email: r.email,
+    company: r.company,
+    message: r.message,
+    source: r.source,
+    createdAt: r.created_at,
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// LEITURA PÚBLICA — a exceção consciente à regra do userId.
+//
+// Estas funções servem o visitante da página, que não tem sessão. Por isso elas
+// devolvem SÓ o que é público: nada de e-mail do dono, nada de lead, nada de
+// estatística. E respeitam `published` e `suspended`.
+// ---------------------------------------------------------------------------
+
+export async function paginaPublica(slug: string): Promise<Page | null> {
+  const row = await q1<PageRow>("SELECT * FROM pages WHERE slug = ?", [slug]);
+  if (!row) return null;
+  const page = toPage(row);
+  if (page.suspended) return null;
+  return page;
+}
+
+export async function linksPublicos(pageId: string): Promise<PageLink[]> {
+  const rows = await q<LinkRow>(
+    "SELECT * FROM links WHERE page_id = ? AND active = 1 ORDER BY position, created_at",
+    [pageId],
+  );
+  return rows.map(toLink);
+}
+
+/** Grava o lead enviado pelo formulário da página pública. */
+export async function registrarLead(
+  pageId: string,
+  dados: Omit<Lead, "id" | "pageId" | "createdAt">,
+): Promise<void> {
+  await q(
+    `INSERT INTO leads (id, page_id, link_id, name, whatsapp, email, company, message, source, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      uid("ld_"),
+      pageId,
+      dados.linkId,
+      dados.name,
+      dados.whatsapp,
+      dados.email,
+      dados.company,
+      dados.message,
+      dados.source,
+      nowIso(),
+    ],
+  );
+  await somarNoDia(pageId, "leads_count");
+}
