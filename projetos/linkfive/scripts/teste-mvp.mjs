@@ -592,7 +592,18 @@ checa("webhook sem token e recusado", r.status === 401 || r.status === 503, `sta
 
 // Com token certo, evento de compra libera o plano.
 const tokenWebhook = envMapTeste.LASTLINK_WEBHOOK_SECRET;
-if (tokenWebhook) {
+// Só dá para testar a liberação de plano se o ambiente alvo tiver o mapeamento
+// de produtos configurado. Em producao ele so existe depois que os produtos
+// forem criados no Lastlink — ate la, isto aqui e pulado, nao reprovado.
+const cfgWebhook = await fetch(`${BASE}/api/webhooks/lastlink`)
+  .then((res) => res.json())
+  .catch(() => ({}));
+
+if (!cfgWebhook.produtosMapeados) {
+  console.log(`[PULADO] cobranca — LASTLINK_PRODUTOS nao configurado em ${BASE}`);
+}
+
+if (tokenWebhook && cfgWebhook.produtosMapeados) {
   const emailCompra = `comprador-${marca}@teste.com`;
 
   r = await fetch(`${BASE}/api/webhooks/lastlink`, {
