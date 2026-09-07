@@ -1,3 +1,5 @@
+import fs from "node:fs";
+
 // Teste ponta a ponta do MVP do LINKFIVE, contra o servidor de dev.
 // Cobre: cadastro, isolamento entre contas, criacao de link, limite de plano,
 // publicacao, pagina publica, registro de view e clique.
@@ -381,6 +383,109 @@ r = await d2("/api/curtos", {
   body: JSON.stringify({ tipo: "url", title: "Torto", url: "isso nao e um endereco" }),
 });
 checa("recusa endereco sem dominio", r.status === 400, `status ${r.status}`);
+
+
+// --- PAINEL ADMINISTRATIVO --------------------------------------------------
+
+// Cliente comum nao entra no painel nem chama a rota de acao.
+r = await fetch(`${BASE}/admin`, {
+  redirect: "manual",
+  headers: { cookie: "" },
+});
+checa("visitante sem sessao nao abre /admin", r.status === 307 || r.status === 302, `status ${r.status}`);
+
+r = await a(`/api/admin/cliente/${infoB.pageId ? "qualquer" : "qualquer"}`, {
+  method: "PATCH",
+  body: JSON.stringify({ plano: "business" }),
+});
+checa("cliente comum nao usa a rota de admin", r.status === 404, `status ${r.status}`);
+
+// Promove a conta A a admin direto no banco, como o ADMIN_EMAILS faria.
+const { createRequire } = await import("node:module");
+const requireLocal = createRequire("C:/Users/User/MazyOS/projetos/linkfive/package.json");
+const postgres = requireLocal("postgres");
+const envTxt = fs.readFileSync("C:/Users/User/MazyOS/projetos/linkfive/.env.local", "utf8");
+const envMap = Object.fromEntries(
+  envTxt
+    .split(/\r?\n/)
+    .filter((l) => l.includes("=") && !l.trim().startsWith("#"))
+    .map((l) => {
+      const i = l.indexOf("=");
+      return [l.slice(0, i).trim(), l.slice(i + 1).trim().replace(/^["']|["']$/g, "")];
+    }),
+);
+const conn = new URL(envMap.DATABASE_URL);
+conn.searchParams.delete("channel_binding");
+const sqlDireto = postgres(conn.toString(), { prepare: false, ssl: "require", onnotice: () => {} });
+const esquema = envMap.DB_SCHEMA || "public";
+
+const [contaA] = await sqlDireto.unsafe(
+  `SELECT id FROM ${esquema}.users WHERE email = $1`,
+  [`a-${marca}@teste.com`],
+);
+await sqlDireto.unsafe(`UPDATE ${esquema}.users SET role = 'admin' WHERE id = $1`, [contaA.id]);
+
+// Agora A e admin: o painel abre e as acoes funcionam.
+const [contaB] = await sqlDireto.unsafe(
+  `SELECT id FROM ${esquema}.users WHERE email = $1`,
+  [`b-${marca}@teste.com`],
+);
+
+r = await a(`/api/admin/cliente/${contaB.id}`, {
+  method: "PATCH",
+  body: JSON.stringify({ plano: "cortesia" }),
+});
+checa("admin concede o plano Cortesia", r.ok, `status ${r.status}`);
+
+const [depoisPlano] = await sqlDireto.unsafe(
+  `SELECT plan FROM ${esquema}.users WHERE id = $1`,
+  [contaB.id],
+);
+checa("o Cortesia foi gravado", depoisPlano.plan === "cortesia", depoisPlano.plan);
+
+// Cortesia libera o que o Free barrava: B agora cria varios links curtos.
+for (let i = 0; i < 3; i++) {
+  await b("/api/curtos", {
+    method: "POST",
+    body: JSON.stringify({ tipo: "whatsapp", title: `Cortesia ${i}`, numero: "11988887777" }),
+  });
+}
+r = await b("/api/curtos");
+const curtosB = (await r.json()).curtos;
+checa("Cortesia libera o limite de links curtos", curtosB.length >= 3, `${curtosB.length} links`);
+
+// Plano invalido e recusado.
+r = await a(`/api/admin/cliente/${contaB.id}`, {
+  method: "PATCH",
+  body: JSON.stringify({ plano: "plano-inventado" }),
+});
+checa("plano inexistente e recusado", r.status === 400, `status ${r.status}`);
+
+// Admin nao tira o proprio acesso.
+r = await a(`/api/admin/cliente/${contaA.id}`, {
+  method: "PATCH",
+  body: JSON.stringify({ papel: "user" }),
+});
+checa("admin nao remove o proprio acesso", r.status === 400, `status ${r.status}`);
+
+// Suspender pagina tira ela do ar na hora.
+r = await a(`/api/admin/cliente/${contaA.id}`, {
+  method: "PATCH",
+  body: JSON.stringify({ suspender: true }),
+});
+checa("admin suspende a pagina", r.ok, `status ${r.status}`);
+
+r = await fetch(`${BASE}/${slugA}`, { redirect: "manual" });
+checa("pagina suspensa sai do ar", r.status === 404, `status ${r.status}`);
+
+r = await a(`/api/admin/cliente/${contaA.id}`, {
+  method: "PATCH",
+  body: JSON.stringify({ suspender: false }),
+});
+r = await fetch(`${BASE}/${slugA}`);
+checa("pagina reativada volta ao ar", r.status === 200, `status ${r.status}`);
+
+await sqlDireto.end();
 
 console.log(falhas === 0 ? "\nTUDO PASSOU" : `\n${falhas} FALHA(S)`);
 process.exit(falhas === 0 ? 0 : 1);

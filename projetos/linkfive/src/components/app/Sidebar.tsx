@@ -13,6 +13,7 @@ import {
   Sparkles,
   UserSquare2,
   Users,
+  ShieldCheck,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 
@@ -32,7 +33,7 @@ const ITENS = [
 /** No celular, os 5 principais viram abas fixas embaixo. */
 const PRINCIPAIS = ["/app", "/app/pagina", "/app/curtos", "/app/analytics", "/app/qrcode"];
 
-export function Sidebar() {
+export function Sidebar({ admin = false }: { admin?: boolean }) {
   const path = usePathname();
   const ativo = (href: string) => (href === "/app" ? path === "/app" : path.startsWith(href));
 
@@ -46,6 +47,15 @@ export function Sidebar() {
         </div>
 
         <nav className="px-3 pb-6">
+          {admin && (
+            <Link
+              href="/admin"
+              className="mb-2 flex items-center gap-3 rounded-[10px] bg-ink-900 px-3 py-2.5 text-sm font-semibold text-white hover:bg-ink-800"
+            >
+              <ShieldCheck size={18} />
+              Painel do admin
+            </Link>
+          )}
           {ITENS.map(({ href, label, icone: Icone }) => (
             <Link
               key={href}

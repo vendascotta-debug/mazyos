@@ -47,7 +47,7 @@ recriar, copie o `.env.example` e preencha.
 
 ## O que já funciona
 
-Testado ponta a ponta em 07/09/2026 — 52 verificações, todas passando
+Testado ponta a ponta em 07/09/2026 — 62 verificações, todas passando
 (`npm run teste`):
 
 - [x] Landing page completa
@@ -72,6 +72,11 @@ Testado ponta a ponta em 07/09/2026 — 52 verificações, todas passando
 - [x] Onboarding de 5 etapas
 - [x] Limites de plano aplicados no servidor
 - [x] Painel de planos
+- [x] **Painel administrativo** (/admin): visão geral com contas, pagantes,
+      receita mensal e movimento; lista de clientes com plano, página,
+      visitas, cliques, leads e última atividade; conceder plano, promover
+      admin e suspender página
+- [x] **Plano Cortesia**: não aparece na página de preços, só o admin concede
 
 ## O que ainda não entrou
 
@@ -95,7 +100,12 @@ do Prospecta, com **Root Directory = `projetos/linkfive`** e GitHub conectado �
 **todo push na `main` publica sozinho**.
 
 Variáveis em produção: `DATABASE_URL`, `DB_SCHEMA=linkfive`, `AUTH_SECRET`
-(diferente do local, de propósito) e `NEXT_PUBLIC_SITE_URL`.
+(diferente do local, de propósito), `NEXT_PUBLIC_SITE_URL` e `ADMIN_EMAILS`.
+
+`ADMIN_EMAILS` é a lista de e-mails que viram administradores automaticamente,
+separados por vírgula. É daqui que nasce o primeiro admin — sem isso ninguém
+conseguiria abrir o painel, porque só um admin promove outro. O papel é
+sincronizado no cadastro e no login, não a cada requisição.
 
 A Deployment Protection foi desligada: a Vercel liga por padrão em projeto novo
 e ela redireciona todo visitante para o login da Vercel — o que faz sentido num

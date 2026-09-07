@@ -42,6 +42,21 @@ export default async function Planos() {
         Seu plano atual é o <strong>{PLANOS[user.plan].nome}</strong>.
       </p>
 
+      {/* Cortesia não está na grade abaixo — ele não é vendido. Quem tem
+          precisa entender o que ganhou, senão vê a grade e acha que está no
+          Free. */}
+      {PLANOS[user.plan].oculto && (
+        <div className="card mt-4 border-brand-200 bg-brand-50 p-4">
+          <p className="font-semibold text-brand-700">
+            Você está no plano Cortesia — acesso liberado por nós.
+          </p>
+          <p className="mt-1 text-sm text-ink-600">
+            Tudo liberado, sem cobrança: links e links diretos ilimitados, formulários, leads,
+            todos os temas, analytics completo e sem a marca LINKFIVE na sua página.
+          </p>
+        </div>
+      )}
+
       <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {ORDEM_PLANOS.map((id) => {
           const p = PLANOS[id];

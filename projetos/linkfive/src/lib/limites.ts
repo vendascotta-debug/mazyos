@@ -33,6 +33,8 @@ export interface Plano {
   marca: boolean;
   equipe: boolean;
   destaque?: string;
+  /** Fora da página de preços: só o admin concede. */
+  oculto?: boolean;
 }
 
 export const PLANOS: Record<PlanId, Plano> = {
@@ -93,9 +95,28 @@ export const PLANOS: Record<PlanId, Plano> = {
     marca: false,
     equipe: true,
   },
+  cortesia: {
+    id: "cortesia",
+    nome: "Cortesia",
+    precoCents: 0,
+    maxLinks: null,
+    maxCurtos: null,
+    maxPaginas: 5,
+    analyticsDias: 365,
+    formularios: true,
+    temas: true,
+    personalizacaoAvancada: true,
+    marca: false,
+    equipe: true,
+    oculto: true,
+  },
 };
 
+/** Ordem dos planos vendidos — é o que a landing e a tela de preços mostram. */
 export const ORDEM_PLANOS: PlanId[] = ["free", "starter", "pro", "business"];
+
+/** Todos os planos, inclusive o Cortesia. Só o painel administrativo usa. */
+export const ORDEM_PLANOS_ADMIN: PlanId[] = [...ORDEM_PLANOS, "cortesia"];
 
 export function plano(id: PlanId | string | null | undefined): Plano {
   return PLANOS[(id as PlanId) ?? "free"] ?? PLANOS.free;
@@ -109,6 +130,8 @@ export function precoFormatado(p: Plano): string {
 
 /** O plano seguinte na escada, ou null se já está no topo. */
 export function proximoPlano(id: PlanId): Plano | null {
+  // Cortesia já tem tudo liberado; não existe "próximo" pra oferecer.
+  if (id === "cortesia") return null;
   const i = ORDEM_PLANOS.indexOf(id);
   const próximo = ORDEM_PLANOS[i + 1];
   return próximo ? PLANOS[próximo] : null;

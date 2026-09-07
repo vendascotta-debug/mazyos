@@ -48,6 +48,19 @@ const TABLES = [
  * dentro de `link_clicks` e `pages` dentro de `page_views`, gerando SQL
  * quebrado como `linkfive.link_clicks` virando `linkfive.linkfive.link_clicks`.
  * A ordem da lista não importa justamente por causa das bordas.
+ *
+ * ⚠️ A LIMITAÇÃO QUE JÁ QUEBROU O SISTEMA DUAS VEZES:
+ *
+ * isto aqui é substituição de texto, não um parser de SQL. Ele não distingue
+ * o nome de uma tabela do mesmo nome usado em qualquer outro papel. Então
+ * **nenhuma coluna e nenhum apelido pode se chamar como uma tabela da lista
+ * acima**:
+ *
+ *   coluna  `leads`      em daily_stats  → virou `linkfive.leads`  (erro)
+ *   apelido `AS links`   em admin.ts     → virou `AS linkfive.links` (erro)
+ *
+ * Por isso a coluna se chama `leads_count` e os apelidos usam prefixo `n_`.
+ * Ao escrever query nova, confira os nomes contra a lista TABLES.
  */
 export function qualify(sql: string): string {
   if (SCHEMA === "public") return sql;

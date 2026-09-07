@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import crypto from "node:crypto";
 import { nowIso, q, q1, uid } from "@/lib/db";
 import type { PlanId, Role, User } from "@/lib/types";
+import { ehAdminPorEmail, sincronizarPapel } from "@/lib/admin";
 
 // ---------------------------------------------------------------------------
 // Autenticação própria, sem dependência externa.
@@ -164,8 +165,8 @@ export async function criarUsuario(dados: {
   const email = dados.email.toLowerCase().trim();
   await q(
     `INSERT INTO users (id, email, name, password_hash, role, plan, onboarded, created_at)
-     VALUES (?, ?, ?, ?, 'user', 'free', 0, ?)`,
-    [id, email, dados.nome.trim(), hashPassword(dados.senha), nowIso()],
+     VALUES (?, ?, ?, ?, ?, 'free', 0, ?)`,
+    [id, email, dados.nome.trim(), hashPassword(dados.senha), ehAdminPorEmail(email) ? 'admin' : 'user', nowIso()],
   );
   const row = await q1<UserRow>("SELECT * FROM users WHERE id = ?", [id]);
   return toUser(row!);
@@ -179,7 +180,11 @@ export async function autenticar(email: string, senha: string): Promise<User | n
   );
   if (!row) return null;
   if (!verifyPassword(senha, row.password_hash)) return null;
-  return toUser(row);
+
+  // O primeiro admin nasce daqui: sem isso ninguem conseguiria abrir o painel
+  // pela primeira vez (precisa ser admin para promover alguem a admin).
+  const papel = await sincronizarPapel(row.id, row.email, row.role);
+  return toUser({ ...row, role: papel });
 }
 
 export async function marcarOnboardingConcluido(userId: string): Promise<void> {

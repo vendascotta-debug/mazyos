@@ -7,7 +7,11 @@
 // no repositório — nenhuma tela lê `Row` direto.
 // ---------------------------------------------------------------------------
 
-export type PlanId = "free" | "starter" | "pro" | "business";
+/**
+ * Planos. "cortesia" não é vendido: só o admin concede, e ele não aparece na
+ * página de preços nem entra na conta de receita.
+ */
+export type PlanId = "free" | "starter" | "pro" | "business" | "cortesia";
 export type Role = "user" | "admin";
 
 export interface User {
