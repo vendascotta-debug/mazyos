@@ -28,12 +28,50 @@ Público: empresas, profissionais e criadores — quem vende.
 (exemplos: página em `/oficinadocarlos`, link direto em `/w/orcamento`). Vercel, projeto `linkfive`, Root Directory
 `projetos/linkfive`, GitHub conectado: todo push na `main` publica sozinho.
 
-52 verificações automatizadas passando (`npm run teste`), rodadas **também
+75 verificações automatizadas passando (`npm run teste`), rodadas **também
 contra produção** (`LINKFIVE_URL=... node scripts/teste-mvp.mjs`).
 
 Atenção: produção e desenvolvimento dividem o mesmo banco. Rodar o teste cria
 contas reais em produção. Inofensivo enquanto não há usuário; é o primeiro
 motivo para separar os bancos no lançamento.
+
+**Já construído além do MVP:** painel administrativo (`/admin`) com visão
+geral, lista de clientes e aba de cobrança; plano **Cortesia** (fora da página
+de preços, só o admin concede); formulário de captura de leads; termos e
+política de privacidade; e a integração de cobrança com o **Lastlink**.
+
+O Alessandro é admin (`ADMIN_EMAILS` na Vercel + no banco) e está no Cortesia.
+
+### PARADO EM (07/09/2026, fim do dia) — retomar por aqui
+
+**1. Domínio `linkfive.com.br` comprado na Hostinger, em registro.** Assim que
+propagar:
+   - Na Hostinger, apagar os registros `@` e `www` de estacionamento e criar:
+     `A @ → 216.198.79.1` e `CNAME www → 3d96bc1e85d4e712.vercel-dns-017.com`
+   - Apex e www **já estão cadastrados no projeto da Vercel**
+   - Trocar `NEXT_PUBLIC_SITE_URL` para `https://linkfive.com.br` e redeployar.
+     É a variável que o **QR Code imprime** — nada de material impresso antes
+     disso.
+   - Rodar a bateria contra o domínio novo
+
+**2. Lastlink — falta o Alessandro:** criar os 3 produtos (Starter 9,90 /
+Pro 19,90 / Business 39,90, recorrentes), cadastrar o webhook
+`/api/webhooks/lastlink` (token em `projetos/linkfive/.env.local`, na variável
+`LASTLINK_WEBHOOK_SECRET`, já espelhado na Vercel), e passar os **IDs dos
+produtos** e os **links de checkout**. Aí é só preencher `LASTLINK_PRODUTOS` e
+`LASTLINK_CHECKOUT_*` — os botões de assinar saem do "Em breve" sozinhos.
+   O webhook grava o payload cru de tudo em `/admin/cobranca`: quando a
+   primeira venda entrar, é de lá que sai o mapeamento definitivo dos campos.
+
+**3. Termos e privacidade** precisam de revisão jurídica e dos dados da
+empresa. O ponto crítico é a seção 1 da privacidade (quem é controlador dos
+leads).
+
+Escolha registrada: **Lastlink primeiro, Mercado Pago depois.** Não por ser
+melhor — é mais caro e pior pra upgrade no meio do ciclo — mas porque com zero
+clientes a pergunta é "alguém paga?", não "qual taxa é menor". A tabela
+`subscriptions` tem `gateway` e `gateway_id` justamente para a troca sair
+barata.
 
 É um produto **independente do Prospecta**: código, deploy, domínio e clientes
 separados. Divide só a instância Neon, em schema `linkfive` — decisão de custo,
