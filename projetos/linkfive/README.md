@@ -7,6 +7,8 @@ clientes. Faz **duas coisas que os concorrentes fazem separadas**:
   endereço só, no formato do Linktree
 - **Link direto** (`linkfive.com.br/w/tDhwE3`) — abre a conversa no WhatsApp na
   hora, sem tela no meio, no formato do W.app
+- **Encurtador de URL** — o mesmo /w/ encurta qualquer endereço, com QR e
+  contador próprios
 
 O Linktree não faz o link direto. O W.app não faz a página.
 
@@ -45,7 +47,7 @@ recriar, copie o `.env.example` e preencha.
 
 ## O que já funciona
 
-Testado ponta a ponta em 07/09/2026 — 42 verificações, todas passando
+Testado ponta a ponta em 07/09/2026 — 52 verificações, todas passando
 (`npm run teste`):
 
 - [x] Landing page completa
@@ -56,9 +58,10 @@ Testado ponta a ponta em 07/09/2026 — 42 verificações, todas passando
 - [x] Criar, editar, ativar/desativar, excluir e reordenar links (arrastando)
 - [x] 13 tipos de link
 - [x] Gerador de link do WhatsApp com mensagem pronta
-- [x] **Links diretos** (/w/abc123): redireciona pro WhatsApp em 307, com QR
-      próprio por link, contador de cliques, pausar/reativar e código
-      personalizado opcional
+- [x] **Links diretos** (/w/abc123) em dois tipos: WhatsApp (monta o wa.me a
+      partir do número e da mensagem) e URL comum (encurta qualquer endereço).
+      Redirecionam em 307, com QR próprio por link, contador de cliques,
+      pausar/reativar e código personalizado opcional
 - [x] Página pública responsiva em `/<slug>`
 - [x] Publicar e despublicar
 - [x] Contador de visualizações e de cliques, com rollup diário

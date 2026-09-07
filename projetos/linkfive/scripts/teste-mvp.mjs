@@ -329,5 +329,58 @@ r = await fetch(`${BASE}/api/slug/disponivel?slug=w`);
 const slugW = await r.json();
 checa("slug 'w' nao pode ser registrado", slugW.disponivel === false, slugW.erro ?? "");
 
+
+// --- ENCURTADOR DE URL COMUM ------------------------------------------------
+
+// A conta C ja existe e ainda tem cota livre (o link de codigo repetido foi
+// recusado, entao nada foi gravado nela).
+r = await c("/api/curtos", {
+  method: "POST",
+  body: JSON.stringify({
+    tipo: "url",
+    title: "Promocao do site",
+    url: "meusite.com.br/promocao?utm_source=cartao",
+  }),
+});
+const curtoUrl = (await r.json()).curto;
+checa("encurta uma URL comum", r.ok && Boolean(curtoUrl?.code));
+checa("completa o https que faltava", curtoUrl?.destino?.startsWith("https://meusite.com.br"), curtoUrl?.destino);
+checa("preserva a query string", curtoUrl?.destino?.includes("utm_source=cartao"), curtoUrl?.destino);
+checa("link de URL nao guarda numero", curtoUrl?.numero === null, String(curtoUrl?.numero));
+checa("link de URL vem marcado como tipo url", curtoUrl?.tipo === "url", curtoUrl?.tipo);
+
+r = await fetch(`${BASE}/w/${curtoUrl.code}`, { redirect: "manual" });
+checa("URL encurtada redireciona (307)", r.status === 307, `status ${r.status}`);
+checa(
+  "redireciona pro endereco certo",
+  (r.headers.get("location") ?? "").startsWith("https://meusite.com.br/promocao"),
+  r.headers.get("location") ?? "",
+);
+
+// javascript: nao pode virar link publico
+const d2 = sessao();
+r = await d2("/api/auth/cadastro", {
+  method: "POST",
+  body: JSON.stringify({
+    nome: "Quarta Conta",
+    email: `d-${marca}@teste.com`,
+    senha: "senha12345",
+    slug: `teste-d-${marca}`,
+  }),
+});
+checa("cadastro da conta D", r.ok);
+
+r = await d2("/api/curtos", {
+  method: "POST",
+  body: JSON.stringify({ tipo: "url", title: "Ataque", url: "javascript:alert(1)" }),
+});
+checa("recusa javascript: como destino", r.status === 400, `status ${r.status}`);
+
+r = await d2("/api/curtos", {
+  method: "POST",
+  body: JSON.stringify({ tipo: "url", title: "Torto", url: "isso nao e um endereco" }),
+});
+checa("recusa endereco sem dominio", r.status === 400, `status ${r.status}`);
+
 console.log(falhas === 0 ? "\nTUDO PASSOU" : `\n${falhas} FALHA(S)`);
 process.exit(falhas === 0 ? 0 : 1);

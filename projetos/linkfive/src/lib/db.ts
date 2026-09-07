@@ -283,8 +283,11 @@ CREATE TABLE IF NOT EXISTS short_links (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   code TEXT NOT NULL UNIQUE,
+  -- tipo: whatsapp (monta o wa.me a partir do numero) ou url (encurta o que
+  -- o usuario colou, seja qual for o destino).
+  tipo TEXT NOT NULL DEFAULT 'whatsapp',
   title TEXT NOT NULL DEFAULT '',
-  numero TEXT NOT NULL,
+  numero TEXT,
   mensagem TEXT,
   destino TEXT NOT NULL,
   active INTEGER NOT NULL DEFAULT 1,
@@ -296,6 +299,8 @@ CREATE TABLE IF NOT EXISTS short_links (
   updated_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_short_user ON short_links(user_id, created_at);
+ALTER TABLE short_links ADD COLUMN IF NOT EXISTS tipo TEXT NOT NULL DEFAULT 'whatsapp';
+ALTER TABLE short_links ALTER COLUMN numero DROP NOT NULL;
 
 CREATE TABLE IF NOT EXISTS short_clicks (
   id TEXT PRIMARY KEY,

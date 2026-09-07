@@ -1,20 +1,30 @@
 // ---------------------------------------------------------------------------
 // Links curtos diretos.
 //
-// linkfive.com.br/w/abc123 → redireciona na hora para a conversa do WhatsApp.
-// Nenhuma página no meio: o cliente toca no link e já está digitando.
+// linkfive.com.br/w/abc123 → redireciona na hora para o destino.
+// Nenhuma página no meio: o cliente toca no link e já chegou.
+//
+// Dois tipos:
+//   whatsapp → o usuário informa o número e a mensagem, e o sistema monta o
+//              wa.me. É o caso que mais aparece nesse produto.
+//   url      → encurtador comum: encurta qualquer endereço, com o mesmo QR e
+//              o mesmo contador.
 //
 // É o formato do w.app. Convive com a página de links, e não a substitui: a
 // página serve pra "todos os meus canais", o link curto serve pra "fala comigo
 // agora" — num anúncio, num cartão, numa etiqueta de produto.
 // ---------------------------------------------------------------------------
 
+export type TipoCurto = "whatsapp" | "url";
+
 export interface ShortLink {
   id: string;
   userId: string;
   code: string;
+  tipo: TipoCurto;
   title: string;
-  numero: string;
+  /** Só nos links de WhatsApp. Nos de URL vem null. */
+  numero: string | null;
   mensagem: string | null;
   destino: string;
   active: boolean;
@@ -72,4 +82,43 @@ export function validarCodigoPersonalizado(
     return { ok: false, erro: "Esse código é reservado pelo sistema." };
   }
   return { ok: true };
+}
+
+/**
+ * Normaliza a URL que o usuário colou.
+ *
+ * Aceita sem protocolo ("meusite.com.br"), porque é assim que as pessoas
+ * digitam. Recusa `javascript:` e afins: o link curto é público e não pode
+ * virar vetor de execução no navegador de quem clicar.
+ */
+export function normalizarUrl(bruto: string): { ok: true; url: string } | { ok: false; erro: string } {
+  const limpo = bruto.trim();
+  if (!limpo) return { ok: false, erro: "Cole o endereço que o link deve abrir." };
+
+  const comProtocolo = /^[a-z][a-z0-9+.-]*:/i.test(limpo) ? limpo : `https://${limpo}`;
+
+  let u: URL;
+  try {
+    u = new URL(comProtocolo);
+  } catch {
+    return { ok: false, erro: "Endereço inválido. Confira se está completo." };
+  }
+
+  if (u.protocol !== "http:" && u.protocol !== "https:") {
+    return { ok: false, erro: "Só é possível encurtar endereços http e https." };
+  }
+  if (!u.hostname.includes(".")) {
+    return { ok: false, erro: "Endereço inválido. Falta o domínio (ex.: meusite.com.br)." };
+  }
+
+  return { ok: true, url: u.toString() };
+}
+
+/** Domínio do destino, para mostrar na listagem. */
+export function dominioDe(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
 }

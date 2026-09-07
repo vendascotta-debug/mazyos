@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Check, Copy, Download, ExternalLink, Loader2, Plus, QrCode, Trash2 } from "lucide-react";
 import type { ShortLink } from "@/lib/curtos";
 import { formatarTelefone } from "@/lib/links";
+import { dominioDe } from "@/lib/curtos";
 import { ModalCurto } from "@/components/curtos/ModalCurto";
 
 /**
@@ -75,18 +76,22 @@ export function ListaCurtos({
   }
 
   async function criar(dados: {
+    tipo: "whatsapp" | "url";
     title: string;
     numero: string;
     mensagem: string;
+    url: string;
     code: string;
   }): Promise<string | null> {
     const r = await fetch("/api/curtos", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
+        tipo: dados.tipo,
         title: dados.title,
-        numero: dados.numero,
+        numero: dados.numero || undefined,
         mensagem: dados.mensagem || undefined,
+        url: dados.url || undefined,
         code: dados.code || undefined,
       }),
     });
@@ -103,8 +108,9 @@ export function ListaCurtos({
         <div>
           <h1 className="text-xl font-bold tracking-tight">Links diretos</h1>
           <p className="mt-1 max-w-[560px] text-sm text-ink-500">
-            Um endereço curto que abre a conversa no WhatsApp na hora, sem passar por página
-            nenhuma. Serve pro anúncio, pro cartão e pro QR Code da vitrine.
+            Endereços curtos que levam direto ao destino, sem passar por página nenhuma.
+            Abrem a conversa no WhatsApp ou encurtam qualquer link. Servem pro anúncio, pro
+            cartão e pro QR Code da vitrine.
           </p>
         </div>
 
@@ -162,6 +168,15 @@ export function ListaCurtos({
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-semibold">{c.title}</p>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                        c.tipo === "whatsapp"
+                          ? "bg-ok-500/10 text-ok-500"
+                          : "bg-brand-50 text-brand-700"
+                      }`}
+                    >
+                      {c.tipo === "whatsapp" ? "WhatsApp" : "Link"}
+                    </span>
                     <button
                       onClick={() => alternar(c)}
                       disabled={ocupado === c.id}
@@ -190,8 +205,9 @@ export function ListaCurtos({
                   </button>
 
                   <p className="mt-2 text-sm text-ink-500">
-                    {formatarTelefone(c.numero)}
-                    {c.mensagem ? ` · "${c.mensagem}"` : ""}
+                    {c.tipo === "whatsapp" && c.numero
+                      ? `${formatarTelefone(c.numero)}${c.mensagem ? ` · "${c.mensagem}"` : ""}`
+                      : `Abre ${dominioDe(c.destino)}`}
                   </p>
 
                   <p className="mt-1 text-sm">

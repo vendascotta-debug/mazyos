@@ -586,8 +586,9 @@ interface ShortRow {
   id: string;
   user_id: string;
   code: string;
+  tipo: string;
   title: string;
-  numero: string;
+  numero: string | null;
   mensagem: string | null;
   destino: string;
   active: number;
@@ -601,6 +602,7 @@ function toShort(r: ShortRow): ShortLink {
     id: r.id,
     userId: r.user_id,
     code: r.code,
+    tipo: (r.tipo === "url" ? "url" : "whatsapp") as ShortLink["tipo"],
     title: r.title,
     numero: r.numero,
     mensagem: r.mensagem,
@@ -643,15 +645,22 @@ export async function curtoDoDono(userId: string, id: string): Promise<ShortLink
 
 export async function criarCurto(
   userId: string,
-  dados: { code: string; title: string; numero: string; mensagem: string | null; destino: string },
+  dados: {
+    code: string;
+    tipo: ShortLink["tipo"];
+    title: string;
+    numero: string | null;
+    mensagem: string | null;
+    destino: string;
+  },
 ): Promise<ShortLink | null> {
   const id = uid("s_");
   const agora = nowIso();
   await q(
-    `INSERT INTO short_links (id, user_id, code, title, numero, mensagem, destino,
+    `INSERT INTO short_links (id, user_id, code, tipo, title, numero, mensagem, destino,
                               active, clicks_total, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?)`,
-    [id, userId, dados.code, dados.title, dados.numero, dados.mensagem, dados.destino, agora, agora],
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?)`,
+    [id, userId, dados.code, dados.tipo, dados.title, dados.numero, dados.mensagem, dados.destino, agora, agora],
   );
   return curtoDoDono(userId, id);
 }
@@ -659,7 +668,13 @@ export async function criarCurto(
 export async function atualizarCurto(
   userId: string,
   id: string,
-  campos: { title?: string; numero?: string; mensagem?: string | null; destino?: string; active?: boolean },
+  campos: {
+    title?: string;
+    numero?: string | null;
+    mensagem?: string | null;
+    destino?: string;
+    active?: boolean;
+  },
 ): Promise<ShortLink | null> {
   if (!(await curtoDoDono(userId, id))) return null;
 
