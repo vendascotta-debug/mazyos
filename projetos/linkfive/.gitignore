@@ -1,6 +1,15 @@
 node_modules
 .next
-.env.local
-.env*.local
 *.tsbuildinfo
 next-env.d.ts
+
+# Segredos: nada de .env real no repositorio.
+.env
+.env.local
+.env*.local
+
+# ...mas o modelo sem segredo nenhum precisa ficar versionado.
+!.env.example
+
+# Estado local do CLI da Vercel (ids do projeto, token OIDC).
+.vercel

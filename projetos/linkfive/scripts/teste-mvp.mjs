@@ -2,7 +2,7 @@
 // Cobre: cadastro, isolamento entre contas, criacao de link, limite de plano,
 // publicacao, pagina publica, registro de view e clique.
 
-const BASE = "http://localhost:3000";
+const BASE = process.env.LINKFIVE_URL ?? "http://localhost:3000";
 
 let falhas = 0;
 function checa(nome, condicao, extra = "") {
