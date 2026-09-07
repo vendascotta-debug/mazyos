@@ -11,17 +11,24 @@ site com IA / ecossistema de IA.
 
 ## Segunda frente: LINKFIVE (desde 07/09/2026)
 
-**LINKFIVE** (`projetos/linkfive/`) — SaaS de páginas de links com foco em
-WhatsApp e geração de leads. Cada cliente tem uma página pública
-(`linkfive.com.br/nomedonegocio`) reunindo WhatsApp, redes, mapa, catálogo e
-formulário. Concorre com Linktree e W.app, mirando quem vende: empresas,
-profissionais e criadores.
+**LINKFIVE** (`projetos/linkfive/`) — SaaS de links para WhatsApp e redes, com
+foco em vendas. Faz **duas coisas que os concorrentes fazem separadas**:
+
+1. **Página de links** (`/oficinadocarlos`) — todos os canais num endereço só,
+   no formato do Linktree
+2. **Link direto e encurtador** (`/w/orcamento`) — redireciona na hora pro
+   WhatsApp ou pra qualquer URL, sem tela no meio, no formato do W.app
+
+O Linktree não faz a 2. O W.app não faz a 1. Esse é o diferencial, e foi
+definido em 07/09/2026 comparando com o W.app que o Alessandro já usa.
+
+Público: empresas, profissionais e criadores — quem vende.
 
 **Status: NO AR desde 07/09/2026** — https://linkfive-seven.vercel.app
-(exemplo: `/oficinadocarlos`). Vercel, projeto `linkfive`, Root Directory
+(exemplos: página em `/oficinadocarlos`, link direto em `/w/orcamento`). Vercel, projeto `linkfive`, Root Directory
 `projetos/linkfive`, GitHub conectado: todo push na `main` publica sozinho.
 
-24 verificações automatizadas passando (`npm run teste`), rodadas **também
+52 verificações automatizadas passando (`npm run teste`), rodadas **também
 contra produção** (`LINKFIVE_URL=... node scripts/teste-mvp.mjs`).
 
 Atenção: produção e desenvolvimento dividem o mesmo banco. Rodar o teste cria
