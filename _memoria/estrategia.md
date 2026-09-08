@@ -28,34 +28,59 @@ Público: empresas, profissionais e criadores — quem vende.
 (exemplos: página em `/oficinadocarlos`, link direto em `/w/orcamento`). Vercel, projeto `linkfive`, Root Directory
 `projetos/linkfive`, GitHub conectado: todo push na `main` publica sozinho.
 
-75 verificações automatizadas passando (`npm run teste`), rodadas **também
-contra produção** (`LINKFIVE_URL=... node scripts/teste-mvp.mjs`).
+81 verificações automatizadas passando (`npm run teste`), rodadas **também
+contra produção** (`LINKFIVE_URL=https://linkfive.com.br node scripts/teste-mvp.mjs`).
+Há também `npm run teste:animacao`, que confere a entrada ao rolar e o modo de
+movimento reduzido.
 
 Atenção: produção e desenvolvimento dividem o mesmo banco. Rodar o teste cria
-contas reais em produção. Inofensivo enquanto não há usuário; é o primeiro
-motivo para separar os bancos no lançamento.
+contas reais em produção. **Depois de rodar, limpar** (o script de limpeza
+apaga contas `%@teste.com`). Separar os bancos é a primeira coisa a fazer no
+lançamento.
 
 **Já construído além do MVP:** painel administrativo (`/admin`) com visão
 geral, lista de clientes e aba de cobrança; plano **Cortesia** (fora da página
 de preços, só o admin concede); formulário de captura de leads; termos e
-política de privacidade; e a integração de cobrança com o **Lastlink**.
+política de privacidade; integração de cobrança com o **Lastlink**; métricas
+de origem/aparelho/país com **cadeado** no que o plano não cobre; e a tela de
+**Consumo** com barras de uso e a data em que a cota zera.
 
 O Alessandro é admin (`ADMIN_EMAILS` na Vercel + no banco) e está no Cortesia.
 
-### PARADO EM (07/09/2026, fim do dia) — retomar por aqui
+### Planos (revisão de 07/09/2026, espelhando o url.gratis)
 
-**1. Domínio `linkfive.com.br` comprado na Hostinger, em registro.** Assim que
-propagar:
-   - Na Hostinger, apagar os registros `@` e `www` de estacionamento e criar:
-     `A @ → 216.198.79.1` e `CNAME www → 3d96bc1e85d4e712.vercel-dns-017.com`
-   - Apex e www **já estão cadastrados no projeto da Vercel**
-   - Trocar `NEXT_PUBLIC_SITE_URL` para `https://linkfive.com.br` e redeployar.
-     É a variável que o **QR Code imprime** — nada de material impresso antes
-     disso.
-   - Rodar a bateria contra o domínio novo
+Três planos: **Grátis**, **Starter** (R$ 19,90/mês ou R$ 199,90/ano) e **Pro**
+(R$ 39,90/mês ou R$ 399/ano). O Business saiu e foi absorvido pelo Pro — há um
+mapa de legado em `limites.ts` para contas antigas.
 
-**2. Lastlink — falta o Alessandro:** criar os 3 produtos (Starter 9,90 /
-Pro 19,90 / Business 39,90, recorrentes), cadastrar o webhook
+Dois tetos para links diretos: **ativos** (10.000) e **criados por mês** (100
+no Grátis, 300 no Starter). O primeiro é número de vitrine; o segundo é o que
+segura o uso de verdade.
+
+Duas coisas do concorrente que **não** copiamos, e por quê: anúncios no plano
+pago e QR Code cobrado. Ambos tirariam algo de quem já tem.
+
+### Identidade visual (revisão de 08/09/2026)
+
+Era violeta + âmbar; virou **azul**, a pedido, seguindo referência de agência:
+fundo azul-marinho `#050a18`, ação azul elétrico `#1e6bff`, acento ciano
+`#38bdf8`. Verde segue proibido.
+
+Nota honesta registrada no CSS: essa família de azul é a mesma do url.gratis.
+Ganhamos cara de produto de tecnologia e perdemos parte da distinção.
+
+**Regra que vale para sempre:** nunca fabricar prova social. Nada de logo de
+cliente, depoimento ou número de usuários inventado. A faixa de números do
+hero traz fatos do produto, conferíveis abrindo o site.
+
+### PARADO EM (08/09/2026, fim do dia) — retomar por aqui
+
+**1. ~~Domínio~~ FEITO.** `linkfive.com.br` no ar com HTTPS, DNS na Hostinger
+(`A @ → 216.198.79.1`), `NEXT_PUBLIC_SITE_URL` já apontando pro domínio
+próprio, verificado no build. **Pode imprimir QR Code.**
+
+**2. Lastlink — falta o Alessandro:** criar os produtos (mensal e anual =
+4 produtos), cadastrar o webhook
 `/api/webhooks/lastlink` (token em `projetos/linkfive/.env.local`, na variável
 `LASTLINK_WEBHOOK_SECRET`, já espelhado na Vercel), e passar os **IDs dos
 produtos** e os **links de checkout**. Aí é só preencher `LASTLINK_PRODUTOS` e
