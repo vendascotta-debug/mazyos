@@ -369,10 +369,11 @@ export async function registrarView(
   pageId: string,
   device: string | null,
   referrer: string | null,
+  country: string | null = null,
 ): Promise<void> {
   await q(
-    "INSERT INTO page_views (id, page_id, device, referrer, created_at) VALUES (?, ?, ?, ?, ?)",
-    [uid("v_"), pageId, device, referrer, nowIso()],
+    "INSERT INTO page_views (id, page_id, device, referrer, country, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+    [uid("v_"), pageId, device, referrer, country, nowIso()],
   );
   await somarNoDia(pageId, "views");
 }
@@ -763,4 +764,126 @@ export async function contarCurtosNoMes(userId: string): Promise<number> {
     [userId, inicioDoMes],
   );
   return Number(r?.n ?? 0);
+}
+
+// ---------------------------------------------------------------------------
+// MÉTRICAS DETALHADAS
+//
+// Origem, dispositivo e país. Os dois primeiros já eram gravados desde o
+// começo e nunca tinham sido mostrados em lugar nenhum — este bloco só traz
+// para a tela o que o banco já guardava.
+// ---------------------------------------------------------------------------
+
+export interface Fatia {
+  rotulo: string;
+  n: number;
+  pct: number;
+}
+
+function comPercentual(linhas: { rotulo: string; n: number }[]): Fatia[] {
+  const total = linhas.reduce((s, l) => s + l.n, 0) || 1;
+  return linhas.map((l) => ({ ...l, pct: Math.round((l.n / total) * 100) }));
+}
+
+/** Data de N dias atrás, no formato do `created_at`. */
+function desdeDias(dias: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - dias);
+  return d.toISOString();
+}
+
+/**
+ * De onde vieram as visitas.
+ *
+ * O referrer chega como URL inteira; o que interessa é o domínio. Sem
+ * referrer significa acesso direto — alguém que digitou, escaneou o QR ou
+ * tocou no link dentro de um app que não informa origem (o WhatsApp é assim).
+ * Isso costuma ser a maior fatia, e chamar de "Desconhecido" confundiria.
+ */
+export async function rankingOrigens(
+  userId: string,
+  pageId: string,
+  dias: number,
+  limite = 8,
+): Promise<Fatia[]> {
+  if (!(await paginaDoDono(userId, pageId))) return [];
+  const rows = await q<{ referrer: string | null; n: string }>(
+    `SELECT pv.referrer, COUNT(*) AS n
+       FROM page_views pv
+       JOIN pages ON pages.id = pv.page_id
+      WHERE pv.page_id = ? AND pages.user_id = ? AND pv.created_at >= ?
+      GROUP BY pv.referrer`,
+    [pageId, userId, desdeDias(dias)],
+  );
+
+  const porDominio = new Map<string, number>();
+  for (const r of rows) {
+    let chave = "Acesso direto";
+    if (r.referrer) {
+      try {
+        chave = new URL(r.referrer).hostname.replace(/^www\./, "");
+      } catch {
+        chave = r.referrer.slice(0, 40);
+      }
+    }
+    porDominio.set(chave, (porDominio.get(chave) ?? 0) + Number(r.n));
+  }
+
+  return comPercentual(
+    [...porDominio.entries()]
+      .map(([rotulo, n]) => ({ rotulo, n }))
+      .sort((a, b) => b.n - a.n)
+      .slice(0, limite),
+  );
+}
+
+const NOME_DISPOSITIVO: Record<string, string> = {
+  mobile: "Celular",
+  tablet: "Tablet",
+  desktop: "Computador",
+};
+
+export async function rankingDispositivos(
+  userId: string,
+  pageId: string,
+  dias: number,
+): Promise<Fatia[]> {
+  if (!(await paginaDoDono(userId, pageId))) return [];
+  const rows = await q<{ device: string | null; n: string }>(
+    `SELECT pv.device, COUNT(*) AS n
+       FROM page_views pv
+       JOIN pages ON pages.id = pv.page_id
+      WHERE pv.page_id = ? AND pages.user_id = ? AND pv.created_at >= ?
+      GROUP BY pv.device
+      ORDER BY n DESC`,
+    [pageId, userId, desdeDias(dias)],
+  );
+  return comPercentual(
+    rows.map((r) => ({
+      rotulo: NOME_DISPOSITIVO[r.device ?? ""] ?? "Outro",
+      n: Number(r.n),
+    })),
+  );
+}
+
+export async function rankingPaises(
+  userId: string,
+  pageId: string,
+  dias: number,
+  limite = 8,
+): Promise<Fatia[]> {
+  if (!(await paginaDoDono(userId, pageId))) return [];
+  const rows = await q<{ country: string | null; n: string }>(
+    `SELECT pv.country, COUNT(*) AS n
+       FROM page_views pv
+       JOIN pages ON pages.id = pv.page_id
+      WHERE pv.page_id = ? AND pages.user_id = ? AND pv.created_at >= ?
+      GROUP BY pv.country
+      ORDER BY n DESC
+      LIMIT ${Number(limite)}`,
+    [pageId, userId, desdeDias(dias)],
+  );
+  return comPercentual(
+    rows.map((r) => ({ rotulo: r.country ?? "Desconhecido", n: Number(r.n) })),
+  );
 }

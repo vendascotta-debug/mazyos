@@ -14,6 +14,7 @@ import {
   UserSquare2,
   Users,
   ShieldCheck,
+  Gauge,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 
@@ -26,6 +27,7 @@ const ITENS = [
   { href: "/app/analytics", label: "Analytics", icone: BarChart3 },
   { href: "/app/qrcode", label: "QR Code", icone: QrCode },
   { href: "/app/aparencia", label: "Aparência", icone: Palette },
+  { href: "/app/consumo", label: "Consumo", icone: Gauge },
   { href: "/app/planos", label: "Planos", icone: Sparkles },
   { href: "/app/config", label: "Configurações", icone: Settings },
 ];

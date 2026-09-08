@@ -50,9 +50,12 @@ export async function POST(req: Request) {
   }
 
   const referrer = req.headers.get("referer");
+  // A Vercel entrega o país no cabeçalho. Fora dela vem nulo, e a tela mostra
+  // "Desconhecido" em vez de inventar uma origem.
+  const pais = req.headers.get("x-vercel-ip-country");
 
   if (parsed.data.tipo === "view") {
-    await registrarView(page.id, device, referrer);
+    await registrarView(page.id, device, referrer, pais);
     return NextResponse.json({ ok: true });
   }
 

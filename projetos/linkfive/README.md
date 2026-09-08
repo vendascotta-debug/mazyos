@@ -65,7 +65,10 @@ Testado ponta a ponta em 07/09/2026 — 81 verificações, todas passando
 - [x] Publicar e despublicar
 - [x] Contador de visualizações e de cliques, com rollup diário
 - [x] Dashboard com métricas, gráficos e ranking de links
-- [x] Analytics com filtro de período
+- [x] Analytics com filtro de período, origem das visitas, tipo de aparelho e
+      país — com **cadeado** no que o plano não cobre, em vez de esconder
+- [x] **Tela de Consumo**: barras de uso, limite atingido e a data em que a
+      cota mensal zera
 - [x] QR Code (ver, baixar PNG, imprimir SVG)
 - [x] 5 temas visuais
 - [x] Onboarding de 5 etapas

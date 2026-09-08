@@ -46,6 +46,10 @@ export interface Plano {
   analyticsDias: number;
   /** Formulário de captura e aba de Leads. */
   formularios: boolean;
+  /** De onde veio a visita e em que aparelho — dados que já coletamos. */
+  metricasDetalhadas: boolean;
+  /** País de origem da visita. */
+  metricasGeo: boolean;
   /** Escolher tema. */
   temas: boolean;
   /** Editar cor, fonte e formato de botão além do tema. */
@@ -74,6 +78,8 @@ export const PLANOS: Record<PlanId, Plano> = {
     // upgrade do concorrente, e funciona.
     analyticsDias: 3,
     formularios: false,
+    metricasDetalhadas: false,
+    metricasGeo: false,
     temas: false,
     personalizacaoAvancada: false,
     marca: true,
@@ -92,6 +98,8 @@ export const PLANOS: Record<PlanId, Plano> = {
     maxMembros: 5,
     analyticsDias: 60,
     formularios: true,
+    metricasDetalhadas: true,
+    metricasGeo: false,
     temas: true,
     personalizacaoAvancada: true,
     marca: false,
@@ -110,6 +118,8 @@ export const PLANOS: Record<PlanId, Plano> = {
     maxMembros: 20,
     analyticsDias: 365,
     formularios: true,
+    metricasDetalhadas: true,
+    metricasGeo: true,
     temas: true,
     personalizacaoAvancada: true,
     marca: false,
@@ -127,6 +137,8 @@ export const PLANOS: Record<PlanId, Plano> = {
     maxMembros: 20,
     analyticsDias: 365,
     formularios: true,
+    metricasDetalhadas: true,
+    metricasGeo: true,
     temas: true,
     personalizacaoAvancada: true,
     marca: false,

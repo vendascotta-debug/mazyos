@@ -1,12 +1,28 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { janelaAnalytics, plano } from "@/lib/limites";
-import { paginaDoUsuario, ranking, serieDiaria, somarTotais } from "@/lib/repo";
+import {
+  paginaDoUsuario,
+  ranking,
+  rankingDispositivos,
+  rankingOrigens,
+  rankingPaises,
+  serieDiaria,
+  somarTotais,
+} from "@/lib/repo";
 import { GraficoLinha } from "@/components/app/GraficoLinha";
+import {
+  AMOSTRA_DISPOSITIVOS,
+  AMOSTRA_ORIGENS,
+  AMOSTRA_PAISES,
+  Bloqueado,
+  ListaFatias,
+} from "@/components/app/Bloqueado";
 
 export const dynamic = "force-dynamic";
 
-/** Períodos do filtro. O plano recorta: o Free pede 90 e recebe 7. */
+/** Períodos do filtro. O plano recorta: o Grátis pede 90 e recebe 3. */
 const PERIODOS = [
   { chave: "hoje", label: "Hoje", dias: 1 },
   { chave: "7d", label: "7 dias", dias: 7 },
@@ -32,6 +48,14 @@ export default async function Analytics({
   const totais = somarTotais(serie);
   const top = await ranking(user.id, page.id, dias, 10);
 
+  // Só consulta o que o plano mostra: buscar dado para depois esconder é
+  // trabalho de banco jogado fora em toda visita à tela.
+  const origens = p.metricasDetalhadas ? await rankingOrigens(user.id, page.id, dias) : [];
+  const dispositivos = p.metricasDetalhadas
+    ? await rankingDispositivos(user.id, page.id, dias)
+    : [];
+  const paises = p.metricasGeo ? await rankingPaises(user.id, page.id, dias) : [];
+
   const cards: [string, string | number][] = [
     ["Visualizações", totais.views],
     ["Cliques", totais.clicks],
@@ -46,7 +70,16 @@ export default async function Analytics({
         <div>
           <h1 className="text-xl font-bold tracking-tight">Analytics</h1>
           <p className="mt-1 text-sm text-ink-500">
-            {cortado ? `O plano ${p.nome} mostra ${p.analyticsDias} dias.` : `Últimos ${dias} dias.`}
+            {cortado ? (
+              <>
+                O plano {p.nome} guarda {p.analyticsDias} dias de histórico.{" "}
+                <Link href="/app/planos" className="text-brand-600 hover:underline">
+                  Ver planos
+                </Link>
+              </>
+            ) : (
+              `Últimos ${dias} dias.`
+            )}
           </p>
         </div>
 
@@ -87,21 +120,71 @@ export default async function Analytics({
         </section>
       </div>
 
-      <section className="card p-5">
-        <h2 className="mb-4 font-semibold">Cliques por link</h2>
-        {top.length === 0 ? (
-          <p className="text-sm text-ink-400">Nenhum clique no período.</p>
-        ) : (
-          <ul className="divide-y divide-ink-100">
-            {top.map((l) => (
-              <li key={l.id} className="flex items-center justify-between gap-3 py-2.5">
-                <span className="min-w-0 truncate text-sm">{l.title}</span>
-                <span className="shrink-0 text-sm font-semibold">{l.cliques}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      {/* --- De onde vem e em que aparelho --- */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="card overflow-hidden p-5">
+          <h2 className="mb-4 font-semibold">De onde vieram</h2>
+          {p.metricasDetalhadas ? (
+            <ListaFatias fatias={origens} />
+          ) : (
+            <Bloqueado
+              titulo="Descubra de onde vem sua audiência"
+              descricao="Instagram, Google, WhatsApp ou acesso direto — saiba onde investir seu tempo."
+              planoNecessario="starter"
+            >
+              <ListaFatias fatias={AMOSTRA_ORIGENS} />
+            </Bloqueado>
+          )}
+        </section>
+
+        <section className="card overflow-hidden p-5">
+          <h2 className="mb-4 font-semibold">Em que aparelho</h2>
+          {p.metricasDetalhadas ? (
+            <ListaFatias fatias={dispositivos} cor="#0891b2" />
+          ) : (
+            <Bloqueado
+              titulo="Celular, tablet ou computador"
+              descricao="Saiba em que tela sua página é aberta e ajuste o que aparece primeiro."
+              planoNecessario="starter"
+            >
+              <ListaFatias fatias={AMOSTRA_DISPOSITIVOS} cor="#0891b2" />
+            </Bloqueado>
+          )}
+        </section>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="card overflow-hidden p-5">
+          <h2 className="mb-4 font-semibold">Países</h2>
+          {p.metricasGeo ? (
+            <ListaFatias fatias={paises} cor="#db2777" />
+          ) : (
+            <Bloqueado
+              titulo="De que país abriram sua página"
+              descricao="Útil para quem atende fora do Brasil ou vende para brasileiros no exterior."
+              planoNecessario="pro"
+            >
+              <ListaFatias fatias={AMOSTRA_PAISES} cor="#db2777" />
+            </Bloqueado>
+          )}
+        </section>
+
+        <section className="card p-5">
+          <h2 className="mb-4 font-semibold">Cliques por link</h2>
+          {top.length === 0 ? (
+            <p className="text-sm text-ink-400">Nenhum clique no período.</p>
+          ) : (
+            <ul className="divide-y divide-ink-100">
+              {top.map((l) => (
+                <li key={l.id} className="flex items-center justify-between gap-3 py-2.5">
+                  <span className="min-w-0 truncate text-sm">{l.title}</span>
+                  <span className="shrink-0 text-sm font-semibold">{l.cliques}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

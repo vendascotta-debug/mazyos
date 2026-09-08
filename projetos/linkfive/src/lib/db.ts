@@ -344,6 +344,12 @@ CREATE TABLE IF NOT EXISTS webhook_events (
   erro TEXT,
   created_at TEXT NOT NULL
 );
+-- País de quem visitou. A Vercel entrega no cabeçalho x-vercel-ip-country;
+-- fora dela fica nulo, e a tela mostra "Desconhecido" em vez de mentir.
+ALTER TABLE page_views ADD COLUMN IF NOT EXISTS country TEXT;
+ALTER TABLE link_clicks ADD COLUMN IF NOT EXISTS country TEXT;
+ALTER TABLE short_clicks ADD COLUMN IF NOT EXISTS country TEXT;
+
 CREATE INDEX IF NOT EXISTS idx_webhook_data ON webhook_events(created_at);
 CREATE INDEX IF NOT EXISTS idx_webhook_email ON webhook_events(email);
 
