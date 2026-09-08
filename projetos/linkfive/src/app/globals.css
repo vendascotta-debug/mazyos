@@ -114,3 +114,96 @@ body {
     @apply font-normal tracking-tight;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Movimento.
+
+   Tudo aqui é CSS puro — nenhuma biblioteca de animação. A landing é a página
+   que mais gente abre pela primeira vez, e num 4G cada KB de JavaScript custa
+   mais que qualquer efeito.
+
+   Toda animação respeita `prefers-reduced-motion`: quem pediu ao sistema para
+   reduzir movimento (por enjoo, vertigem ou preferência) recebe a página
+   parada, não uma versão degradada.
+--------------------------------------------------------------------------- */
+
+@keyframes lf-sobe {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes lf-flutua {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes lf-brilho {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.08);
+  }
+}
+
+@layer components {
+  /* Entra ao aparecer na tela. O estado inicial fica invisível, e a classe
+     `.visivel` (posta pelo observador) dispara a animação. */
+  .revelar {
+    opacity: 0;
+  }
+  .revelar.visivel {
+    animation: lf-sobe 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Escalona os filhos: cada um entra um pouco depois do anterior. Sem isso,
+     uma grade de seis cartões aparece como um bloco só e o efeito some. */
+  .revelar.visivel > *:nth-child(1) { animation-delay: 0ms; }
+  .revelar.visivel > *:nth-child(2) { animation-delay: 70ms; }
+  .revelar.visivel > *:nth-child(3) { animation-delay: 140ms; }
+  .revelar.visivel > *:nth-child(4) { animation-delay: 210ms; }
+  .revelar.visivel > *:nth-child(5) { animation-delay: 280ms; }
+  .revelar.visivel > *:nth-child(6) { animation-delay: 350ms; }
+
+  .flutua {
+    animation: lf-flutua 6s ease-in-out infinite;
+  }
+
+  .brilho {
+    animation: lf-brilho 7s ease-in-out infinite;
+  }
+
+  /* Cartão que sobe de leve no hover. Transform só — mexer em box-shadow ou
+     em `top` obrigaria o navegador a recalcular layout a cada quadro. */
+  .sobe-no-hover {
+    transition: transform 0.2s ease;
+  }
+  .sobe-no-hover:hover {
+    transform: translateY(-3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .revelar,
+  .revelar.visivel,
+  .flutua,
+  .brilho,
+  .sobe-no-hover {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

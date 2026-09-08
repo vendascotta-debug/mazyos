@@ -16,6 +16,7 @@ import { checkoutDoPlano } from "@/lib/cobranca";
 import { TabelaPrecos } from "@/components/landing/TabelaPrecos";
 import { HeroCelular } from "@/components/landing/HeroCelular";
 import { GeradorHero } from "@/components/landing/GeradorHero";
+import { Revelar } from "@/components/landing/Revelar";
 
 // ---------------------------------------------------------------------------
 // POSICIONAMENTO (revisto em 07/09/2026).
@@ -180,57 +181,88 @@ export default function Landing() {
 
   return (
     <div className="bg-white">
-      {/* --- Topo --- */}
-      <header className="sticky top-0 z-40 border-b border-ink-100 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-[1120px] items-center justify-between px-5 py-3.5">
-          <Logo />
-          <nav className="flex items-center gap-2">
-            <Link href="/entrar" className="btn-ghost">
-              Entrar
-            </Link>
-            <Link href="/cadastrar" className="btn-brand">
-              Criar grátis
-            </Link>
-          </nav>
-        </div>
-      </header>
+      {/* ---------------------------------------------------------------------
+          TOPO E HERO — fundo escuro.
 
-      {/* --- Hero --- */}
-      <section className="mx-auto grid max-w-[1120px] items-center gap-10 px-5 py-14 lg:grid-cols-[minmax(0,1fr)_320px] lg:py-20">
-        <div>
-          <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
-            Feito para quem vende
-          </p>
+          O contraste alto faz duas coisas: separa a promessa do resto da
+          página e joga toda a atenção no cartão branco do gerador, que é o
+          único lugar onde o visitante pode agir agora.
+      --------------------------------------------------------------------- */}
+      <div className="relative overflow-hidden bg-ink-950">
+        {/* Dois halos de luz atrás do conteúdo, respirando devagar. São
+            divs com blur, não imagem: nada pra baixar. */}
+        <div
+          className="brilho pointer-events-none absolute -left-40 -top-40 h-[520px] w-[520px] rounded-full bg-brand-600/30 blur-[120px]"
+          aria-hidden="true"
+        />
+        <div
+          className="brilho pointer-events-none absolute -bottom-52 right-0 h-[460px] w-[460px] rounded-full bg-accent-500/15 blur-[130px]"
+          style={{ animationDelay: "2.5s" }}
+          aria-hidden="true"
+        />
 
-          <h1 className="display text-[42px] leading-[1.06] text-ink-900 sm:text-[56px]">
-            Seu link. Sua marca.
-            <br />
-            <span className="text-brand-500">Seus clientes.</span>
-          </h1>
+        <header className="sticky top-0 z-40 border-b border-white/10 bg-ink-950/80 backdrop-blur">
+          <div className="mx-auto flex max-w-[1120px] items-center justify-between px-5 py-3.5">
+            <span className="text-white">
+              <Logo mono />
+            </span>
+            <nav className="flex items-center gap-2">
+              <Link
+                href="/entrar"
+                className="rounded-[10px] border border-white/20 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10"
+              >
+                Entrar
+              </Link>
+              <Link href="/cadastrar" className="btn-accent">
+                Criar grátis
+              </Link>
+            </nav>
+          </div>
+        </header>
 
-          <p className="mt-5 max-w-[520px] text-[17px] leading-relaxed text-ink-600">
-            Não é só reunir seus canais num link. É transformar quem chega em contato salvo, pronto
-            pra você vender.
-          </p>
+        <section className="relative mx-auto grid max-w-[1120px] items-center gap-10 px-5 py-14 lg:grid-cols-[minmax(0,1fr)_320px] lg:py-20">
+          <div>
+            <p className="revelar visivel mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white">
+              Feito para quem vende
+            </p>
 
-          <div className="mt-7 flex flex-wrap gap-3">
-            <Link href="/cadastrar" className="btn-accent px-5 py-3 text-[15px]">
-              CRIAR MINHA PÁGINA GRÁTIS
-            </Link>
-            <a href="#como-funciona" className="btn-ghost px-5 py-3 text-[15px]">
-              VER COMO FUNCIONA
-            </a>
+            <h1 className="display text-[42px] leading-[1.06] text-white sm:text-[56px]">
+              Seu link. Sua marca.
+              <br />
+              <span className="text-brand-300">Seus clientes.</span>
+            </h1>
+
+            <p className="mt-5 max-w-[520px] text-[17px] leading-relaxed text-ink-300">
+              Não é só reunir seus canais num link. É transformar quem chega em contato salvo,
+              pronto pra você vender.
+            </p>
+
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link href="/cadastrar" className="btn-accent px-5 py-3 text-[15px]">
+                CRIAR MINHA PÁGINA GRÁTIS
+              </Link>
+              <a
+                href="#como-funciona"
+                className="rounded-[10px] border border-white/25 px-5 py-3 text-[15px] font-medium text-white transition-colors hover:bg-white/10"
+              >
+                VER COMO FUNCIONA
+              </a>
+            </div>
+
+            <p className="mt-4 text-sm text-ink-400">
+              Grátis para sempre no plano inicial. Sem cartão de crédito.
+            </p>
+
+            <GeradorHero />
           </div>
 
-          <p className="mt-4 text-sm text-ink-400">
-            Grátis para sempre no plano inicial. Sem cartão de crédito.
-          </p>
-
-          <GeradorHero />
-        </div>
-
-        <HeroCelular />
-      </section>
+          {/* O celular flutua devagar: dá vida sem competir com o gerador,
+              que é onde o visitante precisa clicar. */}
+          <div className="flutua">
+            <HeroCelular />
+          </div>
+        </section>
+      </div>
 
       {/* --- Como funciona --- */}
       <section id="como-funciona" className="border-y border-ink-100 bg-ink-50 py-16">
@@ -238,7 +270,7 @@ export default function Landing() {
           <h2 className="display text-[32px] text-ink-900">Como funciona</h2>
           <p className="mt-2 text-ink-600">Três passos. Nenhum deles envolve programar nada.</p>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
+          <Revelar className="mt-8 grid gap-4 md:grid-cols-3">
             {COMO_FUNCIONA.map((c) => (
               <div key={c.n} className="card p-6">
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-500 text-sm font-bold text-white">
@@ -248,7 +280,7 @@ export default function Landing() {
                 <p className="mt-1.5 text-sm leading-relaxed text-ink-600">{c.texto}</p>
               </div>
             ))}
-          </div>
+          </Revelar>
         </div>
       </section>
 
@@ -260,7 +292,7 @@ export default function Landing() {
             O concorrente te dá uma lista de links. Aqui, quem chega vira contato no seu painel.
           </p>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <Revelar className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {RECURSOS.map(({ icone: Icone, titulo, texto }) => (
               <div key={titulo} className="card p-6">
                 <span className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-brand-50">
@@ -270,7 +302,7 @@ export default function Landing() {
                 <p className="mt-1.5 text-sm leading-relaxed text-ink-600">{texto}</p>
               </div>
             ))}
-          </div>
+          </Revelar>
         </div>
       </section>
 
@@ -279,7 +311,7 @@ export default function Landing() {
         <div className="mx-auto max-w-[1120px] px-5">
           <h2 className="display text-[32px] text-ink-900">Para quem é</h2>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
+          <Revelar className="mt-8 grid gap-4 md:grid-cols-3">
             {PARA_QUEM.map((g) => (
               <div key={g.grupo} className="card p-6">
                 <h3 className="font-semibold text-brand-600">{g.grupo}</h3>
@@ -293,7 +325,7 @@ export default function Landing() {
                 </ul>
               </div>
             ))}
-          </div>
+          </Revelar>
         </div>
       </section>
 
@@ -302,14 +334,14 @@ export default function Landing() {
         <div className="mx-auto max-w-[1120px] px-5">
           <h2 className="display text-[32px] text-ink-900">Exemplos de utilização</h2>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
+          <Revelar className="mt-8 grid gap-4 md:grid-cols-3">
             {EXEMPLOS.map((e) => (
               <div key={e.titulo} className="card border-l-4 border-l-accent-500 p-6">
                 <h3 className="font-semibold">{e.titulo}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-ink-600">{e.texto}</p>
               </div>
             ))}
-          </div>
+          </Revelar>
         </div>
       </section>
 

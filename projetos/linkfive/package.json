@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "db:status": "node -e \"fetch('http://localhost:3000/api/status').then(r=>r.json()).then(r=>console.log(r)).catch(()=>console.error('O servidor precisa estar rodando (npm run dev).'))\"",
-    "teste": "node scripts/teste-mvp.mjs"
+    "teste": "node scripts/teste-mvp.mjs",
+    "teste:animacao": "node scripts/teste-animacao.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",

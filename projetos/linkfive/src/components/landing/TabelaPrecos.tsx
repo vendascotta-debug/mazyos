@@ -76,12 +76,16 @@ export function TabelaPrecos({
           return (
             <div
               key={id}
-              className={`card relative flex flex-col p-6 ${
-                p.destaque ? "border-brand-500 ring-2 ring-brand-100" : ""
+              className={`relative flex flex-col rounded-[14px] border p-6 sobe-no-hover ${
+                p.destaque
+                  ? // O plano que queremos vender fica escuro: num quadro de
+                    // três cartões brancos, o escuro é para onde o olho vai.
+                    "border-ink-900 bg-ink-900 text-white shadow-xl"
+                  : "border-ink-200 bg-white"
               }`}
             >
               {p.destaque && (
-                <span className="absolute -top-2.5 left-6 rounded-full bg-brand-500 px-2.5 py-0.5 text-[11px] font-semibold text-white">
+                <span className="absolute -top-2.5 left-6 rounded-full bg-accent-500 px-2.5 py-0.5 text-[11px] font-bold text-ink-900">
                   {p.destaque}
                 </span>
               )}
@@ -91,7 +95,7 @@ export function TabelaPrecos({
               <p className="mt-2 text-[28px] font-bold leading-none tracking-tight">
                 {precoFormatado(p, ciclo)}
                 {!gratuito && (
-                  <span className="text-sm font-medium text-ink-400">
+                  <span className={`text-sm font-medium ${p.destaque ? "text-ink-400" : "text-ink-400"}`}>
                     /{ciclo === "anual" ? "ano" : "mês"}
                   </span>
                 )}
@@ -99,7 +103,7 @@ export function TabelaPrecos({
 
               {/* No anual, o que o cliente compara é o mês. Sem esta linha ele
                   vê "R$ 199,90" e acha caro sem fazer a conta. */}
-              <p className="mt-1 h-5 text-sm text-ink-500">
+              <p className={`mt-1 h-5 text-sm ${p.destaque ? "text-ink-300" : "text-ink-500"}`}>
                 {!gratuito && ciclo === "anual" && mensalNoAnual(p)
                   ? `equivale a ${mensalNoAnual(p)}/mês`
                   : gratuito
@@ -107,7 +111,7 @@ export function TabelaPrecos({
                     : ""}
               </p>
 
-              <ul className="mt-5 flex-1 space-y-2 text-sm text-ink-600">
+              <ul className={`mt-5 flex-1 space-y-2 text-sm ${p.destaque ? "text-ink-200" : "text-ink-600"}`}>
                 <Item>
                   {p.maxPaginas === 1 ? "1 página" : `${p.maxPaginas.toLocaleString("pt-BR")} páginas`}
                 </Item>
@@ -136,32 +140,51 @@ export function TabelaPrecos({
                 </Item>
               </ul>
 
-              {atual ? (
-                <button className="btn-ghost mt-6" disabled>
-                  Plano atual
-                </button>
-              ) : gratuito ? (
-                <a href={ctaGratis ?? "/cadastrar"} className="btn-ghost mt-6">
-                  Começar grátis
-                </a>
-              ) : link ? (
-                <a
-                  href={link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`mt-6 ${p.destaque ? "btn-brand" : "btn-dark"}`}
-                >
-                  {cta} {p.nome}
-                </a>
-              ) : (
-                <button
-                  className="btn-ghost mt-6"
-                  disabled
-                  title={semAnual ? "Este plano não tem opção anual" : "Checkout ainda não configurado"}
-                >
-                  {semAnual ? "Só no mensal" : "Em breve"}
-                </button>
-              )}
+              {/* No cartão escuro o botão fantasma some no fundo — ali ele
+                  vira contorno claro. */}
+              {(() => {
+                const fantasma = p.destaque
+                  ? "mt-6 inline-flex items-center justify-center rounded-[10px] border border-white/25 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+                  : "btn-ghost mt-6";
+
+                if (atual) {
+                  return (
+                    <button className={fantasma} disabled>
+                      Plano atual
+                    </button>
+                  );
+                }
+                if (gratuito) {
+                  return (
+                    <a href={ctaGratis ?? "/cadastrar"} className={fantasma}>
+                      Começar grátis
+                    </a>
+                  );
+                }
+                if (link) {
+                  return (
+                    <a
+                      href={link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`mt-6 ${p.destaque ? "btn-accent" : "btn-dark"}`}
+                    >
+                      {cta} {p.nome}
+                    </a>
+                  );
+                }
+                return (
+                  <button
+                    className={fantasma}
+                    disabled
+                    title={
+                      semAnual ? "Este plano não tem opção anual" : "Checkout ainda não configurado"
+                    }
+                  >
+                    {semAnual ? "Só no mensal" : "Em breve"}
+                  </button>
+                );
+              })()}
             </div>
           );
         })}
