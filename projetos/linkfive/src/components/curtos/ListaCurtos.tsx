@@ -3,11 +3,23 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Check, Copy, Download, ExternalLink, Loader2, Plus, QrCode, Trash2 } from "lucide-react";
+import {
+  CalendarClock,
+  Check,
+  Copy,
+  Download,
+  ExternalLink,
+  Lock,
+  Pencil,
+  Plus,
+  QrCode,
+  Trash2,
+} from "lucide-react";
 import type { ShortLink } from "@/lib/curtos";
 import { formatarTelefone } from "@/lib/links";
 import { dominioDe } from "@/lib/curtos";
 import { ModalCurto } from "@/components/curtos/ModalCurto";
+import { ModalEditarCurto } from "@/components/curtos/ModalEditarCurto";
 
 /**
  * Lista dos links curtos diretos.
@@ -20,15 +32,19 @@ export function ListaCurtos({
   maxCurtos,
   nomePlano,
   site,
+  podeGerir,
 }: {
   curtos: ShortLink[];
   maxCurtos: number | null;
   nomePlano: string;
   site: string;
+  /** Expiração, senha e troca de destino são de plano pago. */
+  podeGerir: boolean;
 }) {
   const router = useRouter();
   const [curtos, setCurtos] = useState(iniciais);
   const [modal, setModal] = useState(false);
+  const [editando, setEditando] = useState<ShortLink | null>(null);
   const [copiado, setCopiado] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -187,6 +203,30 @@ export function ListaCurtos({
                     >
                       {ocupado === c.id ? "..." : c.active ? "Ativo" : "Pausado"}
                     </button>
+
+                    {c.temSenha && (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-1 text-[11px] font-semibold text-brand-700"
+                        title="Pede senha para abrir"
+                      >
+                        <Lock size={11} /> Com senha
+                      </span>
+                    )}
+
+                    {c.expiraEm && (
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold ${
+                          new Date(c.expiraEm).getTime() < Date.now()
+                            ? "bg-danger-500/10 text-danger-500"
+                            : "bg-ink-100 text-ink-600"
+                        }`}
+                      >
+                        <CalendarClock size={11} />
+                        {new Date(c.expiraEm).getTime() < Date.now()
+                          ? "Expirado"
+                          : `até ${new Date(c.expiraEm).toLocaleDateString("pt-BR")}`}
+                      </span>
+                    )}
                   </div>
 
                   <button
@@ -234,6 +274,12 @@ export function ListaCurtos({
                       <ExternalLink size={14} /> Testar
                     </a>
                     <button
+                      onClick={() => setEditando(c)}
+                      className="btn-ghost px-3 py-1.5 text-sm"
+                    >
+                      <Pencil size={14} /> Editar
+                    </button>
+                    <button
                       onClick={() => excluir(c)}
                       className="btn-ghost px-3 py-1.5 text-sm text-ink-500 hover:text-danger-500"
                     >
@@ -245,6 +291,18 @@ export function ListaCurtos({
             </li>
           ))}
         </ul>
+      )}
+
+      {editando && (
+        <ModalEditarCurto
+          curto={editando}
+          podeGerir={podeGerir}
+          onFechar={() => setEditando(null)}
+          onSalvo={(novo) => {
+            setCurtos((cs) => cs.map((c) => (c.id === novo.id ? novo : c)));
+            router.refresh();
+          }}
+        />
       )}
 
       {modal && (

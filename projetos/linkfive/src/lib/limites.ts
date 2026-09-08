@@ -50,6 +50,8 @@ export interface Plano {
   metricasDetalhadas: boolean;
   /** País de origem da visita. */
   metricasGeo: boolean;
+  /** Expiração, senha e troca de destino nos links diretos. */
+  gestaoLinks: boolean;
   /** Escolher tema. */
   temas: boolean;
   /** Editar cor, fonte e formato de botão além do tema. */
@@ -80,6 +82,7 @@ export const PLANOS: Record<PlanId, Plano> = {
     formularios: false,
     metricasDetalhadas: false,
     metricasGeo: false,
+    gestaoLinks: false,
     temas: false,
     personalizacaoAvancada: false,
     marca: true,
@@ -100,6 +103,7 @@ export const PLANOS: Record<PlanId, Plano> = {
     formularios: true,
     metricasDetalhadas: true,
     metricasGeo: false,
+    gestaoLinks: true,
     temas: true,
     personalizacaoAvancada: true,
     marca: false,
@@ -120,6 +124,7 @@ export const PLANOS: Record<PlanId, Plano> = {
     formularios: true,
     metricasDetalhadas: true,
     metricasGeo: true,
+    gestaoLinks: true,
     temas: true,
     personalizacaoAvancada: true,
     marca: false,
@@ -139,6 +144,7 @@ export const PLANOS: Record<PlanId, Plano> = {
     formularios: true,
     metricasDetalhadas: true,
     metricasGeo: true,
+    gestaoLinks: true,
     temas: true,
     personalizacaoAvancada: true,
     marca: false,
@@ -271,6 +277,16 @@ export function podeUsarFormularios(planId: PlanId): Veredito {
   return {
     permitido: false,
     motivo: "A captura de leads está disponível a partir do plano Starter.",
+    upgrade: "starter",
+  };
+}
+
+export function podeGerirLinks(planId: PlanId): Veredito {
+  if (plano(planId).gestaoLinks) return { permitido: true };
+  return {
+    permitido: false,
+    motivo:
+      "Expiração, senha e troca de destino estão disponíveis a partir do plano Starter.",
     upgrade: "starter",
   };
 }

@@ -139,6 +139,7 @@ export default async function Consumo() {
             {p.metricasDetalhadas ? "✓" : "🔒"} Origem das visitas e tipo de aparelho
           </li>
           <li>{p.metricasGeo ? "✓" : "🔒"} País de origem</li>
+          <li>{p.gestaoLinks ? "✓" : "🔒"} Expiração, senha e troca de destino nos links</li>
           <li>{p.formularios ? "✓" : "🔒"} Formulário de captura e painel de leads</li>
         </ul>
       </section>

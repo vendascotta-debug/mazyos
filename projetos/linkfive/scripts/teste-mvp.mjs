@@ -705,8 +705,165 @@ if (tokenWebhook && cfgWebhook.produtosMapeados) {
     depoisCancelar?.plan === "free",
     `plano=${depoisCancelar?.plan}`,
   );
-  await sqlDireto2.end();
+  
 }
+
+
+// --- GESTAO DE LINKS: expiracao, senha e troca de destino -------------------
+
+// A conta A esta no Free: nao pode usar nada disso.
+r = await a(`/api/curtos/${curtoCriado.id}`, {
+  method: "PATCH",
+  body: JSON.stringify({ expiraEm: "2030-01-01" }),
+});
+checa("Free NAO define expiracao", r.status === 402, `status ${r.status}`);
+
+r = await a(`/api/curtos/${curtoCriado.id}`, {
+  method: "PATCH",
+  body: JSON.stringify({ senha: "segredo" }),
+});
+checa("Free NAO protege com senha", r.status === 402, `status ${r.status}`);
+
+// Pausar continua livre: tirar do ar o que ja esta no ar nao pode depender de
+// assinatura.
+r = await a(`/api/curtos/${curtoCriado.id}`, {
+  method: "PATCH",
+  body: JSON.stringify({ active: true }),
+});
+checa("Free ainda consegue reativar o link", r.ok, `status ${r.status}`);
+
+// A conta B esta no Cortesia (concedida no bloco do admin): pode tudo.
+r = await b("/api/curtos", {
+  method: "POST",
+  body: JSON.stringify({ tipo: "whatsapp", title: "Gestao", numero: "11988887777" }),
+});
+const curtoGestao = (await r.json()).curto;
+checa("cria link para testar a gestao", r.ok && Boolean(curtoGestao?.code));
+
+// --- Troca de destino sem trocar o endereco --------------------------------
+const codigoOriginal = curtoGestao.code;
+r = await b(`/api/curtos/${curtoGestao.id}`, {
+  method: "PATCH",
+  body: JSON.stringify({ numero: "11977776666" }),
+});
+const trocado = (await r.json()).curto;
+checa("troca o destino", r.ok && trocado?.destino?.includes("5511977776666"), trocado?.destino);
+checa("o endereco curto NAO muda", trocado?.code === codigoOriginal, trocado?.code);
+
+r = await fetch(`${BASE}/w/${codigoOriginal}`, { redirect: "manual" });
+checa(
+  "o mesmo /w/ ja leva ao destino novo",
+  (r.headers.get("location") ?? "").includes("5511977776666"),
+  r.headers.get("location") ?? "",
+);
+
+// --- Senha ------------------------------------------------------------------
+r = await b(`/api/curtos/${curtoGestao.id}`, {
+  method: "PATCH",
+  body: JSON.stringify({ senha: "abrir123" }),
+});
+const comSenha = (await r.json()).curto;
+checa("define a senha do link", r.ok, `status ${r.status}`);
+checa("a API diz que tem senha", comSenha?.temSenha === true);
+checa(
+  "o hash da senha NAO sai na resposta",
+  !JSON.stringify(comSenha).includes("scrypt"),
+  "resposta limpa",
+);
+
+r = await fetch(`${BASE}/w/${codigoOriginal}`, { redirect: "manual" });
+checa(
+  "link com senha manda para a tela de senha",
+  (r.headers.get("location") ?? "").includes("/senha"),
+  r.headers.get("location") ?? "",
+);
+
+// Senha errada volta para a tela, sem revelar o destino.
+let corpo = new URLSearchParams({ senha: "errada" });
+r = await fetch(`${BASE}/w/${codigoOriginal}`, {
+  method: "POST",
+  headers: { "content-type": "application/x-www-form-urlencoded" },
+  body: corpo,
+  redirect: "manual",
+});
+const destinoErrado = r.headers.get("location") ?? "";
+checa("senha errada volta para a tela", destinoErrado.includes("/senha"), destinoErrado);
+checa("senha errada NAO revela o destino", !destinoErrado.includes("wa.me"), destinoErrado);
+
+// Senha certa redireciona.
+corpo = new URLSearchParams({ senha: "abrir123" });
+r = await fetch(`${BASE}/w/${codigoOriginal}`, {
+  method: "POST",
+  headers: { "content-type": "application/x-www-form-urlencoded" },
+  body: corpo,
+  redirect: "manual",
+});
+checa(
+  "senha certa abre o link",
+  (r.headers.get("location") ?? "").includes("5511977776666"),
+  r.headers.get("location") ?? "",
+);
+
+// Remover a senha volta o link a ser aberto.
+r = await b(`/api/curtos/${curtoGestao.id}`, {
+  method: "PATCH",
+  body: JSON.stringify({ senha: null }),
+});
+const semSenha = (await r.json()).curto;
+checa("remove a senha", r.ok && semSenha?.temSenha === false);
+
+// --- Expiracao ---------------------------------------------------------------
+r = await b(`/api/curtos/${curtoGestao.id}`, {
+  method: "PATCH",
+  body: JSON.stringify({ expiraEm: "2020-01-01" }),
+});
+checa("data no passado e recusada", r.status === 400, `status ${r.status}`);
+
+// Data futura: o link continua funcionando.
+r = await b(`/api/curtos/${curtoGestao.id}`, {
+  method: "PATCH",
+  body: JSON.stringify({ expiraEm: "2099-12-31" }),
+});
+const comValidade = (await r.json()).curto;
+checa("define validade futura", r.ok && Boolean(comValidade?.expiraEm));
+
+r = await fetch(`${BASE}/w/${codigoOriginal}`, { redirect: "manual" });
+checa(
+  "link dentro da validade continua abrindo",
+  (r.headers.get("location") ?? "").includes("wa.me"),
+  r.headers.get("location") ?? "",
+);
+
+// Expira de verdade: forca a data no passado direto no banco, que e o unico
+// jeito de simular a passagem do tempo sem esperar.
+await sqlDireto2.unsafe(
+  `UPDATE ${esquemaTeste}.short_links SET expira_em = $1 WHERE id = $2`,
+  ["2020-01-01T00:00:00.000Z", curtoGestao.id],
+);
+
+r = await fetch(`${BASE}/w/${codigoOriginal}`, { redirect: "manual" });
+const destinoExpirado = r.headers.get("location") ?? "";
+checa("link expirado avisa em vez de redirecionar", destinoExpirado.includes("/aviso"), destinoExpirado);
+checa("link expirado NAO revela o destino", !destinoExpirado.includes("wa.me"), destinoExpirado);
+
+r = await fetch(`${BASE}/w/${codigoOriginal}/aviso?motivo=expirado`);
+const htmlAviso = await r.text();
+checa("a tela de expirado abre", r.status === 200 && htmlAviso.includes("expirou"));
+
+// Limpar a validade traz o link de volta.
+r = await b(`/api/curtos/${curtoGestao.id}`, {
+  method: "PATCH",
+  body: JSON.stringify({ expiraEm: null }),
+});
+r = await fetch(`${BASE}/w/${codigoOriginal}`, { redirect: "manual" });
+checa(
+  "remover a validade reativa o link",
+  (r.headers.get("location") ?? "").includes("wa.me"),
+  r.headers.get("location") ?? "",
+);
+
+
+await sqlDireto2.end();
 
 console.log(falhas === 0 ? "\nTUDO PASSOU" : `\n${falhas} FALHA(S)`);
 process.exit(falhas === 0 ? 0 : 1);

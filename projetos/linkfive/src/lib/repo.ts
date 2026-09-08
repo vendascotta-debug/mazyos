@@ -593,6 +593,8 @@ interface ShortRow {
   mensagem: string | null;
   destino: string;
   active: number;
+  expira_em: string | null;
+  senha_hash: string | null;
   clicks_total: number;
   created_at: string;
   updated_at: string;
@@ -609,6 +611,9 @@ function toShort(r: ShortRow): ShortLink {
     mensagem: r.mensagem,
     destino: r.destino,
     active: Boolean(r.active),
+    expiraEm: r.expira_em,
+    // Só o booleano sai daqui: o hash nunca vai para a tela.
+    temSenha: Boolean(r.senha_hash),
     clicksTotal: Number(r.clicks_total),
     createdAt: r.created_at,
     updatedAt: r.updated_at,
@@ -675,6 +680,9 @@ export async function atualizarCurto(
     mensagem?: string | null;
     destino?: string;
     active?: boolean;
+    expiraEm?: string | null;
+    /** Hash pronto, nunca a senha em texto. */
+    senhaHash?: string | null;
   },
 ): Promise<ShortLink | null> {
   if (!(await curtoDoDono(userId, id))) return null;
@@ -687,6 +695,8 @@ export async function atualizarCurto(
     mensagem: campos.mensagem,
     destino: campos.destino,
     active: campos.active === undefined ? undefined : campos.active ? 1 : 0,
+    expira_em: campos.expiraEm,
+    senha_hash: campos.senhaHash,
   };
   for (const [col, val] of Object.entries(mapa)) {
     if (val !== undefined) {
@@ -715,15 +725,66 @@ export async function excluirCurto(userId: string, id: string): Promise<boolean>
  * visitante vê "link indisponível" em vez de cair numa conversa que o dono
  * desligou de propósito.
  */
-export async function curtoPorCodigo(
-  code: string,
-): Promise<{ id: string; destino: string; userId: string } | null> {
-  const row = await q1<{ id: string; destino: string; user_id: string; active: number }>(
-    "SELECT id, destino, user_id, active FROM short_links WHERE LOWER(code) = LOWER(?)",
+export async function curtoPorCodigo(code: string): Promise<
+  | { estado: "ok"; id: string; destino: string; userId: string }
+  | { estado: "pedeSenha"; id: string }
+  | { estado: "expirado" }
+  | { estado: "inexistente" }
+> {
+  const row = await q1<{
+    id: string;
+    destino: string;
+    user_id: string;
+    active: number;
+    expira_em: string | null;
+    senha_hash: string | null;
+  }>(
+    "SELECT id, destino, user_id, active, expira_em, senha_hash FROM short_links WHERE LOWER(code) = LOWER(?)",
     [code],
   );
-  if (!row || !row.active) return null;
-  return { id: row.id, destino: row.destino, userId: row.user_id };
+
+  // Link pausado e link inexistente respondem igual: quem desligou o link não
+  // quer que descubram que ele existe.
+  if (!row || !row.active) return { estado: "inexistente" };
+
+  // Expirado é diferente de inexistente de propósito: o visitante veio de um
+  // cartão impresso e merece saber que a promoção acabou, não que o endereço
+  // está errado.
+  if (row.expira_em && new Date(row.expira_em).getTime() < Date.now()) {
+    return { estado: "expirado" };
+  }
+
+  if (row.senha_hash) return { estado: "pedeSenha", id: row.id };
+
+  return { estado: "ok", id: row.id, destino: row.destino, userId: row.user_id };
+}
+
+/**
+ * Confere a senha e devolve o destino.
+ *
+ * Só esta função enxerga o hash — nem a listagem do painel nem a API expõem
+ * ele. Devolve null tanto para senha errada quanto para link inexistente: a
+ * diferença entre os dois não interessa a quem está tentando adivinhar.
+ */
+export async function abrirCurtoComSenha(
+  code: string,
+  senha: string,
+  verificar: (senha: string, hash: string | null) => boolean,
+): Promise<{ id: string; destino: string } | null> {
+  const row = await q1<{
+    id: string;
+    destino: string;
+    active: number;
+    expira_em: string | null;
+    senha_hash: string | null;
+  }>(
+    "SELECT id, destino, active, expira_em, senha_hash FROM short_links WHERE LOWER(code) = LOWER(?)",
+    [code],
+  );
+  if (!row || !row.active || !row.senha_hash) return null;
+  if (row.expira_em && new Date(row.expira_em).getTime() < Date.now()) return null;
+  if (!verificar(senha, row.senha_hash)) return null;
+  return { id: row.id, destino: row.destino };
 }
 
 /**

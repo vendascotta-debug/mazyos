@@ -46,7 +46,7 @@ recriar, copie o `.env.example` e preencha.
 
 ## O que já funciona
 
-Testado ponta a ponta em 07/09/2026 — 81 verificações, todas passando
+Testado ponta a ponta em 07/09/2026 — 101 verificações, todas passando
 (`npm run teste`):
 
 - [x] Landing page completa
@@ -83,6 +83,9 @@ Testado ponta a ponta em 07/09/2026 — 81 verificações, todas passando
 - [x] **Cobrança pelo Lastlink**: página de assinatura, webhook com registro do
       payload cru, liberação e revogação automáticas de plano, e aplicação da
       compra feita antes do cadastro
+- [x] **Gestão do link direto** (plano Starter+): expiração com data, proteção
+      por senha e troca do destino sem mudar o endereço — o QR já impresso
+      continua valendo
 - [x] **Termos de uso e política de privacidade** (rascunho, pendente de revisão jurídica)
 
 ## O que ainda não entrou

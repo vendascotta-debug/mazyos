@@ -28,6 +28,10 @@ export interface ShortLink {
   mensagem: string | null;
   destino: string;
   active: boolean;
+  /** Data em que o link para de funcionar. null = não expira. */
+  expiraEm: string | null;
+  /** Só diz SE tem senha. O hash nunca sai do servidor. */
+  temSenha: boolean;
   clicksTotal: number;
   createdAt: string;
   updatedAt: string;

@@ -313,6 +313,16 @@ CREATE TABLE IF NOT EXISTS short_links (
   updated_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_short_user ON short_links(user_id, created_at);
+
+-- Gestão do link (08/09/2026).
+--
+-- expira_em: data em que o link para de funcionar sozinho. Serve para promoção
+--   com prazo — o cartão impresso continua existindo, mas o link não engana
+--   mais ninguém depois que a oferta acabou.
+-- senha_hash: mesmo scrypt das contas. Guardar a senha em texto aqui seria
+--   pior que não ter senha nenhuma.
+ALTER TABLE short_links ADD COLUMN IF NOT EXISTS expira_em TEXT;
+ALTER TABLE short_links ADD COLUMN IF NOT EXISTS senha_hash TEXT;
 ALTER TABLE short_links ADD COLUMN IF NOT EXISTS tipo TEXT NOT NULL DEFAULT 'whatsapp';
 ALTER TABLE short_links ALTER COLUMN numero DROP NOT NULL;
 

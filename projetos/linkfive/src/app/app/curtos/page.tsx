@@ -16,6 +16,7 @@ export default async function Curtos() {
       maxCurtos={p.maxCurtos}
       nomePlano={p.nome}
       site={process.env.NEXT_PUBLIC_SITE_URL ?? ""}
+      podeGerir={p.gestaoLinks}
     />
   );
 }

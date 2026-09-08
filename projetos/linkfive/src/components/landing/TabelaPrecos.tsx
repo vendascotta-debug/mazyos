@@ -131,6 +131,7 @@ export function TabelaPrecos({
                 </Item>
                 <Item>QR Code</Item>
                 <Item>Código personalizado</Item>
+                {p.gestaoLinks && <Item>Expiração, senha e troca de destino</Item>}
                 {p.formularios && <Item>Formulário e captura de leads</Item>}
                 {p.temas && <Item>Temas e personalização</Item>}
                 {!p.marca && <Item>Sem a marca LINKFIVE</Item>}
