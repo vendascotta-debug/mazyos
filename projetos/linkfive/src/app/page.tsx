@@ -18,6 +18,7 @@ import { HeroCelular } from "@/components/landing/HeroCelular";
 import { GeradorHero } from "@/components/landing/GeradorHero";
 import { Revelar } from "@/components/landing/Revelar";
 import { BarraNumeros } from "@/components/landing/BarraNumeros";
+import { CincoPilares } from "@/components/landing/CincoPilares";
 
 // ---------------------------------------------------------------------------
 // POSICIONAMENTO (revisto em 07/09/2026).
@@ -280,6 +281,9 @@ export default function Landing() {
         <BarraNumeros />
       </div>
 
+      {/* --- Um link, cinco funcoes --- */}
+      <CincoPilares />
+
       {/* --- Como funciona --- */}
       <section id="como-funciona" className="border-y border-ink-100 bg-ink-50 py-14">
         <div className="mx-auto max-w-[1120px] px-5">
@@ -303,9 +307,9 @@ export default function Landing() {
       {/* --- Recursos --- */}
       <section className="py-14">
         <div className="mx-auto max-w-[1120px] px-5">
-          <h2 className="titulo-secao">Recursos</h2>
+          <h2 className="titulo-secao">Mais do que uma lista de links</h2>
           <p className="subtitulo-secao">
-            O concorrente te dá uma lista de links. Aqui, quem chega vira contato no seu painel.
+            O LINKFIVE transforma acessos em contatos e oportunidades de venda.
           </p>
 
           <Revelar className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">

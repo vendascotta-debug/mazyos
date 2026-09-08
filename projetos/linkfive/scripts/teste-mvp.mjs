@@ -1161,5 +1161,29 @@ if (!linkSenha) {
 
 
 
+
+// --- LANDING: os cinco pilares ---------------------------------------------
+
+// A secao e Server Component, entao o texto vem no HTML e da para conferir sem
+// navegador — inclusive contra producao.
+r = await fetch(`${BASE}/`);
+const htmlLanding = await r.text();
+checa("a landing abre", r.status === 200, `status ${r.status}`);
+checa("traz o titulo dos cinco pilares", htmlLanding.includes("Cinco funções."));
+for (const acao of ["CONECTE", "CONVERSE", "CAPTURE", "CONVERTA", "ANALISE"]) {
+  // As palavras vao em minusculo no JSX e sobem por CSS (uppercase).
+  checa(`o pilar ${acao} aparece`, htmlLanding.includes(acao[0] + acao.slice(1).toLowerCase()));
+}
+checa("a sequencia termina com o CTA proprio", htmlLanding.includes("CRIAR MEU LINKFIVE GRÁTIS"));
+checa(
+  "o subtitulo de recursos nao fala mais de concorrente",
+  !htmlLanding.includes("O concorrente te dá uma lista de links"),
+);
+checa(
+  "e traz o texto novo",
+  htmlLanding.includes("transforma acessos em contatos e oportunidades de venda"),
+);
+
+
 console.log(falhas === 0 ? "\nTUDO PASSOU" : `\n${falhas} FALHA(S)`);
 process.exit(falhas === 0 ? 0 : 1);
