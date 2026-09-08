@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     const bruto = parsed.data.numero ?? "";
     if (!telefoneValido(bruto)) {
       return NextResponse.json(
-        { erro: "Número inválido. Informe com DDD — ex.: 11 97393-3648.", campo: "numero" },
+        { erro: "Número inválido. Informe com DDD — ex.: 11 99999-9999.", campo: "numero" },
         { status: 400 },
       );
     }

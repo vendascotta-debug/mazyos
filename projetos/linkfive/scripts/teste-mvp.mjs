@@ -98,7 +98,7 @@ r = await a("/api/links", {
     pageId: infoA.pageId,
     type: "whatsapp",
     title: "Falar no WhatsApp",
-    config: { numero: "11973933648", mensagem: "Ola, quero um orcamento." },
+    config: { numero: "11999999999", mensagem: "Ola, quero um orcamento." },
   }),
 });
 const criado = await r.json();
@@ -106,7 +106,7 @@ const linkWhats = criado.link;
 checa("cria link de WhatsApp", r.ok && Boolean(linkWhats));
 checa(
   "URL do WhatsApp sai com DDI e mensagem",
-  linkWhats?.url?.startsWith("https://wa.me/5511973933648?text=") === true,
+  linkWhats?.url?.startsWith("https://wa.me/5511999999999?text=") === true,
   linkWhats?.url,
 );
 
@@ -148,7 +148,7 @@ r = await fetch(`${BASE}/${slugA}`);
 const html = await r.text();
 checa("pagina publica abre", r.status === 200, `status ${r.status}`);
 checa("pagina publica mostra o botao do WhatsApp", html.includes("Falar no WhatsApp"));
-checa("pagina publica traz o link wa.me", html.includes("wa.me/5511973933648"));
+checa("pagina publica traz o link wa.me", html.includes("wa.me/5511999999999"));
 
 // --- Eventos: view e clique -------------------------------------------------
 r = await fetch(`${BASE}/api/eventos`, {
@@ -212,7 +212,7 @@ r = await a("/api/curtos", {
   method: "POST",
   body: JSON.stringify({
     title: "Anuncio de teste",
-    numero: "11973933648",
+    numero: "11999999999",
     mensagem: "Vim pelo anuncio.",
   }),
 });
@@ -230,7 +230,7 @@ checa(
 r = await fetch(`${BASE}/w/${curtoCriado.code}`, { redirect: "manual" });
 const destino = r.headers.get("location") ?? "";
 checa("link curto redireciona (307)", r.status === 307, `status ${r.status}`);
-checa("redireciona para o wa.me certo", destino.startsWith("https://wa.me/5511973933648"), destino);
+checa("redireciona para o wa.me certo", destino.startsWith("https://wa.me/5511999999999"), destino);
 checa("leva a mensagem pronta junto", destino.includes("text="));
 
 // Codigo personalizado.
@@ -238,7 +238,7 @@ checa("leva a mensagem pronta junto", destino.includes("text="));
 // checagem de cota acontece antes da checagem de codigo.
 r = await b("/api/curtos", {
   method: "POST",
-  body: JSON.stringify({ title: "Promo", numero: "11973933648", code: "promo-teste-" + marca }),
+  body: JSON.stringify({ title: "Promo", numero: "11999999999", code: "promo-teste-" + marca }),
 });
 const curtoPersonalizado = (await r.json()).curto;
 checa("aceita codigo personalizado", r.ok && curtoPersonalizado?.code === "promo-teste-" + marca);
@@ -322,7 +322,7 @@ checa("B NAO baixa o QR do link de A", r.status === 404, `status ${r.status}`);
 // O Free agora deixa criar varios links curtos (10.000 ativos, 100/mes).
 r = await a("/api/curtos", {
   method: "POST",
-  body: JSON.stringify({ title: "Segundo", numero: "11973933648" }),
+  body: JSON.stringify({ title: "Segundo", numero: "11999999999" }),
 });
 checa("Free permite mais de um link curto", r.ok, `status ${r.status}`);
 

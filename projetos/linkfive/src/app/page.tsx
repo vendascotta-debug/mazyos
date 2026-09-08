@@ -189,7 +189,10 @@ export default function Landing() {
           página e joga toda a atenção no cartão branco do gerador, que é o
           único lugar onde o visitante pode agir agora.
       --------------------------------------------------------------------- */}
-      <div className="relative overflow-hidden bg-ink-950">
+      {/* Gradiente em vez de chapado: o azul-marinho puro ficava pesado, e o
+          degradê para um azul um pouco mais claro embaixo dá ar à seção sem
+          perder o contraste que o texto branco precisa. */}
+      <div className="relative overflow-hidden bg-gradient-to-b from-ink-950 via-ink-900 to-[#123063]">
         {/* Dois halos de luz atrás do conteúdo, respirando devagar. São
             divs com blur, não imagem: nada pra baixar. */}
         <div
@@ -270,8 +273,8 @@ export default function Landing() {
       {/* --- Como funciona --- */}
       <section id="como-funciona" className="border-y border-ink-100 bg-ink-50 py-16">
         <div className="mx-auto max-w-[1120px] px-5">
-          <h2 className="display text-[32px] text-ink-900">Como funciona</h2>
-          <p className="mt-2 text-ink-600">Três passos. Nenhum deles envolve programar nada.</p>
+          <h2 className="titulo-secao">Como funciona</h2>
+          <p className="subtitulo-secao">Três passos. Nenhum deles envolve programar nada.</p>
 
           <Revelar className="mt-8 grid gap-4 md:grid-cols-3">
             {COMO_FUNCIONA.map((c) => (
@@ -279,8 +282,8 @@ export default function Landing() {
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-500 text-sm font-bold text-white">
                   {c.n}
                 </span>
-                <h3 className="mt-4 font-semibold">{c.titulo}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-ink-600">{c.texto}</p>
+                <h3 className="mt-4 text-[17px] font-semibold">{c.titulo}</h3>
+                <p className="mt-2 text-[15px] leading-relaxed text-ink-600">{c.texto}</p>
               </div>
             ))}
           </Revelar>
@@ -290,8 +293,8 @@ export default function Landing() {
       {/* --- Recursos --- */}
       <section className="py-16">
         <div className="mx-auto max-w-[1120px] px-5">
-          <h2 className="display text-[32px] text-ink-900">Recursos</h2>
-          <p className="mt-2 text-ink-600">
+          <h2 className="titulo-secao">Recursos</h2>
+          <p className="subtitulo-secao">
             O concorrente te dá uma lista de links. Aqui, quem chega vira contato no seu painel.
           </p>
 
@@ -301,8 +304,8 @@ export default function Landing() {
                 <span className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-brand-50">
                   <Icone size={19} className="text-brand-600" />
                 </span>
-                <h3 className="mt-4 font-semibold">{titulo}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-ink-600">{texto}</p>
+                <h3 className="mt-4 text-[17px] font-semibold">{titulo}</h3>
+                <p className="mt-2 text-[15px] leading-relaxed text-ink-600">{texto}</p>
               </div>
             ))}
           </Revelar>
@@ -312,15 +315,15 @@ export default function Landing() {
       {/* --- Para quem é --- */}
       <section className="border-y border-ink-100 bg-ink-50 py-16">
         <div className="mx-auto max-w-[1120px] px-5">
-          <h2 className="display text-[32px] text-ink-900">Para quem é</h2>
+          <h2 className="titulo-secao">Para quem é</h2>
 
           <Revelar className="mt-8 grid gap-4 md:grid-cols-3">
             {PARA_QUEM.map((g) => (
               <div key={g.grupo} className="card p-6">
-                <h3 className="font-semibold text-brand-600">{g.grupo}</h3>
+                <h3 className="text-[17px] font-semibold text-brand-600">{g.grupo}</h3>
                 <ul className="mt-3 space-y-2">
                   {g.itens.map((i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-ink-600">
+                    <li key={i} className="flex items-start gap-2 text-[15px] text-ink-600">
                       <Check size={15} className="mt-0.5 shrink-0 text-brand-400" />
                       {i}
                     </li>
@@ -335,13 +338,13 @@ export default function Landing() {
       {/* --- Exemplos --- */}
       <section className="py-16">
         <div className="mx-auto max-w-[1120px] px-5">
-          <h2 className="display text-[32px] text-ink-900">Exemplos de utilização</h2>
+          <h2 className="titulo-secao">Exemplos de utilização</h2>
 
           <Revelar className="mt-8 grid gap-4 md:grid-cols-3">
             {EXEMPLOS.map((e) => (
               <div key={e.titulo} className="card border-l-4 border-l-accent-500 p-6">
-                <h3 className="font-semibold">{e.titulo}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-ink-600">{e.texto}</p>
+                <h3 className="text-[17px] font-semibold">{e.titulo}</h3>
+                <p className="mt-2 text-[15px] leading-relaxed text-ink-600">{e.texto}</p>
               </div>
             ))}
           </Revelar>
@@ -351,8 +354,11 @@ export default function Landing() {
       {/* --- Planos --- */}
       <section id="planos" className="border-y border-ink-100 bg-ink-50 py-16">
         <div className="mx-auto max-w-[1120px] px-5">
-          <h2 className="display text-[32px] text-ink-900">Planos</h2>
-          <p className="mt-2 text-ink-600">Comece de graça. Mude quando fizer sentido.</p>
+          <h2 className="titulo-secao">Planos</h2>
+          <p className="subtitulo-secao">
+            Escolha o plano que acompanha o seu momento. Todos incluem QR Code e nenhum tem
+            anúncio.
+          </p>
 
           <TabelaPrecos checkouts={checkouts} cta="Assinar" />
         </div>
@@ -361,21 +367,21 @@ export default function Landing() {
       {/* --- FAQ --- */}
       <section className="py-16">
         <div className="mx-auto max-w-[760px] px-5">
-          <h2 className="display text-[32px] text-ink-900">Perguntas frequentes</h2>
+          <h2 className="titulo-secao">Perguntas frequentes</h2>
 
           <div className="mt-8 space-y-2.5">
             {FAQ.map((f) => (
               // <details> em vez de acordeão em JavaScript: funciona sem script
               // e é acessível de fábrica.
               <details key={f.p} className="card group p-5">
-                <summary className="flex cursor-pointer items-center justify-between gap-3 font-medium">
+                <summary className="flex cursor-pointer items-center justify-between gap-3 text-[17px] font-medium">
                   {f.p}
                   <ChevronDown
                     size={18}
                     className="shrink-0 text-ink-400 transition-transform group-open:rotate-180"
                   />
                 </summary>
-                <p className="mt-3 text-sm leading-relaxed text-ink-600">{f.r}</p>
+                <p className="mt-3 text-[15px] leading-relaxed text-ink-600">{f.r}</p>
               </details>
             ))}
           </div>

@@ -63,7 +63,7 @@ export function ModalTipoLink({
     setErro(null);
 
     if (ehWhats && !telefoneValido(entrada)) {
-      setErro("Digite um número válido com DDD. Ex.: 11 97393-3648");
+      setErro("Digite um número válido com DDD. Ex.: 11 99999-9999");
       return;
     }
     if (!ehWhats && !ehForm && !entrada.trim()) {

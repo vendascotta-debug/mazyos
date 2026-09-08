@@ -44,21 +44,25 @@ export function GeradorHero() {
   }
 
   return (
-    <div className="card mt-8 p-5">
-      <p className="text-sm font-semibold text-ink-900">
-        Experimente agora — sem criar conta
-      </p>
-      <p className="mt-0.5 text-sm text-ink-500">
-        Digite seu WhatsApp e veja o link e o QR Code na hora.
+    <div className="card mt-8 p-6 shadow-2xl sm:p-7">
+      {/* O que o produto é, em letra grande. Antes isso estava implícito no
+          headline, e quem chegava pelo Google procurando "encurtador de link"
+          não encontrava a palavra em lugar nenhum da dobra. */}
+      <h2 className="text-[26px] font-bold leading-tight tracking-tight text-ink-900 sm:text-[30px]">
+        Encurtador de link do WhatsApp
+      </h2>
+      <p className="mt-1.5 text-[16px] text-ink-600">
+        Cole seu número e receba o link e o QR Code na hora.{" "}
+        <strong className="text-ink-900">Sem criar conta.</strong>
       </p>
 
-      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+      <div className="mt-5">
         <input
-          className="input flex-1"
+          className="input-grande"
           value={numero}
           inputMode="tel"
           onChange={(e) => setNumero(e.target.value)}
-          placeholder="Seu WhatsApp com DDD — ex.: 11 97393-3648"
+          placeholder="Seu WhatsApp com DDD — ex.: 11 99999-9999"
           aria-label="Número do WhatsApp"
         />
       </div>
@@ -69,7 +73,7 @@ export function GeradorHero() {
             key={m.label}
             type="button"
             onClick={() => setMensagem(m.texto)}
-            className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${
+            className={`rounded-full border px-3 py-1.5 text-[13px] transition-colors ${
               mensagem === m.texto
                 ? "border-brand-500 bg-brand-50 font-medium text-brand-700"
                 : "border-ink-200 text-ink-600 hover:border-brand-300"
@@ -81,7 +85,7 @@ export function GeradorHero() {
       </div>
 
       <textarea
-        className="input mt-2.5 min-h-[62px] resize-y text-sm"
+        className="input mt-3 min-h-[70px] resize-y text-[15px]"
         value={mensagem}
         maxLength={300}
         onChange={(e) => setMensagem(e.target.value)}
@@ -91,7 +95,7 @@ export function GeradorHero() {
       {valido ? (
         <div className="mt-4 flex flex-col gap-4 rounded-[12px] bg-ink-50 p-4 sm:flex-row">
           <div
-            className="mx-auto w-[104px] shrink-0 rounded-[10px] border border-ink-200 bg-white p-2 sm:mx-0"
+            className="mx-auto w-[116px] shrink-0 rounded-[10px] border border-ink-200 bg-white p-2 sm:mx-0"
             aria-hidden="true"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -105,12 +109,12 @@ export function GeradorHero() {
           </div>
 
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-medium text-ink-500">Seu link está pronto</p>
+            <p className="text-[13px] font-medium text-ink-500">Seu link está pronto</p>
             <button
               onClick={copiar}
               className="mt-1.5 flex w-full items-center gap-2 rounded-[10px] border border-ink-200 bg-white px-3 py-2 text-left text-sm hover:border-brand-300"
             >
-              <span className="min-w-0 flex-1 truncate font-medium text-brand-600">{link}</span>
+              <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-brand-600">{link}</span>
               {copiado ? (
                 <Check size={15} className="shrink-0 text-ok-500" />
               ) : (
@@ -123,18 +127,18 @@ export function GeradorHero() {
                 href={link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-ghost px-3 py-1.5 text-sm"
+                className="btn-ghost text-[15px]"
               >
                 Testar conversa
               </a>
-              <Link href="/cadastrar" className="btn-brand px-3 py-1.5 text-sm">
+              <Link href="/cadastrar" className="btn-brand text-[15px]">
                 Quero um link curto meu <ArrowRight size={14} />
               </Link>
             </div>
 
             {/* O gancho: o que ele acabou de ganhar é útil, mas é longo e não
                 conta nada. O que falta é exatamente o produto. */}
-            <p className="mt-2.5 text-xs leading-relaxed text-ink-500">
+            <p className="mt-3 text-[13px] leading-relaxed text-ink-500">
               Esse link funciona, mas é comprido e você não sabe quem clicou. Com uma conta grátis
               ele vira <strong>linkfive.com.br/w/seunome</strong>, com contador de cliques e QR pra
               imprimir.
@@ -142,7 +146,7 @@ export function GeradorHero() {
           </div>
         </div>
       ) : (
-        <p className="mt-3 text-xs text-ink-400">
+        <p className="mt-3 text-[13px] text-ink-400">
           {numero ? "Faltam dígitos — inclua o DDD." : "O link aparece aqui assim que você digitar."}
         </p>
       )}

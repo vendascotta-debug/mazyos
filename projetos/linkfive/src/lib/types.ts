@@ -47,7 +47,7 @@ export type LinkType =
 
 /** Config específica por tipo, guardada como JSON na coluna `config`. */
 export interface LinkConfig {
-  /** whatsapp: número em dígitos, com DDI. Ex.: 5511973933648 */
+  /** whatsapp: número em dígitos, com DDI. Ex.: 5511999999999 */
   numero?: string;
   /** whatsapp: mensagem que já vem digitada na conversa */
   mensagem?: string;

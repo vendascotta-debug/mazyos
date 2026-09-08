@@ -25,9 +25,12 @@
   --color-ink-500: #5b739c;
   --color-ink-600: #3f5578;
   --color-ink-700: #26395a;
-  --color-ink-800: #14223d;
-  --color-ink-900: #0a1428;
-  --color-ink-950: #050a18;
+  /* Clareado em 08/09/2026: o azul quase preto anterior (#050a18) ficou
+     pesado demais no hero. Estes dois continuam escuros o bastante para texto
+     branco por cima e para servirem de cor de texto sobre fundo claro. */
+  --color-ink-800: #16294d;
+  --color-ink-900: #0e2148;
+  --color-ink-950: #0a1a3a;
 
   /* Primária — azul elétrico */
   --color-brand-50: #eaf2ff;
@@ -211,5 +214,33 @@ body {
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Escala da landing (08/09/2026).
+
+   O texto estava pequeno demais comparado ao que o mercado usa. Estas classes
+   existem para a página inteira mudar de tamanho num lugar só, em vez de
+   espalhar text-[32px] por vinte pontos do JSX.
+--------------------------------------------------------------------------- */
+
+@layer components {
+  /* Título de seção: grande e centralizado, como o do concorrente. */
+  .titulo-secao {
+    font-family: var(--font-display);
+    @apply text-center text-[34px] font-normal leading-tight tracking-tight text-ink-900 sm:text-[44px];
+  }
+
+  .subtitulo-secao {
+    @apply mx-auto mt-3 max-w-[620px] text-center text-[17px] leading-relaxed text-ink-600;
+  }
+
+  /* Campo grande do gerador, no topo da página. É o elemento com que o
+     visitante interage primeiro — precisa parecer clicável de longe. */
+  .input-grande {
+    @apply w-full rounded-[12px] border-2 border-ink-200 bg-white px-5 py-4 text-[17px]
+           text-ink-900 placeholder:text-ink-400
+           focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-100;
   }
 }

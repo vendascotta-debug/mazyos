@@ -67,7 +67,7 @@ export function ModalCurto({
   async function salvar() {
     setErro(null);
     if (tipo === "whatsapp" && !telefoneValido(numero)) {
-      setErro("Digite um número válido com DDD. Ex.: 11 97393-3648");
+      setErro("Digite um número válido com DDD. Ex.: 11 99999-9999");
       return;
     }
     if (tipo === "url") {
@@ -157,7 +157,7 @@ export function ModalCurto({
                   autoFocus
                   inputMode="tel"
                   onChange={(e) => setNumero(e.target.value)}
-                  placeholder="11 97393-3648"
+                  placeholder="11 99999-9999"
                 />
                 {numero && !telefoneValido(numero) && (
                   <p className="mt-1 text-xs text-ink-400">Faltam dígitos — inclua o DDD.</p>

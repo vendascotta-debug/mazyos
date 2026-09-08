@@ -46,14 +46,14 @@ export function TabelaPrecos({
             <button
               key={c}
               onClick={() => setCiclo(c)}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+              className={`rounded-full px-6 py-2.5 text-[15px] font-semibold transition-colors ${
                 ciclo === c ? "bg-ink-900 text-white" : "text-ink-600 hover:text-ink-900"
               }`}
             >
               {c === "mensal" ? "Mensal" : "Anual"}
               {c === "anual" && (
                 <span
-                  className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                  className={`ml-2 rounded-full px-2 py-0.5 text-[11px] font-bold ${
                     ciclo === "anual" ? "bg-accent-500 text-ink-900" : "bg-accent-100 text-warn-500"
                   }`}
                 >
@@ -65,7 +65,7 @@ export function TabelaPrecos({
         </div>
       </div>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-3">
+      <div className="mt-8 grid gap-5 md:grid-cols-3">
         {ORDEM_PLANOS.map((id) => {
           const p = PLANOS[id];
           const atual = planoAtual === id;
@@ -76,7 +76,7 @@ export function TabelaPrecos({
           return (
             <div
               key={id}
-              className={`relative flex flex-col rounded-[14px] border p-6 sobe-no-hover ${
+              className={`sobe-no-hover relative flex flex-col rounded-[16px] border p-7 ${
                 p.destaque
                   ? // O plano que queremos vender fica escuro: num quadro de
                     // três cartões brancos, o escuro é para onde o olho vai.
@@ -90,12 +90,12 @@ export function TabelaPrecos({
                 </span>
               )}
 
-              <p className="font-semibold">{p.nome}</p>
+              <p className="text-[19px] font-bold">{p.nome}</p>
 
-              <p className="mt-2 text-[28px] font-bold leading-none tracking-tight">
+              <p className="mt-3 text-[40px] font-bold leading-none tracking-tight">
                 {precoFormatado(p, ciclo)}
                 {!gratuito && (
-                  <span className={`text-sm font-medium ${p.destaque ? "text-ink-400" : "text-ink-400"}`}>
+                  <span className="text-[16px] font-medium text-ink-400">
                     /{ciclo === "anual" ? "ano" : "mês"}
                   </span>
                 )}
@@ -103,7 +103,7 @@ export function TabelaPrecos({
 
               {/* No anual, o que o cliente compara é o mês. Sem esta linha ele
                   vê "R$ 199,90" e acha caro sem fazer a conta. */}
-              <p className={`mt-1 h-5 text-sm ${p.destaque ? "text-ink-300" : "text-ink-500"}`}>
+              <p className={`mt-1.5 h-6 text-[15px] ${p.destaque ? "text-ink-300" : "text-ink-500"}`}>
                 {!gratuito && ciclo === "anual" && mensalNoAnual(p)
                   ? `equivale a ${mensalNoAnual(p)}/mês`
                   : gratuito
@@ -111,7 +111,7 @@ export function TabelaPrecos({
                     : ""}
               </p>
 
-              <ul className={`mt-5 flex-1 space-y-2 text-sm ${p.destaque ? "text-ink-200" : "text-ink-600"}`}>
+              <ul className={`mt-6 flex-1 space-y-2.5 text-[15px] ${p.destaque ? "text-ink-200" : "text-ink-600"}`}>
                 <Item>
                   {p.maxPaginas === 1 ? "1 página" : `${p.maxPaginas.toLocaleString("pt-BR")} páginas`}
                 </Item>
@@ -144,8 +144,8 @@ export function TabelaPrecos({
                   vira contorno claro. */}
               {(() => {
                 const fantasma = p.destaque
-                  ? "mt-6 inline-flex items-center justify-center rounded-[10px] border border-white/25 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
-                  : "btn-ghost mt-6";
+                  ? "mt-7 inline-flex items-center justify-center rounded-[10px] border border-white/25 px-4 py-3 text-[15px] font-medium text-white disabled:opacity-50"
+                  : "btn-ghost mt-7 py-3 text-[15px]";
 
                 if (atual) {
                   return (
@@ -167,7 +167,7 @@ export function TabelaPrecos({
                       href={link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`mt-6 ${p.destaque ? "btn-accent" : "btn-dark"}`}
+                      className={`mt-7 py-3 text-[15px] ${p.destaque ? "btn-accent" : "btn-dark"}`}
                     >
                       {cta} {p.nome}
                     </a>
@@ -196,7 +196,7 @@ export function TabelaPrecos({
 function Item({ children }: { children: React.ReactNode }) {
   return (
     <li className="flex items-start gap-2">
-      <Check size={15} className="mt-0.5 shrink-0 text-ok-500" />
+      <Check size={16} className="mt-0.5 shrink-0 text-ok-500" />
       <span>{children}</span>
     </li>
   );

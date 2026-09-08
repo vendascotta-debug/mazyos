@@ -20,7 +20,7 @@ export interface TipoInfo {
 }
 
 export const TIPOS: Record<LinkType, TipoInfo> = {
-  whatsapp: { label: "WhatsApp", icone: "MessageCircle", placeholder: "11 97393-3648", cor: "#25D366" },
+  whatsapp: { label: "WhatsApp", icone: "MessageCircle", placeholder: "11 99999-9999", cor: "#25D366" },
   link: { label: "Link", icone: "Link", placeholder: "https://seusite.com.br", cor: "#1e6bff" },
   instagram: { label: "Instagram", icone: "Instagram", placeholder: "@seuperfil", cor: "#E1306C" },
   facebook: { label: "Facebook", icone: "Facebook", placeholder: "sua.pagina", cor: "#1877F2" },
@@ -46,7 +46,7 @@ export const ORDEM_TIPOS: LinkType[] = [
 /**
  * Reduz o telefone a dígitos e completa o DDI do Brasil.
  *
- * O usuário digita de tudo: "(11) 97393-3648", "11973933648", "+55 11...".
+ * O usuário digita de tudo: "(11) 99999-9999", "11999999999", "+55 11...".
  * O WhatsApp só aceita dígitos com DDI. As regras:
  *   10 ou 11 dígitos  → número nacional, prefixa 55
  *   12 ou 13 dígitos  → já veio com DDI
@@ -64,7 +64,7 @@ export function telefoneValido(bruto: string): boolean {
   return d.length === 12 || d.length === 13;
 }
 
-/** "5511973933648" → "+55 11 97393-3648", para mostrar na tela. */
+/** "5511999999999" → "+55 11 99999-9999", para mostrar na tela. */
 export function formatarTelefone(digitos: string): string {
   const d = digitos.replace(/\D/g, "");
   if (d.length < 12) return digitos;
