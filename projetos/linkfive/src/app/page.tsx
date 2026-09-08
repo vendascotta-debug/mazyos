@@ -15,6 +15,7 @@ import { ORDEM_PLANOS, PLANOS } from "@/lib/limites";
 import { checkoutDoPlano } from "@/lib/cobranca";
 import { TabelaPrecos } from "@/components/landing/TabelaPrecos";
 import { HeroCelular } from "@/components/landing/HeroCelular";
+import { GeradorHero } from "@/components/landing/GeradorHero";
 
 // ---------------------------------------------------------------------------
 // POSICIONAMENTO (revisto em 07/09/2026).
@@ -224,6 +225,8 @@ export default function Landing() {
           <p className="mt-4 text-sm text-ink-400">
             Grátis para sempre no plano inicial. Sem cartão de crédito.
           </p>
+
+          <GeradorHero />
         </div>
 
         <HeroCelular />
