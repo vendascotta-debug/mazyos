@@ -61,6 +61,9 @@ identidade visual** — o LINKFIVE tem marca própria, definida na seção 9 do
 - **Paleta (desde 08/09/2026):** azul-marinho `#050a18` no fundo, azul elétrico
   `#1e6bff` na ação, ciano `#38bdf8` no acento. Antes era violeta; mudou a
   pedido, seguindo referência de agência
+- **Tamanho da landing:** as classes `titulo-secao`, `subtitulo-secao` e
+  `input-grande` em `globals.css` controlam a escala inteira. Para aumentar ou
+  diminuir a página, mexer nelas — não espalhar tamanho pelo JSX
 - **Cor proibida:** verde como cor principal (é a do Linktree e a do W.app)
 - **Nunca inventar prova social:** nada de logo de cliente, depoimento ou
   número de usuários que não existam. A barra de números do hero traz fatos do
