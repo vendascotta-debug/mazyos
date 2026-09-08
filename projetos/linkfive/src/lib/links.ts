@@ -21,7 +21,7 @@ export interface TipoInfo {
 
 export const TIPOS: Record<LinkType, TipoInfo> = {
   whatsapp: { label: "WhatsApp", icone: "MessageCircle", placeholder: "11 97393-3648", cor: "#25D366" },
-  link: { label: "Link", icone: "Link", placeholder: "https://seusite.com.br", cor: "#5B3DF5" },
+  link: { label: "Link", icone: "Link", placeholder: "https://seusite.com.br", cor: "#1e6bff" },
   instagram: { label: "Instagram", icone: "Instagram", placeholder: "@seuperfil", cor: "#E1306C" },
   facebook: { label: "Facebook", icone: "Facebook", placeholder: "sua.pagina", cor: "#1877F2" },
   tiktok: { label: "TikTok", icone: "Music2", placeholder: "@seuperfil", cor: "#000000" },
@@ -30,9 +30,9 @@ export const TIPOS: Record<LinkType, TipoInfo> = {
   phone: { label: "Telefone", icone: "Phone", placeholder: "11 3333-4444", cor: "#0EA5E9" },
   email: { label: "E-mail", icone: "Mail", placeholder: "contato@empresa.com.br", cor: "#F59E0B" },
   catalog: { label: "Catálogo", icone: "BookOpen", placeholder: "https://catalogo...", cor: "#7C3AED" },
-  product: { label: "Produto", icone: "ShoppingBag", placeholder: "https://... (opcional)", cor: "#DB2777" },
-  service: { label: "Serviço", icone: "Wrench", placeholder: "https://... (opcional)", cor: "#0891B2" },
-  form: { label: "Formulário de contato", icone: "ClipboardList", placeholder: "", cor: "#5B3DF5" },
+  product: { label: "Produto", icone: "ShoppingBag", placeholder: "https://... (opcional)", cor: "#6366f1" },
+  service: { label: "Serviço", icone: "Wrench", placeholder: "https://... (opcional)", cor: "#38bdf8" },
+  form: { label: "Formulário de contato", icone: "ClipboardList", placeholder: "", cor: "#1e6bff" },
 };
 
 /** Ordem em que os tipos aparecem no seletor. WhatsApp primeiro, de propósito. */

@@ -25,11 +25,11 @@ export default async function Dashboard() {
   const ultimosLeads = p.formularios ? await leadsDaPagina(user.id, page.id, 5) : [];
 
   const cards = [
-    { label: "Visualizações", valor: totais.views, icone: Eye, cor: "#5b3df5" },
-    { label: "Cliques", valor: totais.clicks, icone: MousePointerClick, cor: "#0891b2" },
+    { label: "Visualizações", valor: totais.views, icone: Eye, cor: "#1e6bff" },
+    { label: "Cliques", valor: totais.clicks, icone: MousePointerClick, cor: "#38bdf8" },
     { label: "Cliques no WhatsApp", valor: totais.whatsappClicks, icone: MessageCircle, cor: "#16a34a" },
-    { label: "Leads", valor: totais.leads, icone: Users, cor: "#db2777" },
-    { label: "Taxa de conversão", valor: `${totais.conversao}%`, icone: TrendingUp, cor: "#ffb020" },
+    { label: "Leads", valor: totais.leads, icone: Users, cor: "#6366f1" },
+    { label: "Taxa de conversão", valor: `${totais.conversao}%`, icone: TrendingUp, cor: "#38bdf8" },
   ];
 
   return (
@@ -75,12 +75,12 @@ export default async function Dashboard() {
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="card p-5">
           <h2 className="mb-4 font-semibold">Visualizações por dia</h2>
-          <GraficoLinha serie={serie} campo="views" cor="#5b3df5" />
+          <GraficoLinha serie={serie} campo="views" cor="#1e6bff" />
         </section>
 
         <section className="card p-5">
           <h2 className="mb-4 font-semibold">Cliques por dia</h2>
-          <GraficoLinha serie={serie} campo="clicks" cor="#0891b2" />
+          <GraficoLinha serie={serie} campo="clicks" cor="#38bdf8" />
         </section>
       </div>
 
@@ -113,7 +113,7 @@ export default async function Dashboard() {
                           className="h-full rounded-full"
                           style={{
                             width: `${Math.max((l.cliques / maior) * 100, 2)}%`,
-                            background: TIPOS[l.type as LinkType]?.cor ?? "#5b3df5",
+                            background: TIPOS[l.type as LinkType]?.cor ?? "#1e6bff",
                           }}
                         />
                       </div>

@@ -55,7 +55,7 @@ export function Bloqueado({
 /** Lista de barras usada tanto pelo dado real quanto pela amostra borrada. */
 export function ListaFatias({
   fatias,
-  cor = "#5b3df5",
+  cor = "#1e6bff",
   vazio = "Sem dados no período.",
 }: {
   fatias: { rotulo: string; n: number; pct: number }[];

@@ -46,7 +46,7 @@ export async function GET(req: Request) {
     errorCorrectionLevel: "M" as const,
     margin: 2,
     width: tamanho,
-    color: { dark: "#12121a", light: "#ffffff" },
+    color: { dark: "#0a1428", light: "#ffffff" },
   };
 
   if (formato === "png") {

@@ -17,6 +17,7 @@ import { TabelaPrecos } from "@/components/landing/TabelaPrecos";
 import { HeroCelular } from "@/components/landing/HeroCelular";
 import { GeradorHero } from "@/components/landing/GeradorHero";
 import { Revelar } from "@/components/landing/Revelar";
+import { BarraNumeros } from "@/components/landing/BarraNumeros";
 
 // ---------------------------------------------------------------------------
 // POSICIONAMENTO (revisto em 07/09/2026).
@@ -262,6 +263,8 @@ export default function Landing() {
             <HeroCelular />
           </div>
         </section>
+
+        <BarraNumeros />
       </div>
 
       {/* --- Como funciona --- */}
@@ -379,36 +382,46 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* --- CTA final --- */}
-      <section className="bg-ink-900 py-16 text-white">
-        <div className="mx-auto max-w-[760px] px-5 text-center">
-          <h2 className="display text-[36px] leading-tight">
+      {/* --- CTA final: a faixa azul --- */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-brand-700 via-brand-600 to-brand-500 py-20 text-white">
+        {/* Brilho difuso no canto, o mesmo recurso do hero — dá profundidade
+            ao azul chapado sem imagem nenhuma. */}
+        <div
+          className="brilho pointer-events-none absolute -right-32 -top-32 h-[420px] w-[420px] rounded-full bg-accent-500/25 blur-[110px]"
+          aria-hidden="true"
+        />
+
+        <div className="relative mx-auto max-w-[760px] px-5 text-center">
+          <h2 className="display text-[36px] leading-tight sm:text-[44px]">
             Cada visita que some
             <br />
             é um cliente perdido.
           </h2>
-          <p className="mx-auto mt-4 max-w-[460px] text-ink-300">
+          <p className="mx-auto mt-4 max-w-[460px] text-brand-100">
             Crie sua página em um minuto e comece a guardar contato ainda hoje. Grátis, sem cartão.
           </p>
-          <Link href="/cadastrar" className="btn-accent mt-7 px-6 py-3.5 text-[15px]">
+          <Link
+            href="/cadastrar"
+            className="sobe-no-hover mt-8 inline-flex items-center justify-center rounded-[10px] bg-white px-6 py-3.5 text-[15px] font-semibold text-brand-700 shadow-lg"
+          >
             CRIAR MINHA PÁGINA GRÁTIS
           </Link>
         </div>
       </section>
 
-      <footer className="border-t border-ink-100 py-8">
+      <footer className="bg-ink-950 py-8 text-white">
         <div className="mx-auto flex max-w-[1120px] flex-wrap items-center justify-between gap-4 px-5">
-          <Logo size={24} />
-          <nav className="flex flex-wrap items-center gap-4 text-sm text-ink-500">
-            <Link href="/termos" className="hover:text-ink-900">
+          <Logo size={24} mono />
+          <nav className="flex flex-wrap items-center gap-4 text-sm text-ink-400">
+            <Link href="/termos" className="hover:text-white">
               Termos de uso
             </Link>
-            <Link href="/privacidade" className="hover:text-ink-900">
+            <Link href="/privacidade" className="hover:text-white">
               Privacidade
             </Link>
           </nav>
 
-          <p className="text-sm text-ink-400">
+          <p className="text-sm text-ink-500">
             © {new Date().getFullYear()} LINKFIVE. Todos os direitos reservados.
           </p>
         </div>

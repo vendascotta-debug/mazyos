@@ -112,11 +112,11 @@ export default async function Analytics({
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="card p-5">
           <h2 className="mb-4 font-semibold">Visualizações</h2>
-          <GraficoLinha serie={serie} campo="views" cor="#5b3df5" altura={200} />
+          <GraficoLinha serie={serie} campo="views" cor="#1e6bff" altura={200} />
         </section>
         <section className="card p-5">
           <h2 className="mb-4 font-semibold">Cliques</h2>
-          <GraficoLinha serie={serie} campo="clicks" cor="#0891b2" altura={200} />
+          <GraficoLinha serie={serie} campo="clicks" cor="#38bdf8" altura={200} />
         </section>
       </div>
 
@@ -140,14 +140,14 @@ export default async function Analytics({
         <section className="card overflow-hidden p-5">
           <h2 className="mb-4 font-semibold">Em que aparelho</h2>
           {p.metricasDetalhadas ? (
-            <ListaFatias fatias={dispositivos} cor="#0891b2" />
+            <ListaFatias fatias={dispositivos} cor="#38bdf8" />
           ) : (
             <Bloqueado
               titulo="Celular, tablet ou computador"
               descricao="Saiba em que tela sua página é aberta e ajuste o que aparece primeiro."
               planoNecessario="starter"
             >
-              <ListaFatias fatias={AMOSTRA_DISPOSITIVOS} cor="#0891b2" />
+              <ListaFatias fatias={AMOSTRA_DISPOSITIVOS} cor="#38bdf8" />
             </Bloqueado>
           )}
         </section>
@@ -157,14 +157,14 @@ export default async function Analytics({
         <section className="card overflow-hidden p-5">
           <h2 className="mb-4 font-semibold">Países</h2>
           {p.metricasGeo ? (
-            <ListaFatias fatias={paises} cor="#db2777" />
+            <ListaFatias fatias={paises} cor="#6366f1" />
           ) : (
             <Bloqueado
               titulo="De que país abriram sua página"
               descricao="Útil para quem atende fora do Brasil ou vende para brasileiros no exterior."
               planoNecessario="pro"
             >
-              <ListaFatias fatias={AMOSTRA_PAISES} cor="#db2777" />
+              <ListaFatias fatias={AMOSTRA_PAISES} cor="#6366f1" />
             </Bloqueado>
           )}
         </section>

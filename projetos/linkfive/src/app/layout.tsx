@@ -13,7 +13,7 @@ export const viewport: Viewport = {
   // Deixa o visitante dar zoom: ler um telefone na tela importa mais que a
   // pureza do layout.
   maximumScale: 5,
-  themeColor: "#5b3df5",
+  themeColor: "#1e6bff",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -28,7 +28,7 @@ export async function GET(req: Request) {
     // arquivo sai só com viewBox, e dentro de uma tag <img> ele colapsa para
     // altura zero — o QR fica invisível sem nenhum erro no console.
     width: 320,
-    color: { dark: "#12121a", light: "#ffffff" },
+    color: { dark: "#0a1428", light: "#ffffff" },
   });
 
   return new Response(svg, {

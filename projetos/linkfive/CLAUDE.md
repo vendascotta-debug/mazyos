@@ -58,6 +58,12 @@ identidade visual** — o LINKFIVE tem marca própria, definida na seção 9 do
 - **Regra de segurança inegociável:** nenhuma função de repositório acessa dado
   privado sem receber `userId` como primeiro argumento
 - **Página pública:** sem JavaScript pesado. É o que abre no 4G do cliente final
+- **Paleta (desde 08/09/2026):** azul-marinho `#050a18` no fundo, azul elétrico
+  `#1e6bff` na ação, ciano `#38bdf8` no acento. Antes era violeta; mudou a
+  pedido, seguindo referência de agência
 - **Cor proibida:** verde como cor principal (é a do Linktree e a do W.app)
+- **Nunca inventar prova social:** nada de logo de cliente, depoimento ou
+  número de usuários que não existam. A barra de números do hero traz fatos do
+  produto, verificáveis abrindo o site
 - **Antes de avançar de funcionalidade:** testar o fluxo completo da anterior.
   Nada de tela estática sem dado real persistido

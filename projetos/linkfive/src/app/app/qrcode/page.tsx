@@ -20,7 +20,7 @@ export default async function PaginaQrCode() {
     errorCorrectionLevel: "M",
     margin: 2,
     type: "svg",
-    color: { dark: "#12121a", light: "#ffffff" },
+    color: { dark: "#0a1428", light: "#ffffff" },
   });
 
   return (
