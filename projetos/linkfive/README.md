@@ -12,9 +12,8 @@ clientes. Faz **duas coisas que os concorrentes fazem separadas**:
 
 O Linktree não faz o link direto. O W.app não faz a página.
 
-**NO AR:** https://linkfive-seven.vercel.app
-**Exemplo de página:** https://linkfive-seven.vercel.app/oficinadocarlos
-**Domínio definitivo (a registrar):** linkfive.com.br
+**NO AR:** https://linkfive.com.br (domínio próprio ativo desde 07/09/2026)
+**Exemplo de página:** https://linkfive.com.br/oficinadocarlos
 
 - **Arquitetura e decisões técnicas:** [arquitetura.md](arquitetura.md) — leia antes de mexer
 - **Briefing original:** [briefing.md](briefing.md)
@@ -92,9 +91,12 @@ equipes.
 
 **Pendências que dependem de decisão:**
 
-1. Registrar o domínio `linkfive.com.br`
+1. **Lastlink**: criar os 3 produtos, cadastrar o webhook e preencher
+   `LASTLINK_PRODUTOS` e `LASTLINK_CHECKOUT_*`. Até lá os botões de assinar
+   mostram "Em breve".
 2. Serviço de e-mail para a recuperação de senha (sugestão: Resend)
-3. Política de privacidade e termos — o sistema guarda leads de terceiros (LGPD)
+3. Revisão jurídica dos termos e da política de privacidade, e os dados da
+   empresa (razão social, CNPJ, e-mail do encarregado)
 4. Upload de imagem (hoje o avatar é URL colada; Vercel Blob resolve)
 
 ## Deploy
@@ -118,7 +120,7 @@ painel interno e inviabiliza um SaaS público.
 Para rodar a bateria de testes contra produção:
 
 ```bash
-LINKFIVE_URL=https://linkfive-seven.vercel.app node scripts/teste-mvp.mjs
+LINKFIVE_URL=https://linkfive.com.br node scripts/teste-mvp.mjs
 ```
 
 ⚠️ **Produção e desenvolvimento dividem o mesmo banco.** Rodar o teste cria

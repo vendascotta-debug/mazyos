@@ -24,7 +24,7 @@ definido em 07/09/2026 comparando com o W.app que o Alessandro já usa.
 
 Público: empresas, profissionais e criadores — quem vende.
 
-**Status: NO AR desde 07/09/2026** — https://linkfive-seven.vercel.app
+**Status: NO AR desde 07/09/2026** — https://linkfive.com.br
 (exemplos: página em `/oficinadocarlos`, link direto em `/w/orcamento`). Vercel, projeto `linkfive`, Root Directory
 `projetos/linkfive`, GitHub conectado: todo push na `main` publica sozinho.
 
