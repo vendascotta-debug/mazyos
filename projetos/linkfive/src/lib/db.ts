@@ -40,6 +40,7 @@ const TABLES = [
   "short_links",
   "short_clicks",
   "webhook_events",
+  "password_resets",
 ] as const;
 
 /**
@@ -155,12 +156,21 @@ CREATE TABLE IF NOT EXISTS users (
   avatar_url TEXT,
   role TEXT NOT NULL DEFAULT 'user',
   plan TEXT NOT NULL DEFAULT 'free',
-  reset_token TEXT,
-  reset_expires TEXT,
   onboarded INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL
 );
-CREATE INDEX IF NOT EXISTS idx_users_reset ON users(reset_token);
+
+-- reset_token/reset_expires nasceram aqui em 07/09/2026 e nunca chegaram a ser
+-- usados. Quando a recuperacao de senha foi de fato construida (08/09/2026),
+-- ela ganhou tabela propria: guardar o token em texto na linha do usuario
+-- daria, a quem lesse o banco, a chave de entrar em qualquer conta -- e permite
+-- um pedido de cada vez, o que quebra se o cliente clicar duas vezes.
+--
+-- Derrubar a coluna leva o indice junto, entao nao ha DROP INDEX aqui: o nome
+-- do indice nao passa pelo qualify() e um DROP solto procuraria no schema
+-- errado.
+ALTER TABLE users DROP COLUMN IF EXISTS reset_token;
+ALTER TABLE users DROP COLUMN IF EXISTS reset_expires;
 
 CREATE TABLE IF NOT EXISTS pages (
   id TEXT PRIMARY KEY,
@@ -341,6 +351,34 @@ ALTER TABLE short_links ALTER COLUMN numero DROP NOT NULL;
 ALTER TABLE short_links ALTER COLUMN user_id DROP NOT NULL;
 ALTER TABLE short_links ADD COLUMN IF NOT EXISTS ip_hash TEXT;
 CREATE INDEX IF NOT EXISTS idx_short_orfao ON short_links(ip_hash, created_at);
+
+-- Recuperacao de senha (08/09/2026).
+--
+-- Guarda o HASH do token, nunca o token. Quem conseguisse ler esta tabela
+-- teria a chave de entrar em qualquer conta -- e o banco e o mesmo do
+-- Prospecta.
+--
+-- A linha nao e apagada no uso: "usado_em" marca que ja foi gasto. Serve para
+-- o link do e-mail valer UMA vez, mesmo que o cliente clique duas.
+CREATE TABLE IF NOT EXISTS password_resets (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL,
+  expira_em TEXT NOT NULL,
+  usado_em TEXT,
+  ip_hash TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_reset_token ON password_resets(token_hash);
+CREATE INDEX IF NOT EXISTS idx_reset_user ON password_resets(user_id, created_at);
+
+-- Derruba as sessoes antigas quando a senha muda.
+--
+-- O cookie de sessao nao tem estado no servidor: ele se valida sozinho pela
+-- assinatura. Sem esta coluna, trocar a senha nao expulsaria ninguem -- e o
+-- caso que motiva a troca e justamente "alguem entrou na minha conta". Guarda
+-- o instante a partir do qual uma sessao vale; tudo emitido antes morre.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS sessoes_desde TEXT;
 
 CREATE TABLE IF NOT EXISTS short_clicks (
   id TEXT PRIMARY KEY,

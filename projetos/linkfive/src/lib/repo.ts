@@ -576,6 +576,95 @@ export async function registrarLead(
 }
 
 // ---------------------------------------------------------------------------
+// RECUPERACAO DE SENHA
+//
+// Sem `userId` na assinatura, e a excecao esta justificada: quem pede a
+// redefinicao e exatamente quem nao consegue provar quem e. O que substitui a
+// prova e o token — longo, aleatorio, guardado so como hash e com prazo curto.
+// ---------------------------------------------------------------------------
+
+/** Quem tem esse e-mail, se e que tem alguem. */
+export async function usuarioPorEmail(
+  email: string,
+): Promise<{ id: string; nome: string; email: string } | null> {
+  const r = await q1<{ id: string; name: string; email: string }>(
+    "SELECT id, name, email FROM users WHERE email = ?",
+    [email.toLowerCase().trim()],
+  );
+  return r ? { id: r.id, nome: r.name, email: r.email } : null;
+}
+
+/**
+ * Registra um pedido de redefinicao.
+ *
+ * Recebe o hash pronto: o token em texto so existe no e-mail que o cliente
+ * recebe e na memoria da requisicao que o gerou. Se o banco vazar, os pedidos
+ * pendentes nao viram chave de entrada em conta nenhuma.
+ */
+export async function criarPedidoDeSenha(
+  userId: string,
+  tokenHash: string,
+  expiraEm: string,
+  ipHash: string | null,
+): Promise<void> {
+  await q(
+    `INSERT INTO password_resets (id, user_id, token_hash, expira_em, usado_em, ip_hash, created_at)
+     VALUES (?, ?, ?, ?, NULL, ?, ?)`,
+    [uid("pr_"), userId, tokenHash, expiraEm, ipHash, nowIso()],
+  );
+}
+
+/** Quantos pedidos esse e-mail gerou desde `desde`. Freio de abuso. */
+export async function contarPedidosDeSenha(userId: string, desde: string): Promise<number> {
+  const r = await q1<{ n: string }>(
+    "SELECT COUNT(*) AS n FROM password_resets WHERE user_id = ? AND created_at >= ?",
+    [userId, desde],
+  );
+  return Number(r?.n ?? 0);
+}
+
+/** O pedido valido desse token, ou null. Nao diz por que falhou. */
+export async function pedidoDeSenhaValido(
+  tokenHash: string,
+): Promise<{ id: string; userId: string } | null> {
+  const r = await q1<{ id: string; user_id: string; expira_em: string; usado_em: string | null }>(
+    "SELECT id, user_id, expira_em, usado_em FROM password_resets WHERE token_hash = ?",
+    [tokenHash],
+  );
+  if (!r || r.usado_em) return null;
+  if (new Date(r.expira_em).getTime() < Date.now()) return null;
+  return { id: r.id, userId: r.user_id };
+}
+
+/** Troca a senha, queima o pedido e derruba as sessoes antigas. */
+export async function trocarSenhaComPedido(userId: string, senhaHash: string): Promise<void> {
+  const agora = nowIso();
+
+  // A ordem importa e nao e transacao. Queimar o pedido ANTES de trocar a
+  // senha faz a falha cair do lado seguro: se a segunda instrucao nao passar,
+  // a senha continua a antiga e o link do e-mail morreu — o cliente pede
+  // outro. Na ordem inversa, uma falha deixaria o link vivo depois de ja ter
+  // trocado a senha.
+  //
+  // Os outros pedidos pendentes morrem junto: se ele clicou tres vezes em
+  // "esqueci minha senha", os dois links velhos nao podem continuar valendo.
+  await q("UPDATE password_resets SET usado_em = ? WHERE user_id = ? AND usado_em IS NULL", [
+    agora,
+    userId,
+  ]);
+
+  // `sessoes_desde` expulsa quem ja estava dentro: o cookie de sessao se valida
+  // sozinho pela assinatura, entao sem essa marca trocar a senha nao derrubaria
+  // ninguem — e o motivo mais comum para trocar e justamente "alguem entrou na
+  // minha conta".
+  await q("UPDATE users SET password_hash = ?, sessoes_desde = ? WHERE id = ?", [
+    senhaHash,
+    agora,
+    userId,
+  ]);
+}
+
+// ---------------------------------------------------------------------------
 // LINKS CURTOS DIRETOS (/w/abc123)
 //
 // Mesma regra do resto do arquivo: tudo que é privado recebe `userId` como

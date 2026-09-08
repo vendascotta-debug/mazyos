@@ -16,7 +16,8 @@
  */
 export const SLUGS_RESERVADOS = new Set([
   // rotas reais
-  "app", "admin", "api", "entrar", "cadastrar", "recuperar", "onboarding",
+  "app", "admin", "api", "entrar", "cadastrar", "recuperar", "redefinir",
+  "onboarding",
   // "w" é o prefixo dos links curtos diretos (/w/abc123). Se alguém tomasse
   // esse slug, a página dele engoliria todos os links de WhatsApp do sistema.
   "w",

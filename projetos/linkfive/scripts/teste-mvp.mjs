@@ -1038,6 +1038,123 @@ pub = await r.json();
 checa("logado: o link ja nasce na conta", pub?.salvo === true);
 checa("logado: sem prazo de validade", pub?.curto?.expiraEm === null, String(pub?.curto?.expiraEm));
 
+// --- RECUPERACAO DE SENHA ---------------------------------------------------
+
+const emailSenha = `senha-${marca}@teste.com`;
+const SENHA_VELHA = "senhavelha123";
+const SENHA_NOVA = "senhanova456";
+
+// Quem ja esta logado ANTES da troca. E o cenario que motiva trocar a senha:
+// alguem entrou na conta e precisa cair fora.
+const donoAntigo = navegador();
+r = await donoAntigo("/api/auth/cadastro", {
+  method: "POST",
+  body: JSON.stringify({
+    nome: "Dono Teste",
+    email: emailSenha,
+    senha: SENHA_VELHA,
+    slug: `senha-${marca}`,
+  }),
+});
+checa("conta para testar a senha", r.ok, `status ${r.status}`);
+
+// A rota nao pode virar verificador de quem e cliente: e-mail que existe e
+// e-mail que nao existe respondem exatamente igual.
+const anonimo = navegador();
+r = await anonimo("/api/auth/recuperar", {
+  method: "POST",
+  body: JSON.stringify({ email: `naoexiste-${marca}@teste.com` }),
+});
+const semConta = await r.json();
+checa("e-mail inexistente responde 200", r.status === 200, `status ${r.status}`);
+checa("e-mail inexistente NAO gera link", !semConta.linkDeTeste);
+
+r = await anonimo("/api/auth/recuperar", {
+  method: "POST",
+  body: JSON.stringify({ email: emailSenha }),
+});
+const comConta = await r.json();
+checa("e-mail existente responde 200", r.status === 200);
+checa(
+  "a resposta e identica nos dois casos",
+  comConta.mensagem === semConta.mensagem,
+  `"${comConta.mensagem}" vs "${semConta.mensagem}"`,
+);
+
+// As telas existem em qualquer ambiente.
+for (const rota of ["/recuperar", "/redefinir"]) {
+  r = await fetch(BASE + rota);
+  checa(`${rota} abre`, r.status === 200, `status ${r.status}`);
+}
+r = await fetch(`${BASE}/entrar`);
+checa("o login oferece 'Esqueci minha senha'", (await r.text()).includes("Esqueci minha senha"));
+
+r = await fetch(`${BASE}/api/auth/redefinir?token=inventado123`);
+checa("token inventado e invalido", (await r.json()).valido === false);
+
+// O resto do fluxo depende de ler o token, que so a resposta de
+// desenvolvimento entrega. Contra producao, o e-mail e o unico caminho — e e
+// exatamente assim que tem de ser.
+const linkSenha = comConta.linkDeTeste;
+if (!linkSenha) {
+  console.log("[PULADO] troca de senha ponta a ponta (precisa do link, que so sai em dev)");
+} else {
+  const tokenSenha = new URL(linkSenha).searchParams.get("token");
+  checa("o link traz um token longo", (tokenSenha ?? "").length >= 40, `${(tokenSenha ?? "").length} chars`);
+
+  r = await fetch(`${BASE}/api/auth/redefinir?token=${encodeURIComponent(tokenSenha)}`);
+  checa("o token novo e valido", (await r.json()).valido === true);
+
+  // Senha curta e recusada sem gastar o token.
+  const novoDono = navegador();
+  r = await novoDono("/api/auth/redefinir", {
+    method: "POST",
+    body: JSON.stringify({ token: tokenSenha, senha: "curta" }),
+  });
+  checa("senha curta e recusada", r.status === 400, `status ${r.status}`);
+
+  r = await fetch(`${BASE}/api/auth/redefinir?token=${encodeURIComponent(tokenSenha)}`);
+  checa("o token sobrevive a tentativa recusada", (await r.json()).valido === true);
+
+  r = await novoDono("/api/auth/redefinir", {
+    method: "POST",
+    body: JSON.stringify({ token: tokenSenha, senha: SENHA_NOVA }),
+  });
+  checa("a senha e trocada", r.ok, `status ${r.status}`);
+
+  r = await novoDono("/api/pagina");
+  checa("entra direto depois de trocar", r.ok, `status ${r.status}`);
+
+  // O link do e-mail vale UMA vez.
+  r = await fetch(`${BASE}/api/auth/redefinir?token=${encodeURIComponent(tokenSenha)}`);
+  checa("o token usado nao vale mais", (await r.json()).valido === false);
+
+  r = await fetch(`${BASE}/api/auth/redefinir`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ token: tokenSenha, senha: "outrasenha789" }),
+  });
+  checa("reusar o link e recusado", r.status === 400, `status ${r.status}`);
+
+  const tentativa = navegador();
+  r = await tentativa("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email: emailSenha, senha: SENHA_VELHA }),
+  });
+  checa("a senha antiga nao entra mais", r.status === 401, `status ${r.status}`);
+
+  r = await tentativa("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email: emailSenha, senha: SENHA_NOVA }),
+  });
+  checa("a senha nova entra", r.ok, `status ${r.status}`);
+
+  // O que o cookie sozinho nao daria: a sessao aberta antes da troca morre.
+  r = await donoAntigo("/api/pagina");
+  checa("a sessao anterior a troca foi derrubada", r.status === 401, `status ${r.status}`);
+}
+
+
 
 
 console.log(falhas === 0 ? "\nTUDO PASSOU" : `\n${falhas} FALHA(S)`);

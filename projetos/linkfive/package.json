@@ -12,8 +12,10 @@
     "teste:animacao": "node scripts/teste-animacao.mjs"
   },
   "dependencies": {
+    "@types/nodemailer": "^8.0.1",
     "lucide-react": "^0.468.0",
     "next": "^15.5.24",
+    "nodemailer": "^10.0.1",
     "postgres": "^3.4.9",
     "qrcode": "^1.5.4",
     "react": "^19.0.0",

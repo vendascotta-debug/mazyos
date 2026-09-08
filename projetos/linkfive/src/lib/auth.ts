@@ -82,6 +82,22 @@ export function createSessionToken(userId: string): string {
   return `${payload}.${sign(payload)}`;
 }
 
+/**
+ * Igual ao `readSessionToken`, mas devolve também quando o cookie foi emitido.
+ *
+ * O instante de emissão não vai escrito no token: ele é a validade menos os 30
+ * dias de duração. Deduzir em vez de gravar evita mudar o formato do cookie —
+ * quem já estava logado continua logado depois desta versão subir.
+ */
+export function lerSessao(
+  token: string | undefined,
+): { userId: string; emitidoEm: number } | null {
+  const userId = readSessionToken(token);
+  if (!userId) return null;
+  const expira = Number(token!.split(".")[1]);
+  return { userId, emitidoEm: expira - SESSION_DAYS * 24 * 3600 * 1000 };
+}
+
 /** Valida assinatura e validade. Devolve o id do usuário, ou null. */
 export function readSessionToken(token: string | undefined): string | null {
   if (!token) return null;
@@ -127,6 +143,7 @@ interface UserRow {
   role: string;
   plan: string;
   onboarded: number;
+  sessoes_desde: string | null;
   created_at: string;
 }
 
@@ -146,10 +163,19 @@ function toUser(r: UserRow): User {
 /** Usuário da requisição atual, ou null. Nunca lança por falta de sessão. */
 export async function currentUser(): Promise<User | null> {
   const jar = await cookies();
-  const userId = readSessionToken(jar.get(SESSION_COOKIE)?.value);
-  if (!userId) return null;
-  const row = await q1<UserRow>("SELECT * FROM users WHERE id = ?", [userId]);
-  return row ? toUser(row) : null;
+  const sessao = lerSessao(jar.get(SESSION_COOKIE)?.value);
+  if (!sessao) return null;
+
+  const row = await q1<UserRow>("SELECT * FROM users WHERE id = ?", [sessao.userId]);
+  if (!row) return null;
+
+  // Senha trocada depois deste cookie ter sido emitido: ele não vale mais.
+  // É o que faz "redefinir a senha" expulsar quem tiver entrado na conta.
+  if (row.sessoes_desde && sessao.emitidoEm < new Date(row.sessoes_desde).getTime()) {
+    return null;
+  }
+
+  return toUser(row);
 }
 
 /**

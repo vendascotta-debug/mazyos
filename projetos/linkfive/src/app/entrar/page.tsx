@@ -68,9 +68,19 @@ function Formulario() {
         </div>
 
         <div>
-          <label className="label" htmlFor="senha">
-            Senha
-          </label>
+          <div className="flex items-baseline justify-between gap-3">
+            <label className="label" htmlFor="senha">
+              Senha
+            </label>
+            {/* Fica junto do campo, e nao perdido no rodape: quem procura esse
+                link ja errou a senha e esta olhando exatamente para ca. */}
+            <Link
+              href="/recuperar"
+              className="text-[13px] font-medium text-brand-600 hover:underline"
+            >
+              Esqueci minha senha
+            </Link>
+          </div>
           <input
             id="senha"
             type="password"

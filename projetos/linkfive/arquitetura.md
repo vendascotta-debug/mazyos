@@ -445,3 +445,65 @@ O teto de 30/hora é alto de propósito: operadora de celular e rede de escritó
 colocam muita gente atrás do mesmo IP, e um teto baixo barraria quem nunca
 abusou.
 
+---
+
+## 14. Recuperação de senha (08/09/2026)
+
+Até aqui, quem perdesse a senha perdia a conta — e nem o admin conseguia
+devolver. Era o maior buraco antes do primeiro cliente pagante.
+
+### O token
+
+Trinta e dois bytes aleatórios, guardados **só como hash SHA-256**. O token em
+texto existe em dois lugares: no e-mail do cliente e na memória da requisição
+que o gerou. Quem lesse a tabela `password_resets` não teria a chave de entrar
+em conta nenhuma — e vale lembrar que esse banco é o mesmo do Prospecta.
+
+As colunas `reset_token`/`reset_expires`, criadas na estrutura original e nunca
+usadas, foram removidas: elas guardariam o token em texto na linha do usuário e
+só permitiriam um pedido por vez.
+
+Vale **30 minutos** e **uma vez só**. A linha não é apagada no uso — `usado_em`
+marca que foi gasto, e os outros pedidos pendentes do mesmo usuário morrem
+junto: quem clicou três vezes em "esqueci minha senha" não pode ficar com dois
+links vivos.
+
+### A resposta é sempre a mesma
+
+Exista ou não uma conta com aquele e-mail, a rota devolve 200 e o mesmo texto.
+Um "esse e-mail não está cadastrado" seria um verificador de clientes de graça —
+e num SaaS a lista de quem é cliente já é informação de valor. Pelo mesmo motivo,
+estourar o teto de 5 pedidos por hora também responde igual.
+
+### Trocar a senha derruba as sessões
+
+O cookie de sessão não tem estado no servidor: ele se valida sozinho pela
+assinatura. Sem nada a mais, trocar a senha **não expulsaria ninguém** — e o
+motivo mais comum para trocar é justamente "alguém entrou na minha conta".
+
+A coluna `users.sessoes_desde` guarda o instante a partir do qual uma sessão
+vale. O `currentUser()` compara com a emissão do cookie e recusa o que for
+anterior.
+
+O instante de emissão não foi gravado no token: ele é a validade menos os 30
+dias de duração. Deduzir em vez de gravar manteve o formato do cookie intacto —
+quem já estava logado continuou logado quando esta versão subiu.
+
+### O envio
+
+`lib/email.ts` tem uma função e três caminhos, escolhidos pelo que estiver
+configurado: **Resend** (HTTP, sem dependência), **SMTP** (`nodemailer`,
+serve para o e-mail do próprio domínio na Hostinger) ou **terminal**, em
+desenvolvimento.
+
+O caminho do terminal não é preguiça: sem ele, mexer nessa parte exigiria uma
+chave de produção na máquina de desenvolvimento. E enquanto não há serviço
+configurado, **e só fora de produção**, a rota devolve o link na resposta para o
+teste ponta a ponta conseguir percorrer o fluxo inteiro. As duas condições
+juntas importam — sozinha, a segunda deixaria o link vazando em produção
+exatamente no estado em que o site está hoje.
+
+**O remetente precisa ser do `linkfive.com.br`, com o domínio verificado.**
+E-mail automático saindo de `@gmail.com` para o cliente é barrado ou vai para
+spam: o Gmail não autoriza outro serviço a assinar em nome dele.
+

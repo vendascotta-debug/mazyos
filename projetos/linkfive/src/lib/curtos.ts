@@ -73,6 +73,7 @@ export function codigoValido(code: string): boolean {
 const CODIGOS_RESERVADOS = new Set([
   "api", "app", "admin", "novo", "editar", "qr", "w",
   "entrar", "cadastrar", "planos", "termos", "privacidade", "senha", "aviso",
+  "recuperar", "redefinir",
 ]);
 
 export function validarCodigoPersonalizado(

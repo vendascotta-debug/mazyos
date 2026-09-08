@@ -46,7 +46,7 @@ recriar, copie o `.env.example` e preencha.
 
 ## O que já funciona
 
-Testado ponta a ponta em 08/09/2026 — 126 verificações, todas passando
+Testado ponta a ponta em 08/09/2026 — 146 verificações, todas passando
 (`npm run teste`):
 
 - [x] Landing page completa
@@ -90,6 +90,9 @@ Testado ponta a ponta em 08/09/2026 — 126 verificações, todas passando
       conta — três abas (link, QR Code e WhatsApp), código personalizado,
       redirecionamento e QR funcionando na hora. O link nasce com 30 dias de
       prazo e entra na conta assim que ele se cadastra ou faz login
+- [x] **Recuperação de senha**: link por e-mail que vale 30 minutos e uma vez
+      só, token guardado apenas como hash, resposta idêntica exista ou não a
+      conta, e troca de senha que derruba as sessões abertas
 - [x] **Termos de uso e política de privacidade** (rascunho, pendente de revisão jurídica)
 
 ## O que ainda não entrou
@@ -104,7 +107,9 @@ equipes.
 1. **Lastlink**: criar os 3 produtos, cadastrar o webhook e preencher
    `LASTLINK_PRODUTOS` e `LASTLINK_CHECKOUT_*`. Até lá os botões de assinar
    mostram "Em breve".
-2. Serviço de e-mail para a recuperação de senha (sugestão: Resend)
+2. **Chave do serviço de e-mail.** O fluxo de recuperação de senha está pronto
+   e testado, mas sem `RESEND_API_KEY` (ou `SMTP_*`) o e-mail não sai da
+   Vercel e o cliente não recebe o link. Ver `.env.example`
 3. Revisão jurídica dos termos e da política de privacidade, e os dados da
    empresa (razão social, CNPJ, e-mail do encarregado)
 4. Upload de imagem (hoje o avatar é URL colada; Vercel Blob resolve)
