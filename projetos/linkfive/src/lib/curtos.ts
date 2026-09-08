@@ -19,7 +19,8 @@ export type TipoCurto = "whatsapp" | "url";
 
 export interface ShortLink {
   id: string;
-  userId: string;
+  /** `null` no link criado na landing, antes de existir uma conta. */
+  userId: string | null;
   code: string;
   tipo: TipoCurto;
   title: string;
@@ -69,7 +70,10 @@ export function codigoValido(code: string): boolean {
  * digitando algo que quer que faça sentido ("promo-julho"). O que não pode é
  * colidir com as rotas do próprio sistema.
  */
-const CODIGOS_RESERVADOS = new Set(["api", "app", "admin", "novo", "editar", "qr", "w"]);
+const CODIGOS_RESERVADOS = new Set([
+  "api", "app", "admin", "novo", "editar", "qr", "w",
+  "entrar", "cadastrar", "planos", "termos", "privacidade", "senha", "aviso",
+]);
 
 export function validarCodigoPersonalizado(
   code: string,
@@ -116,6 +120,23 @@ export function normalizarUrl(bruto: string): { ok: true; url: string } | { ok: 
   }
 
   return { ok: true, url: u.toString() };
+}
+
+/**
+ * O que o visitante colou parece endereço, e não telefone?
+ *
+ * Existe por um erro real: o campo do gerador só aceitava número, e quem
+ * colava o convite de um grupo (`chat.whatsapp.com/...`) recebia "faltam
+ * dígitos — inclua o DDD". A mensagem estava certa e a tela estava errada:
+ * ninguém digita um link e espera ouvir que faltou o DDD.
+ */
+export function pareceUrl(bruto: string): boolean {
+  const t = bruto.trim();
+  if (!t) return false;
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(t)) return true;
+  // Sem protocolo: só conta como endereço se tiver ponto seguido de letra —
+  // "11 99999-9999" e "11.99999.9999" continuam sendo telefone.
+  return /[a-z]/i.test(t) && /\.[a-z]{2,}/i.test(t);
 }
 
 /** Domínio do destino, para mostrar na listagem. */

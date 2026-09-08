@@ -326,6 +326,22 @@ ALTER TABLE short_links ADD COLUMN IF NOT EXISTS senha_hash TEXT;
 ALTER TABLE short_links ADD COLUMN IF NOT EXISTS tipo TEXT NOT NULL DEFAULT 'whatsapp';
 ALTER TABLE short_links ALTER COLUMN numero DROP NOT NULL;
 
+-- Link criado antes do cadastro (08/09/2026).
+--
+-- user_id passa a aceitar NULL: o visitante da landing encurta de verdade,
+-- sem conta, e o link fica orfao ate alguem adotar. A alternativa seria criar
+-- um usuario-fantasma dono de todos eles, mas ele apareceria na lista de
+-- clientes do admin como se fosse cliente -- e o painel existe justamente
+-- para saber quem sao os clientes de verdade.
+--
+-- ip_hash: SHA-256 do IP com o AUTH_SECRET. Segura o limite por visitante sem
+--   guardar o IP em si; um encurtador aberto sem freio vira ferramenta de
+--   phishing em cima do nosso proprio dominio.
+-- Link orfao nasce com expira_em de 30 dias. Quem adota, limpa a data.
+ALTER TABLE short_links ALTER COLUMN user_id DROP NOT NULL;
+ALTER TABLE short_links ADD COLUMN IF NOT EXISTS ip_hash TEXT;
+CREATE INDEX IF NOT EXISTS idx_short_orfao ON short_links(ip_hash, created_at);
+
 CREATE TABLE IF NOT EXISTS short_clicks (
   id TEXT PRIMARY KEY,
   short_id TEXT NOT NULL REFERENCES short_links(id) ON DELETE CASCADE,

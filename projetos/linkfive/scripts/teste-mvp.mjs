@@ -865,5 +865,180 @@ checa(
 
 await sqlDireto2.end();
 
+// --- GERADOR DA LANDING: encurtar sem conta e levar o link no cadastro ------
+
+// Precisa de um "navegador" proprio: o `sessao()` la de cima guarda um cookie
+// so, e aqui andam dois ao mesmo tempo (o de sessao e o de convidado).
+function navegador() {
+  const jar = new Map();
+  return async (caminho, opcoes = {}) => {
+    const cookie = [...jar].map(([k, v]) => `${k}=${v}`).join("; ");
+    const resp = await fetch(BASE + caminho, {
+      ...opcoes,
+      redirect: "manual",
+      headers: {
+        "content-type": "application/json",
+        ...(cookie ? { cookie } : {}),
+        ...(opcoes.headers ?? {}),
+      },
+    });
+    for (const linha of resp.headers.getSetCookie?.() ?? []) {
+      const [par] = linha.split(";");
+      const i = par.indexOf("=");
+      const nome = par.slice(0, i).trim();
+      const valor = par.slice(i + 1).trim();
+      if (valor) jar.set(nome, valor);
+      else jar.delete(nome);
+    }
+    return resp;
+  };
+}
+
+const visitante = navegador();
+
+// O caso que motivou tudo: colar um ENDERECO, e nao um telefone.
+r = await visitante("/api/curtos/publico", {
+  method: "POST",
+  body: JSON.stringify({ tipo: "url", url: "https://chat.whatsapp.com/CONOSyRv98U0ugU7qEcw7V" }),
+});
+let pub = await r.json();
+checa("visitante sem conta encurta um endereco", r.ok, `status ${r.status}`);
+checa("o link volta no nosso dominio", (pub?.url ?? "").includes("/w/"), pub?.url ?? "");
+checa("o id interno NAO sai na resposta", !JSON.stringify(pub).includes('"id"'));
+
+// Ele funciona de verdade — nao e simulacao de tela.
+r = await fetch(`${BASE}/w/${pub.curto.code}`, { redirect: "manual" });
+checa(
+  "o link criado sem conta redireciona mesmo",
+  r.status === 307 && (r.headers.get("location") ?? "").includes("chat.whatsapp.com"),
+  `${r.status} ${r.headers.get("location") ?? ""}`,
+);
+
+// QR publico do que ele acabou de criar.
+r = await fetch(`${BASE}/api/qrcode?code=${pub.curto.code}&formato=svg`);
+const svgPub = await r.text();
+checa("QR publico abre sem login", r.ok && svgPub.includes("<svg"), `status ${r.status}`);
+checa("o QR sai com largura (senao some dentro do <img>)", svgPub.includes("width="));
+
+r = await fetch(`${BASE}/api/qrcode?code=naoexiste999`);
+checa("QR de codigo inexistente da 404", r.status === 404, `status ${r.status}`);
+
+// Codigo personalizado antes de existir conta.
+const codigoConvidado = `promo-${marca}`;
+r = await visitante("/api/curtos/publico", {
+  method: "POST",
+  body: JSON.stringify({ tipo: "url", url: "meusite.com.br/oferta", code: codigoConvidado }),
+});
+pub = await r.json();
+checa("codigo personalizado sem conta", r.ok && pub?.curto?.code === codigoConvidado);
+checa("endereco sem https:// e completado", (pub?.curto?.destino ?? "").startsWith("https://"));
+
+r = await visitante("/api/curtos/publico", {
+  method: "POST",
+  body: JSON.stringify({ tipo: "url", url: "outro.com.br", code: codigoConvidado }),
+});
+checa("codigo repetido e recusado", r.status === 409, `status ${r.status}`);
+
+// Rota do sistema nao pode ser tomada por um visitante.
+r = await visitante("/api/curtos/publico", {
+  method: "POST",
+  body: JSON.stringify({ tipo: "url", url: "site.com.br", code: "cadastrar" }),
+});
+checa("codigo reservado e recusado", r.status === 400, `status ${r.status}`);
+
+// Um link publico nao pode virar vetor de execucao no navegador de ninguem.
+r = await visitante("/api/curtos/publico", {
+  method: "POST",
+  body: JSON.stringify({ tipo: "url", url: "javascript:alert(1)" }),
+});
+checa("destino que nao e http/https e recusado", r.status === 400, `status ${r.status}`);
+
+// A aba de WhatsApp usa a mesma rota.
+r = await visitante("/api/curtos/publico", {
+  method: "POST",
+  body: JSON.stringify({ tipo: "whatsapp", numero: "11 98888-7777", mensagem: "Ola!" }),
+});
+pub = await r.json();
+checa(
+  "encurta link de WhatsApp sem conta",
+  r.ok && (pub?.curto?.destino ?? "").includes("wa.me/5511988887777"),
+  pub?.curto?.destino ?? "",
+);
+
+// --- O cadastro adota o que ele criou --------------------------------------
+const emailConvidado = `convidado-${marca}@teste.com`;
+r = await visitante("/api/auth/cadastro", {
+  method: "POST",
+  body: JSON.stringify({
+    nome: "Visitante Teste",
+    email: emailConvidado,
+    senha: "senha12345",
+    slug: `convidado-${marca}`,
+  }),
+});
+pub = await r.json();
+checa("cadastro do visitante", r.ok, `status ${r.status}`);
+checa(
+  "os 3 links criados antes do cadastro foram adotados",
+  pub?.linksAdotados === 3,
+  String(pub?.linksAdotados),
+);
+
+r = await visitante("/api/curtos");
+const meusCurtos = (await r.json())?.curtos ?? [];
+checa("os links adotados aparecem no painel", meusCurtos.length === 3, `${meusCurtos.length} links`);
+checa("a adocao apaga o prazo de 30 dias", meusCurtos.every((c) => c.expiraEm === null));
+checa("o codigo escolhido continua o mesmo", meusCurtos.some((c) => c.code === codigoConvidado));
+
+// O cookie e esvaziado: a proxima conta nao herda nada.
+await visitante("/api/auth/sair", { method: "POST" });
+r = await visitante("/api/auth/cadastro", {
+  method: "POST",
+  body: JSON.stringify({
+    nome: "Outro",
+    email: `outro-${marca}@teste.com`,
+    senha: "senha12345",
+    slug: `outro-${marca}`,
+  }),
+});
+checa("a conta seguinte NAO adota os links da anterior", (await r.json())?.linksAdotados === 0);
+
+// Cookie forjado a mao nao reivindica link de ninguem: a assinatura nao bate.
+const impostor = navegador();
+r = await impostor("/api/auth/cadastro", {
+  method: "POST",
+  headers: { cookie: "linkfive_convidado=s_qualquercoisa,s_outra.assinaturafalsa" },
+  body: JSON.stringify({
+    nome: "Impostor",
+    email: `impostor-${marca}@teste.com`,
+    senha: "senha12345",
+    slug: `impostor-${marca}`,
+  }),
+});
+checa("cookie com assinatura falsa nao adota nada", (await r.json())?.linksAdotados === 0);
+
+// Quem ja tinha conta leva o link no login, e nao so no cadastro.
+const voltando = navegador();
+await voltando("/api/curtos/publico", {
+  method: "POST",
+  body: JSON.stringify({ tipo: "url", url: "https://exemplo.com.br/depois" }),
+});
+r = await voltando("/api/auth/login", {
+  method: "POST",
+  body: JSON.stringify({ email: emailConvidado, senha: "senha12345" }),
+});
+checa("o login tambem adota o link do visitante", (await r.json())?.linksAdotados === 1);
+
+// Ja logado, o link nasce salvo — ninguem sai da landing com link temporario.
+r = await voltando("/api/curtos/publico", {
+  method: "POST",
+  body: JSON.stringify({ tipo: "url", url: "https://exemplo.com.br/logado" }),
+});
+pub = await r.json();
+checa("logado: o link ja nasce na conta", pub?.salvo === true);
+checa("logado: sem prazo de validade", pub?.curto?.expiraEm === null, String(pub?.curto?.expiraEm));
+
+
+
 console.log(falhas === 0 ? "\nTUDO PASSOU" : `\n${falhas} FALHA(S)`);
 process.exit(falhas === 0 ? 0 : 1);

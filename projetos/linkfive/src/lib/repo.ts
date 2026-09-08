@@ -579,13 +579,21 @@ export async function registrarLead(
 // LINKS CURTOS DIRETOS (/w/abc123)
 //
 // Mesma regra do resto do arquivo: tudo que é privado recebe `userId` como
-// primeiro argumento. A exceção é `curtoPorCodigo`, usada pelo redirecionador
-// público, e ela devolve só o que o redirecionamento precisa.
+// primeiro argumento. São duas as exceções, e as duas são deliberadas:
+//
+//   curtoPorCodigo   → o redirecionador público; devolve só o que o
+//                      redirecionamento precisa.
+//   criarCurtoOrfao  → o gerador da landing, usado por quem ainda não tem
+//                      conta. O link nasce sem dono (`user_id IS NULL`), então
+//                      não há dado privado de ninguém a proteger. Só
+//                      `adotarCurtos` transforma um órfão em link de alguém, e
+//                      ela recusa qualquer linha que já tenha dono.
 // ---------------------------------------------------------------------------
 
 interface ShortRow {
   id: string;
-  user_id: string;
+  /** `null` enquanto o link for órfão — criado na landing, sem conta. */
+  user_id: string | null;
   code: string;
   tipo: string;
   title: string;
@@ -669,6 +677,78 @@ export async function criarCurto(
     [id, userId, dados.code, dados.tipo, dados.title, dados.numero, dados.mensagem, dados.destino, agora, agora],
   );
   return curtoDoDono(userId, id);
+}
+
+/**
+ * Link criado na landing, por quem ainda não tem conta.
+ *
+ * Nasce sem dono e com prazo: 30 dias. O prazo não é detalhe — sem ele o
+ * gerador aberto encheria a tabela de links eternos que ninguém reivindicou, e
+ * cada um deles é um endereço `linkfive.com.br` apontando para fora do nosso
+ * controle. Adotar o link limpa a data.
+ */
+export async function criarCurtoOrfao(dados: {
+  code: string;
+  tipo: ShortLink["tipo"];
+  title: string;
+  numero: string | null;
+  mensagem: string | null;
+  destino: string;
+  ipHash: string;
+  expiraEm: string;
+}): Promise<ShortLink | null> {
+  const id = uid("s_");
+  const agora = nowIso();
+  await q(
+    `INSERT INTO short_links (id, user_id, code, tipo, title, numero, mensagem, destino,
+                              active, clicks_total, ip_hash, expira_em, created_at, updated_at)
+     VALUES (?, NULL, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?, ?)`,
+    [
+      id, dados.code, dados.tipo, dados.title, dados.numero, dados.mensagem,
+      dados.destino, dados.ipHash, dados.expiraEm, agora, agora,
+    ],
+  );
+  const row = await q1<ShortRow>("SELECT * FROM short_links WHERE id = ?", [id]);
+  return row ? toShort(row) : null;
+}
+
+/** Quantos links órfãos esse visitante criou desde `desde`. Freio de abuso. */
+export async function contarOrfaosDoVisitante(ipHash: string, desde: string): Promise<number> {
+  const r = await q1<{ n: string }>(
+    "SELECT COUNT(*) AS n FROM short_links WHERE ip_hash = ? AND user_id IS NULL AND created_at >= ?",
+    [ipHash, desde],
+  );
+  return Number(r?.n ?? 0);
+}
+
+/**
+ * Passa para a conta os links que o visitante criou antes de se cadastrar.
+ *
+ * O `user_id IS NULL` na cláusula é o que impede a adoção de virar sequestro:
+ * um id forjado no cookie que aponte para o link de outra pessoa não casa, e a
+ * linha não é tocada. Devolve quantos foram realmente adotados.
+ */
+export async function adotarCurtos(userId: string, ids: string[]): Promise<number> {
+  if (ids.length === 0) return 0;
+
+  const marcas = ids.map(() => "?").join(", ");
+  const rows = await q<{ id: string }>(
+    `UPDATE short_links
+        SET user_id = ?, expira_em = NULL, ip_hash = NULL, updated_at = ?
+      WHERE user_id IS NULL AND id IN (${marcas})
+      RETURNING id`,
+    [userId, nowIso(), ...ids],
+  );
+  return rows.length;
+}
+
+/** Lê um órfão pelo id, para a landing mostrar o que acabou de criar. */
+export async function curtoOrfaoPorId(id: string): Promise<ShortLink | null> {
+  const row = await q1<ShortRow>(
+    "SELECT * FROM short_links WHERE id = ? AND user_id IS NULL",
+    [id],
+  );
+  return row ? toShort(row) : null;
 }
 
 export async function atualizarCurto(

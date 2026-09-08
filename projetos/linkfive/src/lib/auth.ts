@@ -57,6 +57,25 @@ function sign(payload: string): string {
   return crypto.createHmac("sha256", secret()).update(payload).digest("base64url");
 }
 
+/**
+ * A mesma assinatura, para quem precisa selar outro cookie.
+ *
+ * Exportada para o cookie de convidado (`lib/convidado.ts`), que guarda os
+ * links criados antes do cadastro. O segredo mora só aqui: nenhum outro módulo
+ * lê o AUTH_SECRET.
+ */
+export function assinarHmac(payload: string): string {
+  return sign(payload);
+}
+
+/** Comparação em tempo constante, para conferir uma assinatura sem vazar dica. */
+export function assinaturaConfere(payload: string, assinatura: string): boolean {
+  const esperada = Buffer.from(sign(payload));
+  const recebida = Buffer.from(assinatura);
+  if (esperada.length !== recebida.length) return false;
+  return crypto.timingSafeEqual(esperada, recebida);
+}
+
 export function createSessionToken(userId: string): string {
   const expira = Date.now() + SESSION_DAYS * 24 * 3600 * 1000;
   const payload = `${userId}.${expira}`;

@@ -393,3 +393,55 @@ Não travam o começo, mas travam o lançamento:
 | Vazamento de dados entre contas | `userId` obrigatório na assinatura de toda função do repo |
 | Alguém hospedar phishing numa página LINKFIVE | Painel admin com listagem e botão de suspender página |
 | Concorrência estabelecida (Linktree, W.app) | Diferencial é lead + WhatsApp + analytics comercial, não "lista de links" |
+
+---
+
+## 13. Encurtar antes de ter conta (08/09/2026)
+
+A landing tinha um gerador que **parecia** um encurtador e não era. Ele montava
+um `wa.me` dentro do navegador e chamava aquilo de link: um endereço que não é
+nosso, que não conta clique nenhum e que o dono não pode trocar depois. E o
+único campo aceitava telefone — quem colava o convite de um grupo
+(`chat.whatsapp.com/...`) recebia "faltam dígitos, inclua o DDD".
+
+O concorrente faz o caminho inteiro na primeira tela: cola, escolhe o código,
+recebe o link curto e o QR, e **só então** ouve falar em criar conta. Passamos a
+fazer o mesmo.
+
+### O link órfão
+
+`short_links.user_id` passou a aceitar `NULL`. O link criado na landing nasce
+sem dono e com `expira_em` de 30 dias.
+
+Consideramos um usuário-fantasma dono de todos esses links, o que evitaria a
+coluna nula. Foi descartado: ele apareceria no `/admin` como se fosse cliente, e
+esse painel existe justamente para responder "quem são meus clientes".
+
+O prazo de 30 dias não é detalhe de limpeza. Sem ele, um gerador aberto encheria
+a tabela de endereços `linkfive.com.br` permanentes apontando para fora do nosso
+controle. Adotar o link apaga a data.
+
+### Como o link atravessa o cadastro
+
+O id vai para o cookie `linkfive_convidado` — httpOnly e assinado com o mesmo
+HMAC da sessão. O cadastro e o login chamam `adotarCurtos()`, cujo `WHERE`
+carrega `user_id IS NULL`: um id forjado que aponte para o link de outra pessoa
+não casa com nada, e a linha não é tocada. É o que separa adoção de sequestro.
+
+Quem já está logado nem chega a ter link órfão: a rota adota na mesma
+requisição, depois de conferir o limite do plano.
+
+### Por que é seguro deixar a rota aberta
+
+| Risco | O que segura |
+|---|---|
+| Encurtador virar hospedagem de phishing | 30 links/hora por visitante, e o que ninguém adota morre em 30 dias |
+| Guardar IP de visitante | Só o SHA-256 do IP com o `AUTH_SECRET` (`ip_hash`), nunca o IP |
+| `javascript:` no destino | `normalizarUrl()` só aceita http e https |
+| Tomarem `/w/admin`, `/w/entrar` | Lista de códigos reservados, agora com as rotas de topo |
+| QR virar gerador grátis pro mundo | `/api/qrcode?code=` só desenha endereços `/w/` que já existem aqui |
+
+O teto de 30/hora é alto de propósito: operadora de celular e rede de escritório
+colocam muita gente atrás do mesmo IP, e um teto baixo barraria quem nunca
+abusou.
+

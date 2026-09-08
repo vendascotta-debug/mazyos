@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { criarUsuario, emailEmUso, setSessionCookie } from "@/lib/auth";
-import { criarPagina, slugDisponivel } from "@/lib/repo";
+import { adotarCurtos, criarPagina, slugDisponivel } from "@/lib/repo";
+import { curtosDoConvidado, esquecerConvidado } from "@/lib/convidado";
 import { normalizarSlug, validarSlug } from "@/lib/slug";
 import { aplicarAssinaturaPendente } from "@/lib/cobranca";
 
@@ -49,7 +50,18 @@ export async function POST(req: Request) {
   // pago.
   const planoPago = await aplicarAssinaturaPendente(user.id, email);
 
+  // O link que ele encurtou na landing antes de decidir criar conta entra
+  // junto. Sem isso, o "criar conta e salvar o link" da home seria propaganda
+  // enganosa: ele perderia exatamente a coisa que o convenceu a se cadastrar.
+  const adotados = await adotarCurtos(user.id, await curtosDoConvidado());
+  if (adotados > 0) await esquecerConvidado();
+
   await setSessionCookie(user.id);
 
-  return NextResponse.json({ ok: true, destino: "/onboarding", plano: planoPago ?? "free" });
+  return NextResponse.json({
+    ok: true,
+    destino: "/onboarding",
+    plano: planoPago ?? "free",
+    linksAdotados: adotados,
+  });
 }

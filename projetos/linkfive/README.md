@@ -46,7 +46,7 @@ recriar, copie o `.env.example` e preencha.
 
 ## O que já funciona
 
-Testado ponta a ponta em 07/09/2026 — 101 verificações, todas passando
+Testado ponta a ponta em 08/09/2026 — 126 verificações, todas passando
 (`npm run teste`):
 
 - [x] Landing page completa
@@ -86,6 +86,10 @@ Testado ponta a ponta em 07/09/2026 — 101 verificações, todas passando
 - [x] **Gestão do link direto** (plano Starter+): expiração com data, proteção
       por senha e troca do destino sem mudar o endereço — o QR já impresso
       continua valendo
+- [x] **Encurtador aberto na landing**: o visitante encurta de verdade sem criar
+      conta — três abas (link, QR Code e WhatsApp), código personalizado,
+      redirecionamento e QR funcionando na hora. O link nasce com 30 dias de
+      prazo e entra na conta assim que ele se cadastra ou faz login
 - [x] **Termos de uso e política de privacidade** (rascunho, pendente de revisão jurídica)
 
 ## O que ainda não entrou
