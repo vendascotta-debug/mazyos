@@ -131,7 +131,7 @@ r = await a("/api/links", {
     url: "https://exemplo.com",
   }),
 });
-checa("plano Free barra o 6o link", r.status === 402, `status ${r.status}`);
+checa("links na pagina sao ilimitados no Free", r.ok, `status ${r.status}`);
 
 // --- Pagina em rascunho responde 404 ---------------------------------------
 r = await fetch(`${BASE}/${slugA}`, { redirect: "manual" });
@@ -319,12 +319,50 @@ checa("QR do link curto sai em SVG", r.ok && svgCurto.includes("<svg"));
 r = await b(`/api/qrcode?curto=${curtoCriado.id}&formato=svg`);
 checa("B NAO baixa o QR do link de A", r.status === 404, `status ${r.status}`);
 
-// Limite do plano Free: 1 link curto
+// O Free agora deixa criar varios links curtos (10.000 ativos, 100/mes).
 r = await a("/api/curtos", {
   method: "POST",
-  body: JSON.stringify({ title: "Terceiro", numero: "11973933648" }),
+  body: JSON.stringify({ title: "Segundo", numero: "11973933648" }),
 });
-checa("plano Free barra o link curto extra", r.status === 402, `status ${r.status}`);
+checa("Free permite mais de um link curto", r.ok, `status ${r.status}`);
+
+// A cota em si e testada direto no modulo, logo abaixo: subir 100 links por
+// HTTP so para ver o 101 ser barrado levaria minutos e testaria a mesma conta.
+const limites = await import("../src/lib/limites.ts");
+
+const cotaCheia = limites.podeCriarCurto("free", 0, limites.PLANOS.free.maxCurtosMes);
+checa(
+  "cota mensal barra quando enche",
+  cotaCheia.permitido === false && cotaCheia.motivo.includes("por mês"),
+  cotaCheia.motivo ?? "",
+);
+
+const tetoAtivos = limites.podeCriarCurto("free", limites.PLANOS.free.maxCurtos, 0);
+checa(
+  "teto de ativos barra quando enche",
+  tetoAtivos.permitido === false && tetoAtivos.motivo.includes("ativos"),
+  tetoAtivos.motivo ?? "",
+);
+
+checa("dentro dos dois tetos, permite", limites.podeCriarCurto("free", 5, 5).permitido === true);
+
+checa(
+  "plano pago nao tem cota mensal",
+  limites.podeCriarCurto("pro", 999999, 999999).permitido === true,
+);
+
+// Conta antiga gravada como "business" nao pode virar Free e perder recurso.
+checa(
+  "plano legado business vira Pro",
+  limites.plano("business").id === "pro",
+  limites.plano("business").id,
+);
+
+checa(
+  "anual do Starter desconta",
+  (limites.descontoAnual(limites.PLANOS.starter) ?? 0) >= 10,
+  `${limites.descontoAnual(limites.PLANOS.starter)}%`,
+);
 
 // O slug "w" nao pode ser registrado por ninguem
 r = await fetch(`${BASE}/api/slug/disponivel?slug=w`);
@@ -396,7 +434,7 @@ checa("visitante sem sessao nao abre /admin", r.status === 307 || r.status === 3
 
 r = await a(`/api/admin/cliente/${infoB.pageId ? "qualquer" : "qualquer"}`, {
   method: "PATCH",
-  body: JSON.stringify({ plano: "business" }),
+  body: JSON.stringify({ plano: "pro" }),
 });
 checa("cliente comum nao usa a rota de admin", r.status === 404, `status ${r.status}`);
 

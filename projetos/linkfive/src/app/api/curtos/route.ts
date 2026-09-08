@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { currentUser } from "@/lib/auth";
 import { podeCriarCurto } from "@/lib/limites";
-import { codigoDisponivel, contarCurtos, criarCurto, curtosDoUsuario } from "@/lib/repo";
+import {
+  codigoDisponivel,
+  contarCurtos,
+  contarCurtosNoMes,
+  criarCurto,
+  curtosDoUsuario,
+} from "@/lib/repo";
 import { gerarCodigo, normalizarUrl, validarCodigoPersonalizado } from "@/lib/curtos";
 import { linkWhatsapp, normalizarTelefone, telefoneValido } from "@/lib/links";
 
@@ -58,7 +64,12 @@ export async function POST(req: Request) {
     tituloPadrao = "Link encurtado";
   }
 
-  const veredito = podeCriarCurto(user.plan, await contarCurtos(user.id));
+  // Os dois tetos: quantos existem ativos e quantos já foram criados no mês.
+  const veredito = podeCriarCurto(
+    user.plan,
+    await contarCurtos(user.id),
+    await contarCurtosNoMes(user.id),
+  );
   if (!veredito.permitido) {
     return NextResponse.json({ erro: veredito.motivo, upgrade: veredito.upgrade }, { status: 402 });
   }

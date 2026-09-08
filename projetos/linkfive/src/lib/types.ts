@@ -10,8 +10,12 @@
 /**
  * Planos. "cortesia" não é vendido: só o admin concede, e ele não aparece na
  * página de preços nem entra na conta de receita.
+ *
+ * "business" saiu na revisão de 07/09/2026 e foi absorvido pelo Pro. Contas
+ * antigas com esse valor no banco continuam funcionando — ver LEGADO em
+ * limites.ts.
  */
-export type PlanId = "free" | "starter" | "pro" | "business" | "cortesia";
+export type PlanId = "free" | "starter" | "pro" | "cortesia";
 export type Role = "user" | "admin";
 
 export interface User {

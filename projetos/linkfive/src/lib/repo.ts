@@ -742,3 +742,25 @@ export async function registrarCliqueCurto(
   );
   await q("UPDATE short_links SET clicks_total = clicks_total + 1 WHERE id = ?", [shortId]);
 }
+
+/**
+ * Quantos links diretos o usuário criou no mês corrente.
+ *
+ * A cota é por mês de calendário e zera no dia 1º — é o que a mensagem de
+ * limite promete ao usuário, então precisa ser exatamente isso. Janela móvel
+ * de 30 dias seria mais suave, mas ninguém entende quando a cota volta.
+ *
+ * O corte usa o fuso de São Paulo: virar o mês às 21h do dia 30 porque o
+ * servidor está em UTC seria uma surpresa desagradável.
+ */
+export async function contarCurtosNoMes(userId: string): Promise<number> {
+  const agora = new Date();
+  const saoPaulo = agora.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  const inicioDoMes = `${saoPaulo.slice(0, 7)}-01`;
+
+  const r = await q1<{ n: string }>(
+    "SELECT COUNT(*) AS n FROM short_links WHERE user_id = ? AND created_at >= ?",
+    [userId, inicioDoMes],
+  );
+  return Number(r?.n ?? 0);
+}

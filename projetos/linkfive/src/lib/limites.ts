@@ -9,6 +9,20 @@ import type { PlanId } from "@/lib/types";
 //
 // A checagem que VALE é a do servidor. Esconder o botão no front é conforto,
 // não controle de acesso.
+//
+// ESTRUTURA (definida em 07/09/2026, espelhando o url.gratis):
+//
+// Dois tetos diferentes para links diretos, e é de propósito:
+//   maxCurtos    → quantos podem existir ATIVOS ao mesmo tempo
+//   maxCurtosMes → quantos podem ser CRIADOS por mês
+//
+// O primeiro é o número de vitrine; o segundo é o que realmente segura o uso.
+// Um teto alto de ativos com cota mensal apertada deixa o plano generoso na
+// leitura e controlado na prática.
+//
+// O vocabulário deles ("projetos", "workspaces") virou o nosso: projeto é
+// PÁGINA, membro é EQUIPE. "Workspace" não tem equivalente e ficou de fora —
+// inventar uma camada só para igualar a tabela seria vender o que não existe.
 // ---------------------------------------------------------------------------
 
 export interface Plano {
@@ -16,11 +30,18 @@ export interface Plano {
   nome: string;
   /** Em centavos, para não carregar erro de ponto flutuante. */
   precoCents: number;
-  /** `null` = ilimitado. */
+  /** Preço do ano inteiro. `null` = plano sem opção anual. */
+  precoAnualCents: number | null;
+  /** Links na página. `null` = ilimitado. */
   maxLinks: number | null;
-  /** Links curtos diretos (/w/abc123). `null` = ilimitado. */
+  /** Links diretos ativos ao mesmo tempo. `null` = ilimitado. */
   maxCurtos: number | null;
+  /** Links diretos que podem ser criados por mês. `null` = ilimitado. */
+  maxCurtosMes: number | null;
+  /** Páginas (o "projeto" do concorrente). */
   maxPaginas: number;
+  /** Pessoas com acesso à conta. */
+  maxMembros: number;
   /** Até quantos dias atrás o analytics mostra. */
   analyticsDias: number;
   /** Formulário de captura e aba de Leads. */
@@ -40,12 +61,18 @@ export interface Plano {
 export const PLANOS: Record<PlanId, Plano> = {
   free: {
     id: "free",
-    nome: "Free",
+    nome: "Grátis",
     precoCents: 0,
-    maxLinks: 5,
-    maxCurtos: 1,
-    maxPaginas: 1,
-    analyticsDias: 7,
+    precoAnualCents: null,
+    maxLinks: null,
+    maxCurtos: 10000,
+    maxCurtosMes: 100,
+    maxPaginas: 10,
+    maxMembros: 1,
+    // Três dias é curto de propósito: o produto funciona de graça, mas quem
+    // quer saber o que deu certo precisa de histórico. É a alavanca de
+    // upgrade do concorrente, e funciona.
+    analyticsDias: 3,
     formularios: false,
     temas: false,
     personalizacaoAvancada: false,
@@ -55,39 +82,32 @@ export const PLANOS: Record<PlanId, Plano> = {
   starter: {
     id: "starter",
     nome: "Starter",
-    precoCents: 990,
-    maxLinks: 25,
-    maxCurtos: 5,
-    maxPaginas: 1,
-    analyticsDias: 30,
-    formularios: false,
-    temas: true,
-    personalizacaoAvancada: false,
-    marca: true,
-    equipe: false,
-  },
-  pro: {
-    id: "pro",
-    nome: "Pro",
     precoCents: 1990,
+    // 12 meses sairiam R$ 238,80 — o anual desconta ~16%.
+    precoAnualCents: 19990,
     maxLinks: null,
-    maxCurtos: 50,
-    maxPaginas: 1,
-    analyticsDias: 90,
+    maxCurtos: 10000,
+    maxCurtosMes: 300,
+    maxPaginas: 100,
+    maxMembros: 5,
+    analyticsDias: 60,
     formularios: true,
     temas: true,
     personalizacaoAvancada: true,
     marca: false,
-    equipe: false,
+    equipe: true,
     destaque: "Mais escolhido",
   },
-  business: {
-    id: "business",
-    nome: "Business",
+  pro: {
+    id: "pro",
+    nome: "Pro",
     precoCents: 3990,
+    precoAnualCents: 39900,
     maxLinks: null,
     maxCurtos: null,
-    maxPaginas: 5,
+    maxCurtosMes: null,
+    maxPaginas: 1000,
+    maxMembros: 20,
     analyticsDias: 365,
     formularios: true,
     temas: true,
@@ -99,9 +119,12 @@ export const PLANOS: Record<PlanId, Plano> = {
     id: "cortesia",
     nome: "Cortesia",
     precoCents: 0,
+    precoAnualCents: null,
     maxLinks: null,
     maxCurtos: null,
-    maxPaginas: 5,
+    maxCurtosMes: null,
+    maxPaginas: 1000,
+    maxMembros: 20,
     analyticsDias: 365,
     formularios: true,
     temas: true,
@@ -113,19 +136,47 @@ export const PLANOS: Record<PlanId, Plano> = {
 };
 
 /** Ordem dos planos vendidos — é o que a landing e a tela de preços mostram. */
-export const ORDEM_PLANOS: PlanId[] = ["free", "starter", "pro", "business"];
+export const ORDEM_PLANOS: PlanId[] = ["free", "starter", "pro"];
 
 /** Todos os planos, inclusive o Cortesia. Só o painel administrativo usa. */
 export const ORDEM_PLANOS_ADMIN: PlanId[] = [...ORDEM_PLANOS, "cortesia"];
 
+/**
+ * Planos que já existiram e não estão mais à venda.
+ *
+ * O "business" foi absorvido pelo Pro na revisão de 07/09/2026. Quem estivesse
+ * nele não pode virar Free do nada — perderia recurso que já usava.
+ */
+const LEGADO: Record<string, PlanId> = { business: "pro" };
+
 export function plano(id: PlanId | string | null | undefined): Plano {
-  return PLANOS[(id as PlanId) ?? "free"] ?? PLANOS.free;
+  const chave = (id ?? "free") as string;
+  return PLANOS[chave as PlanId] ?? PLANOS[LEGADO[chave] ?? "free"];
 }
 
+export type Ciclo = "mensal" | "anual";
+
 /** "R$ 19,90" ou "Grátis". */
-export function precoFormatado(p: Plano): string {
-  if (p.precoCents === 0) return "Grátis";
-  return (p.precoCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+export function precoFormatado(p: Plano, ciclo: Ciclo = "mensal"): string {
+  const cents = ciclo === "anual" ? p.precoAnualCents : p.precoCents;
+  if (!cents) return "Grátis";
+  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+/** Quanto sai por mês quando paga o ano inteiro. */
+export function mensalNoAnual(p: Plano): string | null {
+  if (!p.precoAnualCents) return null;
+  return (p.precoAnualCents / 12 / 100).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
+
+/** Quanto por cento o anual economiza. */
+export function descontoAnual(p: Plano): number | null {
+  if (!p.precoAnualCents || !p.precoCents) return null;
+  const doze = p.precoCents * 12;
+  return Math.round(((doze - p.precoAnualCents) / doze) * 100);
 }
 
 /** O plano seguinte na escada, ou null se já está no topo. */
@@ -142,7 +193,7 @@ export function proximoPlano(id: PlanId): Plano | null {
 export type Veredito = { permitido: true } | { permitido: false; motivo: string; upgrade: PlanId };
 
 /**
- * Pode criar mais um link?
+ * Pode criar mais um link na página?
  *
  * `atuais` é a contagem que veio do banco. Quem chama é responsável por contar
  * dentro da mesma requisição — não guardamos contador desnormalizado, que é
@@ -155,23 +206,38 @@ export function podeCriarLink(planId: PlanId, atuais: number): Veredito {
   return {
     permitido: false,
     motivo: `O plano ${p.nome} permite ${p.maxLinks} links. Você já usou todos.`,
-    upgrade: up?.id ?? "pro",
+    upgrade: up?.id ?? "starter",
   };
 }
 
-/** Pode criar mais um link curto direto (/w/abc123)? */
-export function podeCriarCurto(planId: PlanId, atuais: number): Veredito {
+/**
+ * Pode criar mais um link direto?
+ *
+ * Confere os dois tetos. A cota mensal quase sempre é a que barra primeiro —
+ * e a mensagem precisa dizer QUAL dos dois estourou, senão o usuário fica sem
+ * entender por que "10.000 links" não deixou ele criar o de número 101.
+ */
+export function podeCriarCurto(planId: PlanId, ativos: number, criadosNoMes: number): Veredito {
   const p = plano(planId);
-  if (p.maxCurtos === null || atuais < p.maxCurtos) return { permitido: true };
   const up = proximoPlano(planId);
-  return {
-    permitido: false,
-    motivo:
-      p.maxCurtos === 1
-        ? `O plano ${p.nome} permite um link direto. Para criar mais, mude de plano.`
-        : `O plano ${p.nome} permite ${p.maxCurtos} links diretos. Você já usou todos.`,
-    upgrade: up?.id ?? "pro",
-  };
+
+  if (p.maxCurtosMes !== null && criadosNoMes >= p.maxCurtosMes) {
+    return {
+      permitido: false,
+      motivo: `O plano ${p.nome} permite criar ${p.maxCurtosMes} links diretos por mês, e você já criou todos. A cota volta no dia 1º.`,
+      upgrade: up?.id ?? "starter",
+    };
+  }
+
+  if (p.maxCurtos !== null && ativos >= p.maxCurtos) {
+    return {
+      permitido: false,
+      motivo: `O plano ${p.nome} permite ${p.maxCurtos.toLocaleString("pt-BR")} links diretos ativos. Pause ou exclua algum para criar outro.`,
+      upgrade: up?.id ?? "starter",
+    };
+  }
+
+  return { permitido: true };
 }
 
 export function podeCriarPagina(planId: PlanId, atuais: number): Veredito {
@@ -184,7 +250,7 @@ export function podeCriarPagina(planId: PlanId, atuais: number): Veredito {
       p.maxPaginas === 1
         ? `O plano ${p.nome} permite uma página. Para ter mais de uma, mude de plano.`
         : `O plano ${p.nome} permite ${p.maxPaginas} páginas.`,
-    upgrade: up?.id ?? "business",
+    upgrade: up?.id ?? "pro",
   };
 }
 
@@ -192,8 +258,8 @@ export function podeUsarFormularios(planId: PlanId): Veredito {
   if (plano(planId).formularios) return { permitido: true };
   return {
     permitido: false,
-    motivo: "A captura de leads está disponível a partir do plano Pro.",
-    upgrade: "pro",
+    motivo: "A captura de leads está disponível a partir do plano Starter.",
+    upgrade: "starter",
   };
 }
 
@@ -210,7 +276,7 @@ export function podeTrocarTema(planId: PlanId): Veredito {
  * Recorta o período pedido ao que o plano enxerga.
  *
  * Devolve os dias efetivos e se houve corte — a tela usa isso pra mostrar
- * "seu plano mostra os últimos 7 dias" em vez de um gráfico misteriosamente
+ * "seu plano mostra os últimos 3 dias" em vez de um gráfico misteriosamente
  * curto.
  */
 export function janelaAnalytics(planId: PlanId, diasPedidos: number) {

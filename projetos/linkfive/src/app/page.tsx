@@ -11,51 +11,68 @@ import {
   Zap,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
-import { ORDEM_PLANOS, PLANOS, precoFormatado } from "@/lib/limites";
+import { ORDEM_PLANOS, PLANOS } from "@/lib/limites";
+import { checkoutDoPlano } from "@/lib/cobranca";
+import { TabelaPrecos } from "@/components/landing/TabelaPrecos";
 import { HeroCelular } from "@/components/landing/HeroCelular";
+
+// ---------------------------------------------------------------------------
+// POSICIONAMENTO (revisto em 07/09/2026).
+//
+// "Todos os seus canais em um link" é o que Linktree, Bitly e url.gratis já
+// dizem. Repetir a frase do concorrente obriga a ganhar no convencimento, que
+// é caro para quem ninguém conhece ainda.
+//
+// A promessa daqui em diante é o que eles NÃO fazem: a página não só recebe
+// visita, ela devolve o contato de quem chegou. Reunir canais virou meio; o
+// fim é cliente.
+// ---------------------------------------------------------------------------
 
 export const metadata = {
   title: "LINKFIVE — Seu link. Sua marca. Seus clientes.",
   description:
-    "Crie uma página profissional com todos os seus canais, produtos e formas de contato em um único link.",
+    "Uma página que transforma quem chega em contato: WhatsApp com mensagem pronta, formulário de captura e os leads organizados no seu painel.",
 };
 
 const COMO_FUNCIONA = [
   {
     n: "1",
-    titulo: "Crie sua página",
-    texto: "Escolha seu endereço, coloque seu nome e sua logo. Leva menos de um minuto.",
+    titulo: "Monte sua página",
+    texto:
+      "Endereço, nome, logo e os canais que você usa. Leva menos de um minuto e não precisa saber nada de site.",
   },
   {
     n: "2",
-    titulo: "Adicione seus canais",
-    texto: "WhatsApp, Instagram, catálogo, mapa, telefone. Cada um vira um botão.",
+    titulo: "Divulgue um link só",
+    texto:
+      "Na bio, no cartão, no anúncio, no QR Code da vitrine. Quem chegar encontra o caminho pra falar com você.",
   },
   {
     n: "3",
-    titulo: "Divulgue um link só",
-    texto: "Na bio, no cartão, no anúncio, no QR Code da vitrine. Um endereço para tudo.",
+    titulo: "Receba o contato",
+    texto:
+      "A conversa abre no seu WhatsApp com a mensagem pronta, ou o contato cai no seu painel pelo formulário. Aí é só vender.",
   },
 ];
 
 const RECURSOS = [
   {
-    icone: Zap,
-    titulo: "Link direto pro WhatsApp",
+    icone: Users,
+    titulo: "O contato não se perde",
     texto:
-      "Além da página, você cria endereços curtos que abrem a conversa na hora, sem passar por tela nenhuma. Cada um com seu QR Code e seu contador.",
+      "Um formulário na sua página recolhe nome, WhatsApp e e-mail. Tudo cai organizado no seu painel — nada de anotar em papel ou caçar no meio das mensagens.",
   },
   {
     icone: MessageCircle,
     titulo: "WhatsApp com mensagem pronta",
     texto:
-      "O cliente toca no botão e a conversa já abre com a mensagem digitada. Ele só aperta enviar.",
+      "O cliente toca no botão e a conversa já abre com a mensagem digitada. Ele só aperta enviar — sem aquele silêncio de quem não sabe como começar.",
   },
   {
-    icone: Users,
-    titulo: "Captura de leads",
+    icone: Zap,
+    titulo: "Link direto, sem página no meio",
     texto:
-      "Um formulário na sua página. Nome, WhatsApp e e-mail caem direto no seu painel, prontos para o contato.",
+      "Endereços curtos que abrem a conversa na hora. Um pro anúncio, um pro cartão, um pra vitrine — e você vê qual deles trouxe gente.",
   },
   {
     icone: BarChart3,
@@ -76,8 +93,9 @@ const RECURSOS = [
   },
   {
     icone: MousePointerClick,
-    titulo: "Produtos e serviços",
-    texto: "Mostre o que você vende com foto e preço, e leve o cliente direto para a conversa.",
+    titulo: "Preço em real, feito aqui",
+    texto:
+      "Sem cobrança em dólar, sem cartão internacional, sem suporte em inglês. Um produto brasileiro para quem vende no Brasil.",
   },
 ];
 
@@ -121,7 +139,17 @@ const FAQ = [
   },
   {
     p: "Posso usar de graça?",
-    r: "Sim. O plano gratuito tem uma página, cinco links, QR Code e analytics. Sem cartão de crédito e sem prazo para acabar.",
+    // Os números saem de PLANOS, não escritos à mão: um limite alterado lá
+    // corrigiria a tabela de preços e deixaria esta resposta mentindo.
+    r:
+      `Sim, e sem prazo para acabar. O plano gratuito dá ${PLANOS.free.maxPaginas} páginas, ` +
+      `${PLANOS.free.maxCurtosMes} links diretos novos por mês, QR Code e código personalizado. ` +
+      `As métricas ficam disponíveis por ${PLANOS.free.analyticsDias} dias — nos planos pagos, ` +
+      `o histórico é bem maior. Sem cartão de crédito.`,
+  },
+  {
+    p: "Vocês colocam anúncio nos meus links?",
+    r: "Nunca, em nenhum plano — inclusive no gratuito. O link é seu e a página é sua; quem clica vê o que você colocou lá, e mais nada.",
   },
   {
     p: "Qual a diferença entre a página e o link direto?",
@@ -142,6 +170,13 @@ const FAQ = [
 ];
 
 export default function Landing() {
+  // Os links de checkout saem do servidor: as URLs do Lastlink ficam em
+  // variável de ambiente e trocam sem precisar de deploy.
+  const checkouts: Record<string, { mensal: string | null; anual: string | null }> = {};
+  for (const id of ORDEM_PLANOS) {
+    checkouts[id] = { mensal: checkoutDoPlano(id, "mensal"), anual: checkoutDoPlano(id, "anual") };
+  }
+
   return (
     <div className="bg-white">
       {/* --- Topo --- */}
@@ -173,8 +208,8 @@ export default function Landing() {
           </h1>
 
           <p className="mt-5 max-w-[520px] text-[17px] leading-relaxed text-ink-600">
-            Crie uma página profissional com todos os seus canais, produtos e formas de contato em
-            um único link.
+            Não é só reunir seus canais num link. É transformar quem chega em contato salvo, pronto
+            pra você vender.
           </p>
 
           <div className="mt-7 flex flex-wrap gap-3">
@@ -219,7 +254,7 @@ export default function Landing() {
         <div className="mx-auto max-w-[1120px] px-5">
           <h2 className="display text-[32px] text-ink-900">Recursos</h2>
           <p className="mt-2 text-ink-600">
-            Tudo pensado para uma coisa: transformar quem abre a página em cliente.
+            O concorrente te dá uma lista de links. Aqui, quem chega vira contato no seu painel.
           </p>
 
           <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -281,87 +316,7 @@ export default function Landing() {
           <h2 className="display text-[32px] text-ink-900">Planos</h2>
           <p className="mt-2 text-ink-600">Comece de graça. Mude quando fizer sentido.</p>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {ORDEM_PLANOS.map((id) => {
-              const p = PLANOS[id];
-              return (
-                <div
-                  key={id}
-                  className={`card relative flex flex-col p-6 ${
-                    p.destaque ? "border-brand-500 ring-2 ring-brand-100" : ""
-                  }`}
-                >
-                  {p.destaque && (
-                    <span className="absolute -top-2.5 left-6 rounded-full bg-brand-500 px-2.5 py-0.5 text-[11px] font-semibold text-white">
-                      {p.destaque}
-                    </span>
-                  )}
-
-                  <p className="font-semibold">{p.nome}</p>
-                  <p className="mt-2 text-[28px] font-bold tracking-tight">
-                    {precoFormatado(p)}
-                    {p.precoCents > 0 && (
-                      <span className="text-sm font-medium text-ink-400">/mês</span>
-                    )}
-                  </p>
-
-                  <ul className="mt-5 flex-1 space-y-2 text-sm text-ink-600">
-                    <li className="flex gap-2">
-                      <Check size={15} className="mt-0.5 shrink-0 text-ok-500" />
-                      {p.maxPaginas} {p.maxPaginas === 1 ? "página" : "páginas"}
-                    </li>
-                    <li className="flex gap-2">
-                      <Check size={15} className="mt-0.5 shrink-0 text-ok-500" />
-                      {p.maxLinks === null ? "Links ilimitados" : `${p.maxLinks} links`}
-                    </li>
-                    <li className="flex gap-2">
-                      <Check size={15} className="mt-0.5 shrink-0 text-ok-500" />
-                      {p.maxCurtos === null ? "Links diretos ilimitados" : `${p.maxCurtos} ${p.maxCurtos === 1 ? "link direto" : "links diretos"}`}
-                    </li>
-                    <li className="flex gap-2">
-                      <Check size={15} className="mt-0.5 shrink-0 text-ok-500" />
-                      Analytics de {p.analyticsDias} dias
-                    </li>
-                    <li className="flex gap-2">
-                      <Check size={15} className="mt-0.5 shrink-0 text-ok-500" />
-                      QR Code
-                    </li>
-                    {p.temas && (
-                      <li className="flex gap-2">
-                        <Check size={15} className="mt-0.5 shrink-0 text-ok-500" />
-                        Escolha de tema
-                      </li>
-                    )}
-                    {p.formularios && (
-                      <li className="flex gap-2">
-                        <Check size={15} className="mt-0.5 shrink-0 text-ok-500" />
-                        Formulário e leads
-                      </li>
-                    )}
-                    {!p.marca && (
-                      <li className="flex gap-2">
-                        <Check size={15} className="mt-0.5 shrink-0 text-ok-500" />
-                        Sem marca LINKFIVE
-                      </li>
-                    )}
-                    {p.equipe && (
-                      <li className="flex gap-2">
-                        <Check size={15} className="mt-0.5 shrink-0 text-ok-500" />
-                        Acesso para equipe
-                      </li>
-                    )}
-                  </ul>
-
-                  <Link
-                    href="/cadastrar"
-                    className={`mt-6 ${p.destaque ? "btn-brand" : "btn-ghost"}`}
-                  >
-                    {p.precoCents === 0 ? "Começar grátis" : "Criar conta"}
-                  </Link>
-                </div>
-              );
-            })}
-          </div>
+          <TabelaPrecos checkouts={checkouts} cta="Assinar" />
         </div>
       </section>
 
@@ -393,12 +348,12 @@ export default function Landing() {
       <section className="bg-ink-900 py-16 text-white">
         <div className="mx-auto max-w-[760px] px-5 text-center">
           <h2 className="display text-[36px] leading-tight">
-            Um link. Todos os seus canais.
+            Cada visita que some
             <br />
-            Mais clientes.
+            é um cliente perdido.
           </h2>
           <p className="mx-auto mt-4 max-w-[460px] text-ink-300">
-            Crie sua página agora e comece a receber contato ainda hoje.
+            Crie sua página em um minuto e comece a guardar contato ainda hoje. Grátis, sem cartão.
           </p>
           <Link href="/cadastrar" className="btn-accent mt-7 px-6 py-3.5 text-[15px]">
             CRIAR MINHA PÁGINA GRÁTIS

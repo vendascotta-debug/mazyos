@@ -69,9 +69,12 @@ export async function indicadores(): Promise<Indicadores> {
   const planos = await q<{ plan: string; n: string }>(
     "SELECT plan, COUNT(*) AS n FROM users GROUP BY plan",
   );
-  const porPlano: Record<PlanId, number> = { free: 0, starter: 0, pro: 0, business: 0, cortesia: 0 };
+  const porPlano: Record<PlanId, number> = { free: 0, starter: 0, pro: 0, cortesia: 0 };
   for (const p of planos) {
-    if (p.plan in porPlano) porPlano[p.plan as PlanId] = Number(p.n);
+    // "business" saiu da tabela mas pode existir no banco: soma no Pro, que o
+    // absorveu, em vez de sumir da contagem.
+    const chave = p.plan === "business" ? "pro" : (p.plan as PlanId);
+    if (chave in porPlano) porPlano[chave] += Number(p.n);
   }
 
   return {
@@ -89,7 +92,7 @@ export async function indicadores(): Promise<Indicadores> {
     leads: await um("SELECT COUNT(*) AS n FROM leads"),
     porPlano,
     // Cortesia fica de fora: é acesso concedido, não receita.
-    pagantes: porPlano.starter + porPlano.pro + porPlano.business,
+    pagantes: porPlano.starter + porPlano.pro,
     cortesias: porPlano.cortesia,
   };
 }
@@ -193,7 +196,7 @@ export async function clientes(busca = "", limite = 200): Promise<Cliente[]> {
 
 // O Cortesia entra aqui de propósito: é justamente o plano que só existe
 // para o admin conceder, e esta é a única porta por onde ele pode ser dado.
-const PLANOS_VALIDOS: PlanId[] = ["free", "starter", "pro", "business", "cortesia"];
+const PLANOS_VALIDOS: PlanId[] = ["free", "starter", "pro", "cortesia"];
 
 export async function definirPlano(userId: string, plano: string): Promise<boolean> {
   if (!PLANOS_VALIDOS.includes(plano as PlanId)) return false;

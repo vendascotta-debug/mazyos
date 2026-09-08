@@ -46,7 +46,7 @@ recriar, copie o `.env.example` e preencha.
 
 ## O que já funciona
 
-Testado ponta a ponta em 07/09/2026 — 75 verificações, todas passando
+Testado ponta a ponta em 07/09/2026 — 81 verificações, todas passando
 (`npm run teste`):
 
 - [x] Landing page completa

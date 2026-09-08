@@ -41,15 +41,32 @@ export function mapaProdutos(): Record<string, PlanId> {
   return mapa;
 }
 
-/** Link do checkout de cada plano, para os botões da tela de assinatura. */
-export function checkoutDoPlano(plano: PlanId): string | null {
-  const chave = `LASTLINK_CHECKOUT_${plano.toUpperCase()}`;
-  const url = process.env[chave]?.trim();
-  return url || null;
+/**
+ * Link do checkout de cada plano e ciclo.
+ *
+ * São produtos diferentes no Lastlink: mensal e anual têm preço, recorrência e
+ * id próprios. A variável segue o padrão LASTLINK_CHECKOUT_<PLANO>_<CICLO>,
+ * ex.: LASTLINK_CHECKOUT_STARTER_ANUAL.
+ */
+export function checkoutDoPlano(
+  plano: PlanId,
+  ciclo: "mensal" | "anual" = "mensal",
+): string | null {
+  const url = process.env[`LASTLINK_CHECKOUT_${plano.toUpperCase()}_${ciclo.toUpperCase()}`]?.trim();
+  if (url) return url;
+
+  // Aceita também o formato antigo, sem ciclo, para o mensal — assim quem já
+  // tinha configurado uma variável não fica com o botão morto.
+  if (ciclo === "mensal") {
+    return process.env[`LASTLINK_CHECKOUT_${plano.toUpperCase()}`]?.trim() || null;
+  }
+  return null;
 }
 
 export function cobrancaConfigurada(): boolean {
-  return Boolean(process.env.LASTLINK_CHECKOUT_PRO || process.env.LASTLINK_CHECKOUT_STARTER);
+  return Object.keys(process.env).some(
+    (k) => k.startsWith("LASTLINK_CHECKOUT_") && process.env[k]?.trim(),
+  );
 }
 
 // --- Registro cru ----------------------------------------------------------
