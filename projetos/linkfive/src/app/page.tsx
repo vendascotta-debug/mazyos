@@ -230,10 +230,20 @@ export default function Landing() {
               Feito para quem vende
             </p>
 
-            <h1 className="display text-[42px] leading-[1.06] text-white sm:text-[56px]">
+            {/* O Instrument Serif só tem um peso — não dá para engrossar. A
+                força vem de tamanho, entrelinha apertada e contraste: a
+                terceira linha sai no ciano, que é a cor mais clara da paleta,
+                com um brilho suave atrás para descolar do fundo azul. */}
+            <h1 className="display text-[46px] leading-[0.98] text-white drop-shadow-[0_2px_20px_rgba(0,0,0,0.35)] sm:text-[68px]">
               Seu link. Sua marca.
               <br />
-              <span className="text-brand-300">Seus clientes.</span>
+              <span className="relative inline-block text-accent-500">
+                <span
+                  className="brilho pointer-events-none absolute -inset-x-4 -inset-y-2 rounded-full bg-accent-500/20 blur-[28px]"
+                  aria-hidden="true"
+                />
+                <span className="relative">Seus clientes.</span>
+              </span>
             </h1>
 
             <p className="mt-5 max-w-[520px] text-[17px] leading-relaxed text-ink-300">
