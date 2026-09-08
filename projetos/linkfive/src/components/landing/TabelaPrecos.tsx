@@ -46,7 +46,7 @@ export function TabelaPrecos({
             <button
               key={c}
               onClick={() => setCiclo(c)}
-              className={`rounded-full px-6 py-2.5 text-[15px] font-semibold transition-colors ${
+              className={`rounded-full px-5 py-2 text-[14px] font-semibold transition-colors ${
                 ciclo === c ? "bg-ink-900 text-white" : "text-ink-600 hover:text-ink-900"
               }`}
             >
@@ -76,7 +76,7 @@ export function TabelaPrecos({
           return (
             <div
               key={id}
-              className={`sobe-no-hover relative flex flex-col rounded-[16px] border p-7 ${
+              className={`sobe-no-hover relative flex flex-col rounded-[16px] border p-6 ${
                 p.destaque
                   ? // O plano que queremos vender fica escuro: num quadro de
                     // três cartões brancos, o escuro é para onde o olho vai.
@@ -90,9 +90,9 @@ export function TabelaPrecos({
                 </span>
               )}
 
-              <p className="text-[19px] font-bold">{p.nome}</p>
+              <p className="text-[17px] font-bold">{p.nome}</p>
 
-              <p className="mt-3 text-[40px] font-bold leading-none tracking-tight">
+              <p className="mt-2.5 text-[34px] font-bold leading-none tracking-tight">
                 {precoFormatado(p, ciclo)}
                 {!gratuito && (
                   <span className="text-[16px] font-medium text-ink-400">
@@ -111,7 +111,7 @@ export function TabelaPrecos({
                     : ""}
               </p>
 
-              <ul className={`mt-6 flex-1 space-y-2.5 text-[15px] ${p.destaque ? "text-ink-200" : "text-ink-600"}`}>
+              <ul className={`mt-5 flex-1 space-y-2 text-[14px] ${p.destaque ? "text-ink-200" : "text-ink-600"}`}>
                 <Item>
                   {p.maxPaginas === 1 ? "1 página" : `${p.maxPaginas.toLocaleString("pt-BR")} páginas`}
                 </Item>

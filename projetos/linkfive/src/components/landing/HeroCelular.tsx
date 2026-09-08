@@ -18,8 +18,16 @@ const BOTOES = [
 
 export function HeroCelular() {
   return (
-    <div className="mx-auto w-full max-w-[290px]">
-      <div className="rounded-[40px] border-[11px] border-ink-900 bg-ink-900 shadow-2xl">
+    <div className="relative mx-auto w-full max-w-[290px]">
+      {/* Halo azul atrás do aparelho: no fundo escuro, um celular preto quase
+          some. O brilho recorta a silhueta e diz "olha aqui" sem precisar de
+          seta nem legenda. */}
+      <div
+        className="brilho pointer-events-none absolute -inset-6 rounded-[56px] bg-brand-500/25 blur-[42px]"
+        aria-hidden="true"
+      />
+
+      <div className="relative rounded-[40px] border-[11px] border-ink-900 bg-ink-900 shadow-2xl ring-1 ring-brand-400/40">
         <div className="rounded-[30px] bg-white">
           {/* Entalhe do topo, só pra leitura de "isso é um celular". */}
           <div className="flex justify-center pt-2.5">

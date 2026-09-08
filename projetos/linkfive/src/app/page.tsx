@@ -271,7 +271,7 @@ export default function Landing() {
       </div>
 
       {/* --- Como funciona --- */}
-      <section id="como-funciona" className="border-y border-ink-100 bg-ink-50 py-16">
+      <section id="como-funciona" className="border-y border-ink-100 bg-ink-50 py-14">
         <div className="mx-auto max-w-[1120px] px-5">
           <h2 className="titulo-secao">Como funciona</h2>
           <p className="subtitulo-secao">Três passos. Nenhum deles envolve programar nada.</p>
@@ -282,8 +282,8 @@ export default function Landing() {
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-500 text-sm font-bold text-white">
                   {c.n}
                 </span>
-                <h3 className="mt-4 text-[17px] font-semibold">{c.titulo}</h3>
-                <p className="mt-2 text-[15px] leading-relaxed text-ink-600">{c.texto}</p>
+                <h3 className="mt-3.5 text-[16px] font-semibold">{c.titulo}</h3>
+                <p className="mt-2 text-[14.5px] leading-relaxed text-ink-600">{c.texto}</p>
               </div>
             ))}
           </Revelar>
@@ -291,7 +291,7 @@ export default function Landing() {
       </section>
 
       {/* --- Recursos --- */}
-      <section className="py-16">
+      <section className="py-14">
         <div className="mx-auto max-w-[1120px] px-5">
           <h2 className="titulo-secao">Recursos</h2>
           <p className="subtitulo-secao">
@@ -304,8 +304,8 @@ export default function Landing() {
                 <span className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-brand-50">
                   <Icone size={19} className="text-brand-600" />
                 </span>
-                <h3 className="mt-4 text-[17px] font-semibold">{titulo}</h3>
-                <p className="mt-2 text-[15px] leading-relaxed text-ink-600">{texto}</p>
+                <h3 className="mt-3.5 text-[16px] font-semibold">{titulo}</h3>
+                <p className="mt-2 text-[14.5px] leading-relaxed text-ink-600">{texto}</p>
               </div>
             ))}
           </Revelar>
@@ -313,17 +313,17 @@ export default function Landing() {
       </section>
 
       {/* --- Para quem é --- */}
-      <section className="border-y border-ink-100 bg-ink-50 py-16">
+      <section className="border-y border-ink-100 bg-ink-50 py-14">
         <div className="mx-auto max-w-[1120px] px-5">
           <h2 className="titulo-secao">Para quem é</h2>
 
           <Revelar className="mt-8 grid gap-4 md:grid-cols-3">
             {PARA_QUEM.map((g) => (
               <div key={g.grupo} className="card p-6">
-                <h3 className="text-[17px] font-semibold text-brand-600">{g.grupo}</h3>
+                <h3 className="text-[16px] font-semibold text-brand-600">{g.grupo}</h3>
                 <ul className="mt-3 space-y-2">
                   {g.itens.map((i) => (
-                    <li key={i} className="flex items-start gap-2 text-[15px] text-ink-600">
+                    <li key={i} className="flex items-start gap-2 text-[14.5px] text-ink-600">
                       <Check size={15} className="mt-0.5 shrink-0 text-brand-400" />
                       {i}
                     </li>
@@ -336,15 +336,15 @@ export default function Landing() {
       </section>
 
       {/* --- Exemplos --- */}
-      <section className="py-16">
+      <section className="py-14">
         <div className="mx-auto max-w-[1120px] px-5">
           <h2 className="titulo-secao">Exemplos de utilização</h2>
 
           <Revelar className="mt-8 grid gap-4 md:grid-cols-3">
             {EXEMPLOS.map((e) => (
               <div key={e.titulo} className="card border-l-4 border-l-accent-500 p-6">
-                <h3 className="text-[17px] font-semibold">{e.titulo}</h3>
-                <p className="mt-2 text-[15px] leading-relaxed text-ink-600">{e.texto}</p>
+                <h3 className="text-[16px] font-semibold">{e.titulo}</h3>
+                <p className="mt-2 text-[14.5px] leading-relaxed text-ink-600">{e.texto}</p>
               </div>
             ))}
           </Revelar>
@@ -352,7 +352,7 @@ export default function Landing() {
       </section>
 
       {/* --- Planos --- */}
-      <section id="planos" className="border-y border-ink-100 bg-ink-50 py-16">
+      <section id="planos" className="border-y border-ink-100 bg-ink-50 py-14">
         <div className="mx-auto max-w-[1120px] px-5">
           <h2 className="titulo-secao">Planos</h2>
           <p className="subtitulo-secao">
@@ -365,7 +365,7 @@ export default function Landing() {
       </section>
 
       {/* --- FAQ --- */}
-      <section className="py-16">
+      <section className="py-14">
         <div className="mx-auto max-w-[760px] px-5">
           <h2 className="titulo-secao">Perguntas frequentes</h2>
 
@@ -374,14 +374,14 @@ export default function Landing() {
               // <details> em vez de acordeão em JavaScript: funciona sem script
               // e é acessível de fábrica.
               <details key={f.p} className="card group p-5">
-                <summary className="flex cursor-pointer items-center justify-between gap-3 text-[17px] font-medium">
+                <summary className="flex cursor-pointer items-center justify-between gap-3 text-[16px] font-medium">
                   {f.p}
                   <ChevronDown
                     size={18}
                     className="shrink-0 text-ink-400 transition-transform group-open:rotate-180"
                   />
                 </summary>
-                <p className="mt-3 text-[15px] leading-relaxed text-ink-600">{f.r}</p>
+                <p className="mt-3 text-[14.5px] leading-relaxed text-ink-600">{f.r}</p>
               </details>
             ))}
           </div>

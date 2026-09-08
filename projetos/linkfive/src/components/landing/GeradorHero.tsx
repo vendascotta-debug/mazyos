@@ -44,19 +44,19 @@ export function GeradorHero() {
   }
 
   return (
-    <div className="card mt-8 p-6 shadow-2xl sm:p-7">
+    <div className="card mt-7 p-5 shadow-2xl sm:p-6">
       {/* O que o produto é, em letra grande. Antes isso estava implícito no
           headline, e quem chegava pelo Google procurando "encurtador de link"
           não encontrava a palavra em lugar nenhum da dobra. */}
-      <h2 className="text-[26px] font-bold leading-tight tracking-tight text-ink-900 sm:text-[30px]">
+      <h2 className="text-[22px] font-bold leading-tight tracking-tight text-ink-900 sm:text-[26px]">
         Encurtador de link do WhatsApp
       </h2>
-      <p className="mt-1.5 text-[16px] text-ink-600">
+      <p className="mt-1 text-[15px] text-ink-600">
         Cole seu número e receba o link e o QR Code na hora.{" "}
         <strong className="text-ink-900">Sem criar conta.</strong>
       </p>
 
-      <div className="mt-5">
+      <div className="mt-4">
         <input
           className="input-grande"
           value={numero}
@@ -73,7 +73,7 @@ export function GeradorHero() {
             key={m.label}
             type="button"
             onClick={() => setMensagem(m.texto)}
-            className={`rounded-full border px-3 py-1.5 text-[13px] transition-colors ${
+            className={`rounded-full border px-2.5 py-1 text-[12px] transition-colors ${
               mensagem === m.texto
                 ? "border-brand-500 bg-brand-50 font-medium text-brand-700"
                 : "border-ink-200 text-ink-600 hover:border-brand-300"
@@ -85,7 +85,7 @@ export function GeradorHero() {
       </div>
 
       <textarea
-        className="input mt-3 min-h-[70px] resize-y text-[15px]"
+        className="input mt-2.5 min-h-[64px] resize-y text-[14px]"
         value={mensagem}
         maxLength={300}
         onChange={(e) => setMensagem(e.target.value)}

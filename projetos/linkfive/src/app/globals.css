@@ -226,21 +226,26 @@ body {
 --------------------------------------------------------------------------- */
 
 @layer components {
-  /* Título de seção: grande e centralizado, como o do concorrente. */
+  /* Título de seção: centralizado e grande, mas sem estourar. A primeira
+     tentativa foi a 44px e ficou grande demais — 38px no desktop dá o mesmo
+     destaque sem empurrar a página inteira para baixo. */
   .titulo-secao {
     font-family: var(--font-display);
-    @apply text-center text-[34px] font-normal leading-tight tracking-tight text-ink-900 sm:text-[44px];
+    @apply text-center text-[30px] font-normal leading-tight tracking-tight text-ink-900 sm:text-[38px];
   }
 
   .subtitulo-secao {
-    @apply mx-auto mt-3 max-w-[620px] text-center text-[17px] leading-relaxed text-ink-600;
+    @apply mx-auto mt-2.5 max-w-[600px] text-center text-[16px] leading-relaxed text-ink-600;
   }
 
-  /* Campo grande do gerador, no topo da página. É o elemento com que o
-     visitante interage primeiro — precisa parecer clicável de longe. */
+  /* Campo do gerador, no topo da página.
+     A borda é azul e não cinza de propósito: é o único lugar da dobra onde o
+     visitante pode agir, e uma borda neutra fazia ele desaparecer no cartão
+     branco. O anel suave por fora funciona como um holofote discreto. */
   .input-grande {
-    @apply w-full rounded-[12px] border-2 border-ink-200 bg-white px-5 py-4 text-[17px]
-           text-ink-900 placeholder:text-ink-400
-           focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-100;
+    @apply w-full rounded-[12px] border-2 border-brand-300 bg-white px-4 py-3.5 text-[16px]
+           text-ink-900 shadow-[0_0_0_4px_rgba(30,107,255,0.08)]
+           placeholder:text-ink-400
+           focus:border-brand-500 focus:outline-none focus:shadow-[0_0_0_5px_rgba(30,107,255,0.16)];
   }
 }
