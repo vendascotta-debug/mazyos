@@ -11,6 +11,11 @@ import path from "node:path";
 // Resend responde com uma mensagem clara, e sem esse script ela ficaria
 // enterrada no log da Vercel — descoberta só quando um cliente reclamasse de
 // não receber o link de senha.
+//
+// No Windows, o Node imprime um "Assertion failed ... uv_handle" DEPOIS do
+// resultado, ao descarregar o leitor de TypeScript. E ruido de encerramento do
+// proprio Node, nao falha de envio: o codigo de saida continua 0. O que vale e
+// a linha ENVIADO/FALHOU acima dele.
 // ---------------------------------------------------------------------------
 
 const raiz = path.resolve(import.meta.dirname, "..");
