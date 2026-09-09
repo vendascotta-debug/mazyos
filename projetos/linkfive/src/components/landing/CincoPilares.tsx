@@ -73,18 +73,32 @@ const PILARES = [
   },
 ];
 
-/** O "5" da marca, o mesmo do logo, para a seção não inventar outro símbolo. */
+/**
+ * O "5" da marca, o mesmo do logo.
+ *
+ * É uma cópia do glifo, e não um import do `Logo`, porque aqui ele entra
+ * sozinho, sem o nome ao lado. Se o desenho mudar, os dois mudam juntos — foi
+ * o que aconteceu quando o logotipo novo chegou e este ficou para trás.
+ */
 function Cinco({ size = 22 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      <rect width="32" height="32" rx="9" fill="var(--color-brand-500)" />
+      <defs>
+        <linearGradient id="lf5p" x1="4" y1="3" x2="27" y2="29" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#38bdf8" />
+          <stop offset="0.45" stopColor="#1e6bff" />
+          <stop offset="1" stopColor="#0a1a3a" />
+        </linearGradient>
+      </defs>
       <path
-        d="M11 9h10M11 9v6h5.5a4.5 4.5 0 1 1 0 9H12"
-        stroke="#fff"
-        strokeWidth="2.6"
+        d="M9.5 5.5h13M9.5 5.5v8h6.5a6 6 0 1 1 0 12h-5"
+        stroke="url(#lf5p)"
+        strokeWidth="4.2"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+      <path d="M14.2 19.6h5.2" stroke="#fff" strokeWidth="7" strokeLinecap="round" />
+      <path d="M14.6 19.6h4.4" stroke="#22d3a6" strokeWidth="3" strokeLinecap="round" />
     </svg>
   );
 }
