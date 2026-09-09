@@ -1225,6 +1225,32 @@ checa(
 r = await fetch(`${BASE}/entrar`);
 checa("o login abre com o Google configurado ou nao", r.status === 200, `status ${r.status}`);
 
+// --- A LOGO DA PAGINA -------------------------------------------------------
+
+// O caso real que quebrou uma pagina: o dono colou o endereco do SITE no campo
+// da logo. O campo aceitava calado e a pagina saia com o circulo quebrado.
+r = await a("/api/pagina", {
+  method: "PATCH",
+  body: JSON.stringify({ pageId: infoA.pageId, avatarUrl: `${BASE}/termos` }),
+});
+const recadoLogo = await r.json();
+checa("endereco que nao e imagem e recusado", r.status === 400, `status ${r.status}`);
+checa(
+  "e o recado ensina o caminho",
+  /Copiar endere/i.test(recadoLogo.erro ?? ""),
+  (recadoLogo.erro ?? "").slice(0, 50),
+);
+
+r = await a("/api/pagina", {
+  method: "PATCH",
+  body: JSON.stringify({ pageId: infoA.pageId, avatarUrl: null }),
+});
+checa("remover a logo continua funcionando", r.ok, `status ${r.status}`);
+
+// O envio de arquivo exige sessao: e o unico jeito de saber de quem e a imagem.
+r = await fetch(`${BASE}/api/upload`, { method: "POST", body: new FormData() });
+checa("deslogado NAO envia imagem", r.status === 401, `status ${r.status}`);
+
 // --- PAUSAR E EXCLUIR CONTA ------------------------------------------------
 
 // As travas de acesso, que valem contra producao. O comportamento completo

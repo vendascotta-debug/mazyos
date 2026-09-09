@@ -13,3 +13,5 @@ next-env.d.ts
 
 # Estado local do CLI da Vercel (ids do projeto, token OIDC).
 .vercel
+
+.env*

@@ -6,6 +6,8 @@ import { Check, Eye, GripVertical, Loader2, Plus, Trash2 } from "lucide-react";
 import type { Page, PageLink, LinkType, LinkConfig } from "@/lib/types";
 import { TIPOS } from "@/lib/links";
 import { PreviewCelular } from "@/components/editor/PreviewCelular";
+import { CampoLogo } from "@/components/editor/CampoLogo";
+import { iniciais as calcularIniciais } from "@/lib/iniciais";
 import { ModalTipoLink } from "@/components/editor/ModalTipoLink";
 
 /**
@@ -194,21 +196,11 @@ export function Editor({
               <p className="mt-1 text-xs text-ink-400">{(page.bio ?? "").length}/200</p>
             </div>
 
-            <div>
-              <label className="label" htmlFor="avatar">
-                Logo ou foto (URL da imagem)
-              </label>
-              <input
-                id="avatar"
-                className="input"
-                value={page.avatarUrl ?? ""}
-                onChange={(e) => alterar("avatarUrl", e.target.value)}
-                placeholder="https://..."
-              />
-              <p className="mt-1 text-xs text-ink-400">
-                Enquanto o envio de arquivo não entra, cole o endereço de uma imagem já publicada.
-              </p>
-            </div>
+            <CampoLogo
+              valor={page.avatarUrl ?? null}
+              aoMudar={(url) => alterar("avatarUrl", url ?? "")}
+              iniciais={calcularIniciais(page.title || "?")}
+            />
 
             {erro && <p className="erro">{erro}</p>}
 

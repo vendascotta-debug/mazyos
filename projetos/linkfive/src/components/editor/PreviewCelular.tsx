@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import {
   BookOpen,
   ClipboardList,
@@ -43,6 +45,12 @@ const ICONES = {
  * iframe: um iframe recarregaria a cada tecla e o preview ao vivo morreria.
  */
 export function PreviewCelular({ page, links }: { page: Page; links: PageLink[] }) {
+  // Reseta quando o endereço muda: uma imagem quebrada não pode condenar a
+  // próxima que a pessoa colar.
+  const [quebrouEm, setQuebrouEm] = useState<string | null>(null);
+  const fotoQuebrada = Boolean(page.avatarUrl) && quebrouEm === page.avatarUrl;
+  const setFotoQuebrada = () => setQuebrouEm(page.avatarUrl ?? null);
+
   const iniciais = calcularIniciais(page.title || "?");
 
   return (
@@ -58,13 +66,17 @@ export function PreviewCelular({ page, links }: { page: Page; links: PageLink[] 
         >
           <div className="px-5 pb-8 pt-8">
             <div className="flex flex-col items-center text-center">
-              {page.avatarUrl ? (
+              {page.avatarUrl && !fotoQuebrada ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={page.avatarUrl}
                   alt=""
                   className="h-16 w-16 rounded-full object-cover"
                   style={{ border: "2px solid var(--lf-cardBorda)" }}
+                  // Endereço que não carrega vira iniciais, e não o ícone de
+                  // imagem partida — a prévia tem de mostrar o que o visitante
+                  // veria, não um erro do navegador.
+                  onError={setFotoQuebrada}
                 />
               ) : (
                 <div

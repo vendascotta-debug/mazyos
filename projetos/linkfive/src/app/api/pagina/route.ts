@@ -42,6 +42,46 @@ export async function GET() {
   return NextResponse.json({ pageId: page.id, slug: page.slug, published: page.published, totais });
 }
 
+/**
+ * O endereço colado é mesmo uma imagem?
+ *
+ * O campo aceitava qualquer texto, e o primeiro dono de página real colou ali
+ * o endereço do próprio site. A página saiu com o círculo quebrado e nada
+ * explicava o motivo — nem para ele, nem para quem visitasse.
+ *
+ * A checagem custa uma requisição no momento de salvar, uma vez. Deixar passar
+ * custa uma página quebrada até alguém reparar.
+ *
+ * Endereço do nosso próprio Blob passa direto: foi enviado por esta aplicação,
+ * já validado na entrada, e não vale gastar rede conferindo o que nós mesmos
+ * gravamos.
+ */
+async function pareceImagem(url: string): Promise<boolean> {
+  if (/^https:\/\/[a-z0-9.-]*\.public\.blob\.vercel-storage\.com\//i.test(url)) return true;
+
+  try {
+    const controle = new AbortController();
+    const relogio = setTimeout(() => controle.abort(), 5000);
+
+    // HEAD primeiro; alguns servidores não respondem HEAD, então cai para um
+    // GET pedindo só o primeiro byte.
+    let r = await fetch(url, { method: "HEAD", signal: controle.signal }).catch(() => null);
+    if (!r || !r.ok) {
+      r = await fetch(url, {
+        method: "GET",
+        headers: { range: "bytes=0-0" },
+        signal: controle.signal,
+      }).catch(() => null);
+    }
+    clearTimeout(relogio);
+
+    if (!r || !r.ok) return false;
+    return (r.headers.get("content-type") ?? "").toLowerCase().startsWith("image/");
+  } catch {
+    return false;
+  }
+}
+
 export async function PATCH(req: Request) {
   const user = await currentUser();
   if (!user) return NextResponse.json({ erro: "Não autenticado." }, { status: 401 });
@@ -81,6 +121,23 @@ export async function PATCH(req: Request) {
           { status: 409 },
         );
       }
+    }
+  }
+
+  // A logo é conferida antes de gravar: endereço que não devolve imagem sai
+  // daqui com recado, em vez de virar círculo quebrado na página do cliente.
+  if (campos.avatarUrl) {
+    if (!(await pareceImagem(campos.avatarUrl))) {
+      return NextResponse.json(
+        {
+          erro:
+            "Esse endereço não devolve uma imagem. Se você copiou o endereço do site, " +
+            "clique com o botão direito na logo e escolha \"Copiar endereço da imagem\" — " +
+            "ou envie o arquivo pelo botão.",
+          campo: "avatarUrl",
+        },
+        { status: 400 },
+      );
     }
   }
 
