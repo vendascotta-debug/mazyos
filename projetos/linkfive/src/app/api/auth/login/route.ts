@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { autenticar, setSessionCookie } from "@/lib/auth";
+import { ContaPausada, autenticar, setSessionCookie } from "@/lib/auth";
 import { adotarCurtos } from "@/lib/repo";
 import { curtosDoConvidado, esquecerConvidado } from "@/lib/convidado";
 
@@ -15,7 +15,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ erro: parsed.error.issues[0].message }, { status: 400 });
   }
 
-  const user = await autenticar(parsed.data.email, parsed.data.senha);
+  let user;
+  try {
+    user = await autenticar(parsed.data.email, parsed.data.senha);
+  } catch (e) {
+    if (e instanceof ContaPausada) {
+      return NextResponse.json(
+        { erro: "Esta conta está pausada. Fale com o suporte: linkfive.app@gmail.com" },
+        { status: 403 },
+      );
+    }
+    throw e;
+  }
+
   if (!user) {
     // Mensagem única de propósito: dizer "esse e-mail não existe" entrega a
     // quem sonda quais e-mails têm conta aqui.

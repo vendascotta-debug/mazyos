@@ -1225,6 +1225,34 @@ checa(
 r = await fetch(`${BASE}/entrar`);
 checa("o login abre com o Google configurado ou nao", r.status === 200, `status ${r.status}`);
 
+// --- PAUSAR E EXCLUIR CONTA ------------------------------------------------
+
+// As travas de acesso, que valem contra producao. O comportamento completo
+// (pausar derruba a sessao, excluir preserva o pagamento) e testado a parte,
+// com acesso direto ao banco.
+const forasteiro = navegador();
+await forasteiro("/api/auth/cadastro", {
+  method: "POST",
+  body: JSON.stringify({
+    nome: "Forasteiro",
+    email: `forasteiro-${marca}@teste.com`,
+    senha: "senha12345",
+    slug: `forasteiro-${marca}`,
+  }),
+});
+
+r = await forasteiro("/api/admin/cliente/u_qualquer", {
+  method: "PATCH",
+  body: JSON.stringify({ pausarConta: true }),
+});
+checa("usuario comum NAO pausa conta alheia", r.status === 404, `status ${r.status}`);
+
+r = await forasteiro("/api/admin/cliente/u_qualquer", { method: "DELETE" });
+checa("usuario comum NAO exclui conta alheia", r.status === 404, `status ${r.status}`);
+
+r = await fetch(`${BASE}/api/admin/cliente/u_qualquer`, { method: "DELETE" });
+checa("deslogado NAO exclui conta alheia", r.status === 401, `status ${r.status}`);
+
 // --- WEBHOOK DO STRIPE -----------------------------------------------------
 
 // O segredo do webhook nao esta aqui, entao o que da para afirmar e o

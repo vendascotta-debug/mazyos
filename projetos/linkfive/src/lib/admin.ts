@@ -1,4 +1,4 @@
-import { q, q1 } from "@/lib/db";
+import { nowIso, q, q1 } from "@/lib/db";
 import type { PlanId } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -112,7 +112,10 @@ export interface Cliente {
   criadoEm: string;
   slug: string | null;
   publicada: boolean;
+  /** A PÁGINA está fora do ar para o visitante. */
   suspensa: boolean;
+  /** A CONTA está pausada: o dono não consegue entrar. */
+  pausada: boolean;
   pageId: string | null;
   links: number;
   curtos: number;
@@ -135,12 +138,36 @@ export interface Cliente {
  * um `AS links`, que viraria `AS linkfive.links` e quebraria o SQL. Apelido de
  * coluna nunca pode ter nome de tabela.
  */
-export async function clientes(busca = "", limite = 200): Promise<Cliente[]> {
+/** Recortes que os cards da visão geral abrem. */
+export type FiltroCliente = "pagantes" | "cortesia" | "publicadas" | "com-leads" | "pausadas";
+
+const RECORTES: Record<FiltroCliente, string> = {
+  // "Pagante" é quem está num plano vendido — Cortesia não conta, porque não
+  // entrou dinheiro nenhum por ela.
+  pagantes: "u.plan IN ('starter','pro','business')",
+  cortesia: "u.plan = 'cortesia'",
+  publicadas: "p.published = 1",
+  "com-leads": "EXISTS (SELECT 1 FROM leads l WHERE l.page_id = p.id)",
+  pausadas: "u.suspenso_em IS NOT NULL",
+};
+
+export async function clientes(
+  busca = "",
+  limite = 200,
+  filtro?: FiltroCliente,
+): Promise<Cliente[]> {
   const termo = `%${busca.trim().toLowerCase()}%`;
-  const filtro = busca.trim()
-    ? "WHERE LOWER(u.email) LIKE ? OR LOWER(u.name) LIKE ? OR LOWER(COALESCE(p.slug,'')) LIKE ?"
-    : "";
-  const params = busca.trim() ? [termo, termo, termo] : [];
+
+  const condicoes: string[] = [];
+  const params: unknown[] = [];
+
+  if (busca.trim()) {
+    condicoes.push("(LOWER(u.email) LIKE ? OR LOWER(u.name) LIKE ? OR LOWER(COALESCE(p.slug,'')) LIKE ?)");
+    params.push(termo, termo, termo);
+  }
+  if (filtro && RECORTES[filtro]) condicoes.push(RECORTES[filtro]);
+
+  const clausula = condicoes.length ? `WHERE ${condicoes.join(" AND ")}` : "";
 
   const rows = await q<{
     id: string;
@@ -153,6 +180,7 @@ export async function clientes(busca = "", limite = 200): Promise<Cliente[]> {
     page_id: string | null;
     published: number | null;
     suspended: number | null;
+    suspenso_em: string | null;
     n_links: string;
     n_curtos: string;
     n_views: string;
@@ -160,7 +188,7 @@ export async function clientes(busca = "", limite = 200): Promise<Cliente[]> {
     n_leads: string;
     ultima: string | null;
   }>(
-    `SELECT u.id, u.name, u.email, u.plan, u.role, u.created_at,
+    `SELECT u.id, u.name, u.email, u.plan, u.role, u.created_at, u.suspenso_em,
             p.id AS page_id, p.slug, p.published, p.suspended,
             (SELECT COUNT(*) FROM links l WHERE l.page_id = p.id) AS n_links,
             (SELECT COUNT(*) FROM short_links s WHERE s.user_id = u.id) AS n_curtos,
@@ -170,7 +198,7 @@ export async function clientes(busca = "", limite = 200): Promise<Cliente[]> {
             (SELECT MAX(v2.created_at) FROM page_views v2 WHERE v2.page_id = p.id) AS ultima
        FROM users u
        LEFT JOIN pages p ON p.user_id = u.id
-       ${filtro}
+       ${clausula}
       ORDER BY u.created_at DESC
       LIMIT ${Number(limite)}`,
     params,
@@ -187,6 +215,7 @@ export async function clientes(busca = "", limite = 200): Promise<Cliente[]> {
     pageId: r.page_id,
     publicada: Boolean(r.published),
     suspensa: Boolean(r.suspended),
+    pausada: Boolean(r.suspenso_em),
     links: Number(r.n_links),
     curtos: Number(r.n_curtos),
     views: Number(r.n_views),
@@ -221,6 +250,33 @@ export async function definirPapel(userId: string, papel: string): Promise<boole
  * dono continua com os dados e pode recorrer; ninguém perde trabalho por um
  * engano do moderador.
  */
+/**
+ * Pausa ou libera a conta inteira.
+ *
+ * Diferente de suspender a página: a página suspensa some para o visitante; a
+ * conta pausada impede o dono de entrar. Vale na requisição seguinte, porque a
+ * checagem mora no `currentUser`, não só no login.
+ */
+export async function pausarConta(userId: string, pausar: boolean): Promise<void> {
+  await q("UPDATE users SET suspenso_em = ? WHERE id = ?", [pausar ? nowIso() : null, userId]);
+}
+
+/**
+ * Apaga a conta e tudo que pende dela.
+ *
+ * Página, links, métricas e leads somem junto, por cascata — é o que a pessoa
+ * espera de "excluir".
+ *
+ * O QUE NÃO SOME: o histórico de pagamento. As assinaturas são soltas do
+ * usuário antes da exclusão, e sobrevivem ancoradas no e-mail. Apagar registro
+ * de dinheiro recebido junto com a conta seria perder a contabilidade — e se a
+ * mesma pessoa voltar com o mesmo e-mail, o que ela pagou continua lá.
+ */
+export async function excluirConta(userId: string): Promise<void> {
+  await q("UPDATE subscriptions SET user_id = NULL WHERE user_id = ?", [userId]);
+  await q("DELETE FROM users WHERE id = ?", [userId]);
+}
+
 export async function suspenderPagina(pageId: string, suspensa: boolean): Promise<void> {
   await q("UPDATE pages SET suspended = ? WHERE id = ?", [suspensa ? 1 : 0, pageId]);
 }

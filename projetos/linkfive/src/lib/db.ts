@@ -390,6 +390,16 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS sessoes_desde TEXT;
 -- password_hash ja aceitava NULL: quem entra so pelo Google nao tem senha, e
 -- pode criar uma depois pelo "esqueci minha senha".
 ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT;
+
+-- Conta pausada pelo admin (09/09/2026).
+--
+-- Guarda QUANDO foi pausada, e nao um sim/nao: na hora de responder "por que
+-- essa conta esta bloqueada" a data e a primeira coisa que se procura.
+--
+-- Pausar a conta e diferente de suspender a pagina. A pagina suspensa sai do
+-- ar para o visitante; a conta pausada impede o dono de entrar no painel. Um
+-- caso e sobre o que o mundo ve, o outro e sobre quem pode mexer.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS suspenso_em TEXT;
 CREATE INDEX IF NOT EXISTS idx_users_google ON users(google_id);
 
 CREATE TABLE IF NOT EXISTS short_clicks (

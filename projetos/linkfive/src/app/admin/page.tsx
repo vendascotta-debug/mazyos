@@ -14,20 +14,49 @@ export default async function AdminVisaoGeral() {
   );
   const mrr = (mrrCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+  // `para` leva à lista já filtrada. Os cards sem destino são totais que não
+  // correspondem a um recorte de clientes — fingir que são clicáveis só
+  // frustraria quem clica.
   const cards = [
-    { label: "Contas", valor: i.usuarios, nota: `${i.usuariosNovos7d} nos últimos 7 dias` },
-    { label: "Pagantes", valor: i.pagantes, nota: `${i.porPlano.free} no Free` },
-    { label: "Cortesias", valor: i.cortesias, nota: "acesso concedido por você" },
-    { label: "Receita mensal", valor: mrr, nota: "soma dos planos ativos" },
+    {
+      label: "Contas",
+      valor: i.usuarios,
+      nota: `${i.usuariosNovos7d} nos últimos 7 dias`,
+      para: "/admin/clientes",
+    },
+    {
+      label: "Pagantes",
+      valor: i.pagantes,
+      nota: `${i.porPlano.free} no Free`,
+      para: "/admin/clientes?filtro=pagantes",
+    },
+    {
+      label: "Cortesias",
+      valor: i.cortesias,
+      nota: "acesso concedido por você",
+      para: "/admin/clientes?filtro=cortesia",
+    },
+    {
+      label: "Receita mensal",
+      valor: mrr,
+      nota: "soma dos planos ativos",
+      para: "/admin/clientes?filtro=pagantes",
+    },
     {
       label: "Páginas publicadas",
       valor: i.paginasPublicadas,
       nota: `${i.paginas - i.paginasPublicadas} em rascunho`,
+      para: "/admin/clientes?filtro=publicadas",
     },
     { label: "Visualizações", valor: i.views, nota: "total acumulado" },
     { label: "Cliques na página", valor: i.cliques, nota: `${i.links} links criados` },
     { label: "Cliques em link direto", valor: i.cliquesCurtos, nota: `${i.curtos} links diretos` },
-    { label: "Leads capturados", valor: i.leads, nota: "de todos os clientes" },
+    {
+      label: "Leads capturados",
+      valor: i.leads,
+      nota: "de todos os clientes",
+      para: "/admin/clientes?filtro=com-leads",
+    },
   ];
 
   return (
@@ -44,13 +73,34 @@ export default async function AdminVisaoGeral() {
       )}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {cards.map((c) => (
-          <div key={c.label} className="card p-4">
-            <p className="text-xs font-medium text-ink-500">{c.label}</p>
-            <p className="mt-1.5 text-2xl font-bold tracking-tight">{c.valor}</p>
-            <p className="mt-1 text-xs text-ink-400">{c.nota}</p>
-          </div>
-        ))}
+        {cards.map((c) => {
+          const miolo = (
+            <>
+              <p className="text-xs font-medium text-ink-500">{c.label}</p>
+              <p className="mt-1.5 text-2xl font-bold tracking-tight">{c.valor}</p>
+              <p className="mt-1 text-xs text-ink-400">{c.nota}</p>
+            </>
+          );
+
+          if (!c.para) {
+            return (
+              <div key={c.label} className="card p-4">
+                {miolo}
+              </div>
+            );
+          }
+
+          return (
+            <Link
+              key={c.label}
+              href={c.para}
+              className="card block p-4 transition-colors hover:border-brand-300 hover:bg-brand-50/40 focus:outline-none focus:ring-2 focus:ring-brand-100"
+            >
+              {miolo}
+              <span className="mt-2 block text-xs font-medium text-brand-600">Ver clientes →</span>
+            </Link>
+          );
+        })}
       </div>
 
       <section className="card p-5">

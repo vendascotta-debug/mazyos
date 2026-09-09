@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ExternalLink, Search, ShieldCheck, ShieldOff } from "lucide-react";
+import { ExternalLink, Pause, Play, Search, ShieldCheck, ShieldOff, Trash2 } from "lucide-react";
 import type { Cliente } from "@/lib/admin";
 import { ORDEM_PLANOS_ADMIN, PLANOS } from "@/lib/limites";
 
@@ -50,6 +50,40 @@ export function TabelaClientes({
       setErro(d.erro ?? "Não foi possível aplicar a mudança.");
       return;
     }
+    router.refresh();
+  }
+
+  /**
+   * Exclui a conta.
+   *
+   * Pede confirmação com o e-mail escrito por extenso: numa lista de linhas
+   * parecidas, "tem certeza?" sozinho não impede o clique na linha errada — e
+   * aqui não há desfazer.
+   */
+  async function excluir(c: Cliente) {
+    const certeza = window.confirm(
+      `Excluir a conta de ${c.email}?
+
+` +
+        `A página, os links, as métricas e os leads dessa conta somem junto. ` +
+        `Não dá para desfazer.
+
+` +
+        `O histórico de pagamento é preservado.`,
+    );
+    if (!certeza) return;
+
+    setOcupado(c.id);
+    setErro(null);
+    const r = await fetch(`/api/admin/cliente/${c.id}`, { method: "DELETE" });
+    setOcupado(null);
+
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      setErro(d.erro ?? "Não foi possível excluir a conta.");
+      return;
+    }
+    setLista((cs) => cs.filter((x) => x.id !== c.id));
     router.refresh();
   }
 
@@ -112,6 +146,13 @@ export function TabelaClientes({
                       {c.papel === "admin" && (
                         <span className="ml-2 rounded-full bg-accent-100 px-2 py-0.5 text-[10px] font-bold text-warn-500">
                           ADMIN
+                        </span>
+                      )}
+                      {/* Conta pausada precisa gritar na lista: é o estado em
+                          que o cliente está trancado do lado de fora. */}
+                      {c.pausada && (
+                        <span className="ml-2 rounded-full bg-danger-500/10 px-2 py-0.5 text-[10px] font-bold text-danger-500">
+                          PAUSADA
                         </span>
                       )}
                     </p>
@@ -219,6 +260,38 @@ export function TabelaClientes({
                               <ShieldCheck size={12} /> Tornar admin
                             </>
                           )}
+                        </button>
+                      )}
+
+                      {/* Pausar a conta impede o DONO de entrar. É diferente de
+                          suspender a página, que só a tira do ar. */}
+                      {c.id !== meuId && (
+                        <button
+                          onClick={() =>
+                            acao(c.id, { pausarConta: !c.pausada }, { pausada: !c.pausada })
+                          }
+                          disabled={ocupado === c.id}
+                          className="inline-flex items-center gap-1 text-left text-xs font-medium text-ink-500 hover:text-warn-500"
+                        >
+                          {c.pausada ? (
+                            <>
+                              <Play size={12} /> Reativar conta
+                            </>
+                          ) : (
+                            <>
+                              <Pause size={12} /> Pausar conta
+                            </>
+                          )}
+                        </button>
+                      )}
+
+                      {c.id !== meuId && c.papel !== "admin" && (
+                        <button
+                          onClick={() => excluir(c)}
+                          disabled={ocupado === c.id}
+                          className="inline-flex items-center gap-1 text-left text-xs font-medium text-ink-400 hover:text-danger-500"
+                        >
+                          <Trash2 size={12} /> Excluir conta
                         </button>
                       )}
                     </div>

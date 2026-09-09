@@ -145,6 +145,7 @@ interface UserRow {
   onboarded: number;
   sessoes_desde: string | null;
   google_id: string | null;
+  suspenso_em: string | null;
   created_at: string;
 }
 
@@ -175,6 +176,11 @@ export async function currentUser(): Promise<User | null> {
   if (row.sessoes_desde && sessao.emitidoEm < new Date(row.sessoes_desde).getTime()) {
     return null;
   }
+
+  // Conta pausada pelo admin: o cookie pode até ser válido, mas não entra.
+  // A checagem fica aqui, e não só no login, para quem já estava dentro cair
+  // fora na requisição seguinte — pausar precisa valer agora, não amanhã.
+  if (row.suspenso_em) return null;
 
   return toUser(row);
 }
@@ -275,6 +281,9 @@ export async function usuarioDoGoogle(conta: {
 }
 
 /** Devolve o usuário se e-mail e senha conferem. Null em qualquer outro caso. */
+/** Sinaliza conta pausada, para o login dar o motivo certo. */
+export class ContaPausada extends Error {}
+
 export async function autenticar(email: string, senha: string): Promise<User | null> {
   const row = await q1<UserRow & { password_hash: string | null }>(
     "SELECT * FROM users WHERE email = ?",
@@ -282,6 +291,11 @@ export async function autenticar(email: string, senha: string): Promise<User | n
   );
   if (!row) return null;
   if (!verifyPassword(senha, row.password_hash)) return null;
+
+  // A senha confere, mas a conta está pausada. Lança em vez de devolver null
+  // para o login poder dizer o motivo: "e-mail ou senha incorretos" mandaria a
+  // pessoa trocar a senha à toa, e ela nunca descobriria o que houve.
+  if (row.suspenso_em) throw new ContaPausada();
 
   // O primeiro admin nasce daqui: sem isso ninguem conseguiria abrir o painel
   // pela primeira vez (precisa ser admin para promover alguem a admin).
