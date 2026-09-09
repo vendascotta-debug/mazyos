@@ -5,7 +5,7 @@ import type { PlanId } from "@/lib/types";
 // Cobrança.
 //
 // O LINKFIVE não processa pagamento: quem faz isso é a plataforma (hoje o
-// Lastlink). O papel deste módulo é traduzir o que a plataforma avisa para
+// Stripe). O papel deste módulo é traduzir o que a plataforma avisa para
 // uma coisa só — qual plano cada e-mail tem direito.
 //
 // DECISÃO IMPORTANTE: a assinatura é ancorada no E-MAIL, não no usuário.
@@ -18,7 +18,7 @@ import type { PlanId } from "@/lib/types";
 // só conhece "e-mail X tem plano Y".
 // ---------------------------------------------------------------------------
 
-export type Gateway = "lastlink" | "mercadopago" | "manual";
+export type Gateway = "stripe" | "lastlink" | "mercadopago" | "manual";
 
 /**
  * De qual plano é cada produto da plataforma.
@@ -42,6 +42,27 @@ export function mapaProdutos(): Record<string, PlanId> {
 }
 
 /**
+ * De qual plano é cada preço do Stripe.
+ *
+ * No Stripe um produto tem vários preços: "LINKFIVE Starter" com um preço
+ * mensal e um anual. O que identifica o que foi comprado é o preço, não o
+ * produto — por isso o mapa é por `price_...`.
+ *
+ *   STRIPE_PRECOS=price_abc:starter,price_def:starter,price_ghi:pro
+ *
+ * Mensal e anual apontam para o MESMO plano de propósito: o ciclo muda quando
+ * o Stripe cobra de novo, não o que a pessoa pode fazer aqui dentro.
+ */
+export function mapaPrecosStripe(): Record<string, PlanId> {
+  const mapa: Record<string, PlanId> = {};
+  for (const par of (process.env.STRIPE_PRECOS ?? "").split(",")) {
+    const [id, plano] = par.split(":").map((x) => x.trim());
+    if (id && plano) mapa[id.toLowerCase()] = plano as PlanId;
+  }
+  return mapa;
+}
+
+/**
  * Link do checkout de cada plano e ciclo.
  *
  * São produtos diferentes no Lastlink: mensal e anual têm preço, recorrência e
@@ -52,6 +73,12 @@ export function checkoutDoPlano(
   plano: PlanId,
   ciclo: "mensal" | "anual" = "mensal",
 ): string | null {
+  // O Stripe vem primeiro: é a plataforma em uso. O Lastlink fica como
+  // segunda opção para não quebrar nada que já estivesse configurado.
+  const noStripe =
+    process.env[`STRIPE_CHECKOUT_${plano.toUpperCase()}_${ciclo.toUpperCase()}`]?.trim();
+  if (noStripe) return noStripe;
+
   const url = process.env[`LASTLINK_CHECKOUT_${plano.toUpperCase()}_${ciclo.toUpperCase()}`]?.trim();
   if (url) return url;
 
@@ -65,8 +92,29 @@ export function checkoutDoPlano(
 
 export function cobrancaConfigurada(): boolean {
   return Object.keys(process.env).some(
-    (k) => k.startsWith("LASTLINK_CHECKOUT_") && process.env[k]?.trim(),
+    (k) =>
+      (k.startsWith("STRIPE_CHECKOUT_") || k.startsWith("LASTLINK_CHECKOUT_")) &&
+      process.env[k]?.trim(),
   );
+}
+
+/**
+ * O e-mail de quem tem assinatura com este identificador na plataforma.
+ *
+ * O Stripe avisa o cancelamento falando do CLIENTE (`cus_...`), não do e-mail.
+ * Como guardamos o `cus_...` na hora de liberar, o cancelamento consegue voltar
+ * ao e-mail sem precisar consultar a API deles — uma chamada a menos no
+ * caminho onde o dinheiro está em jogo.
+ */
+export async function emailPorIdDaPlataforma(
+  gateway: Gateway,
+  gatewayId: string,
+): Promise<string | null> {
+  const r = await q1<{ email: string | null }>(
+    "SELECT email FROM subscriptions WHERE gateway = ? AND gateway_id = ? ORDER BY created_at DESC",
+    [gateway, gatewayId],
+  );
+  return r?.email ?? null;
 }
 
 // --- Registro cru ----------------------------------------------------------

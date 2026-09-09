@@ -114,7 +114,7 @@ export const PLANOS: Record<PlanId, Plano> = {
     id: "pro",
     nome: "Pro",
     precoCents: 3990,
-    precoAnualCents: 39900,
+    precoAnualCents: 39990,
     maxLinks: null,
     maxCurtos: null,
     maxCurtosMes: null,

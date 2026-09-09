@@ -1225,6 +1225,39 @@ checa(
 r = await fetch(`${BASE}/entrar`);
 checa("o login abre com o Google configurado ou nao", r.status === 200, `status ${r.status}`);
 
+// --- WEBHOOK DO STRIPE -----------------------------------------------------
+
+// O segredo do webhook nao esta aqui, entao o que da para afirmar e o
+// contrato: a rota existe, e NADA passa sem assinatura valida. O ciclo
+// completo (compra libera, cancelamento tira) e testado a parte, com um
+// segredo conhecido.
+r = await fetch(`${BASE}/api/webhooks/stripe`);
+const stripeInfo = await r.json();
+checa("o webhook do Stripe responde", r.ok, `status ${r.status}`);
+checa("ele se identifica", stripeInfo?.webhook === "stripe");
+
+r = await fetch(`${BASE}/api/webhooks/stripe`, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ type: "checkout.session.completed", data: { object: {} } }),
+});
+checa(
+  "POST sem assinatura NAO e aceito",
+  r.status === 401 || r.status === 503,
+  `status ${r.status}`,
+);
+
+r = await fetch(`${BASE}/api/webhooks/stripe`, {
+  method: "POST",
+  headers: { "content-type": "application/json", "stripe-signature": "t=1,v1=forjada" },
+  body: JSON.stringify({ type: "checkout.session.completed", data: { object: {} } }),
+});
+checa(
+  "POST com assinatura forjada NAO e aceito",
+  r.status === 401 || r.status === 503,
+  `status ${r.status}`,
+);
+
 // --- O QUE O GOOGLE PODE VARRER ------------------------------------------
 
 r = await fetch(`${BASE}/robots.txt`);
