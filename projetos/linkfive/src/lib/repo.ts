@@ -543,6 +543,26 @@ export async function paginaPublica(slug: string): Promise<Page | null> {
   return page;
 }
 
+/**
+ * Endereços das páginas que o Google pode indexar.
+ *
+ * Só o que está publicado E não suspenso. Página suspensa pelo admin costuma
+ * ser abuso — deixá-la no sitemap seria pedir ao Google que indexasse
+ * justamente o que tiramos do ar.
+ *
+ * Sem `userId` de propósito: isto lê só o que já é público para qualquer
+ * visitante, e é o mesmo critério de `paginaPublica`.
+ */
+export async function paginasIndexaveis(): Promise<{ slug: string; updatedAt: string }[]> {
+  const rows = await q<{ slug: string; updated_at: string }>(
+    `SELECT slug, updated_at FROM pages
+      WHERE published = 1 AND suspended = 0
+      ORDER BY updated_at DESC
+      LIMIT 40000`,
+  );
+  return rows.map((r) => ({ slug: r.slug, updatedAt: r.updated_at }));
+}
+
 export async function linksPublicos(pageId: string): Promise<PageLink[]> {
   const rows = await q<LinkRow>(
     "SELECT * FROM links WHERE page_id = ? AND active = 1 ORDER BY position, created_at",

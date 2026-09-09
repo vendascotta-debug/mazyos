@@ -1225,6 +1225,29 @@ checa(
 r = await fetch(`${BASE}/entrar`);
 checa("o login abre com o Google configurado ou nao", r.status === 200, `status ${r.status}`);
 
+// --- O QUE O GOOGLE PODE VARRER ------------------------------------------
+
+r = await fetch(`${BASE}/robots.txt`);
+const robots = await r.text();
+checa("robots.txt responde", r.status === 200, `status ${r.status}`);
+checa("robots aponta o sitemap", robots.includes("/sitemap.xml"));
+for (const bloqueado of ["/w/", "/app/", "/admin/", "/api/", "/entrar"]) {
+  checa(`robots bloqueia ${bloqueado}`, robots.includes(`Disallow: ${bloqueado}`));
+}
+
+r = await fetch(`${BASE}/sitemap.xml`);
+const mapa = await r.text();
+checa("sitemap.xml responde", r.status === 200, `status ${r.status}`);
+checa("o sitemap e XML valido", mapa.startsWith("<?xml") && mapa.includes("<urlset"));
+checa("o sitemap traz a landing", mapa.includes(`<loc>${BASE}</loc>`));
+
+// O bloqueio que mais importa: link curto e redirecionamento, nao pagina. Se o
+// Google entrar neles, conta clique que nao e de gente -- e o numero que o
+// cliente usa para decidir onde anunciar deixa de valer.
+checa("o sitemap NAO expoe links curtos", !mapa.includes("/w/"), "nenhum /w/");
+checa("o sitemap NAO expoe o painel", !mapa.includes("/app") && !mapa.includes("/admin"));
+checa("o sitemap NAO expoe telas de conta", !mapa.includes("/entrar") && !mapa.includes("/cadastrar"));
+
 // --- UM HOST SO ------------------------------------------------------------
 
 // O site respondendo em dois enderecos quebrou o login do Google: o cookie
