@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Check, Loader2, X } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { CampoSenha } from "@/components/ui/CampoSenha";
+import { BotaoGoogle } from "@/components/ui/BotaoGoogle";
 import { normalizarSlug } from "@/lib/slug";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL?.replace(/^https?:\/\//, "") ?? "linkfive.com.br";
@@ -87,7 +88,11 @@ export default function Cadastrar() {
         <h1 className="text-xl font-bold tracking-tight">Criar minha página</h1>
         <p className="mt-1 text-sm text-ink-500">É grátis. Leva menos de um minuto.</p>
 
-        <form onSubmit={enviar} className="mt-6 space-y-4">
+        <div className="mt-6 flex flex-col gap-4">
+          <BotaoGoogle />
+        </div>
+
+        <form onSubmit={enviar} className="mt-4 space-y-4">
           <div>
             <label className="label" htmlFor="nome">
               Nome ou nome do negócio

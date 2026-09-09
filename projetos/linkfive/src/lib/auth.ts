@@ -144,6 +144,7 @@ interface UserRow {
   plan: string;
   onboarded: number;
   sessoes_desde: string | null;
+  google_id: string | null;
   created_at: string;
 }
 
@@ -215,6 +216,62 @@ export async function criarUsuario(dados: {
   );
   const row = await q1<UserRow>("SELECT * FROM users WHERE id = ?", [id]);
   return toUser(row!);
+}
+
+/**
+ * Acha ou cria a conta a partir de uma conta do Google já verificada.
+ *
+ * Três caminhos, nessa ordem:
+ *
+ *   1. já entrou pelo Google antes  → acha pelo `google_id`
+ *   2. já tinha conta com o mesmo e-mail → LIGA as duas e entra
+ *   3. ninguém                      → cria conta nova, sem senha
+ *
+ * O caminho 2 é o que evita a pior experiência possível: a pessoa se cadastrou
+ * com e-mail e senha, um dia clica em "entrar com o Google" e cairia numa
+ * segunda conta vazia, achando que perdeu a página. Ligar as duas só é seguro
+ * porque quem chama aqui já conferiu o `email_verified` do Google — sem isso,
+ * uma conta Google forjada com o e-mail alheio entraria na conta da vítima.
+ *
+ * Quem nasce por aqui fica sem `password_hash`, e é de propósito: pode criar
+ * uma senha depois pelo "esqueci minha senha", que manda o link para o mesmo
+ * e-mail que o Google acabou de confirmar.
+ */
+export async function usuarioDoGoogle(conta: {
+  id: string;
+  email: string;
+  nome: string;
+  foto: string | null;
+}): Promise<{ user: User; novo: boolean }> {
+  const email = conta.email.toLowerCase().trim();
+
+  const porGoogle = await q1<UserRow>("SELECT * FROM users WHERE google_id = ?", [conta.id]);
+  if (porGoogle) {
+    await sincronizarPapel(porGoogle.id, porGoogle.email, porGoogle.role);
+    return { user: toUser(porGoogle), novo: false };
+  }
+
+  const porEmail = await q1<UserRow>("SELECT * FROM users WHERE email = ?", [email]);
+  if (porEmail) {
+    // A foto só entra se a conta ainda não tiver uma: o que o usuário escolheu
+    // aqui dentro vale mais que o avatar do Google.
+    await q(
+      "UPDATE users SET google_id = ?, avatar_url = COALESCE(avatar_url, ?) WHERE id = ?",
+      [conta.id, conta.foto, porEmail.id],
+    );
+    await sincronizarPapel(porEmail.id, porEmail.email, porEmail.role);
+    const atualizado = await q1<UserRow>("SELECT * FROM users WHERE id = ?", [porEmail.id]);
+    return { user: toUser(atualizado!), novo: false };
+  }
+
+  const id = uid("u_");
+  await q(
+    `INSERT INTO users (id, email, name, password_hash, avatar_url, google_id, role, plan, onboarded, created_at)
+     VALUES (?, ?, ?, NULL, ?, ?, ?, 'free', 0, ?)`,
+    [id, email, conta.nome, conta.foto, conta.id, ehAdminPorEmail(email) ? "admin" : "user", nowIso()],
+  );
+  const criado = await q1<UserRow>("SELECT * FROM users WHERE id = ?", [id]);
+  return { user: toUser(criado!), novo: true };
 }
 
 /** Devolve o usuário se e-mail e senha conferem. Null em qualquer outro caso. */

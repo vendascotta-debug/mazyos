@@ -6,6 +6,7 @@ import { Suspense, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { CampoSenha } from "@/components/ui/CampoSenha";
+import { BotaoGoogle } from "@/components/ui/BotaoGoogle";
 
 function Formulario() {
   const router = useRouter();
@@ -15,8 +16,17 @@ function Formulario() {
 
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+
+  // A volta do Google traz o motivo na URL: ela e uma navegacao de verdade,
+  // entao nao ha resposta de fetch onde carregar o recado.
+  const MOTIVOS: Record<string, string> = {
+    "google-indisponivel": "Entrar com o Google ainda não está disponível. Use e-mail e senha.",
+    "google-expirado": "A tentativa demorou demais. Clique de novo em Continuar com o Google.",
+    "google-incompleto": "O Google não completou o login. Tente de novo.",
+    "google-falhou": "Não foi possível entrar com o Google. Tente de novo ou use e-mail e senha.",
+  };
+  const [erro, setErro] = useState<string | null>(MOTIVOS[params.get("erro") ?? ""] ?? null);
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
@@ -52,7 +62,11 @@ function Formulario() {
       <h1 className="text-xl font-bold tracking-tight">Entrar</h1>
       <p className="mt-1 text-sm text-ink-500">Acesse sua página e seus resultados.</p>
 
-      <form onSubmit={enviar} className="mt-6 space-y-4">
+      <div className="mt-6 flex flex-col gap-4">
+        <BotaoGoogle destino={destinoPretendido} />
+      </div>
+
+      <form onSubmit={enviar} className="mt-4 space-y-4">
         <div>
           <label className="label" htmlFor="email">
             E-mail

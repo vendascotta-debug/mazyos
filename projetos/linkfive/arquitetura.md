@@ -523,3 +523,56 @@ duas recusas que de fato acontecem (domínio não verificado e chave inválida).
 Ele importa o `lib/email.ts` de verdade, e não uma cópia: uma segunda
 implementação no script passaria no teste enquanto o cliente não recebe nada.
 
+---
+
+## 15. Entrar com o Google (09/09/2026)
+
+O QuatroCar, o outro app, resolve isso com o Supabase Auth. Aqui não dava para
+copiar: a sessão do LINKFIVE é própria (scrypt + cookie HMAC) e já roda em
+produção. Trocar por um framework de autenticação para ganhar um botão
+significaria reescrever o que funciona. São duas chamadas HTTP e um JWT para
+ler — feito na mão, sem dependência nova.
+
+### Os três caminhos de quem chega pelo Google
+
+    já entrou pelo Google antes   → acha pelo google_id
+    já tinha conta com o e-mail   → LIGA as duas contas e entra
+    ninguém                       → cria conta nova, sem senha
+
+O segundo caminho é o que evita a pior experiência possível: alguém que se
+cadastrou com e-mail e senha clica em "entrar com o Google" e cairia numa
+segunda conta vazia, achando que perdeu a página.
+
+Ligar as duas só é seguro por causa de uma checagem: **`email_verified` no token
+do Google**. Sem ela, uma conta Google criada com o e-mail de outra pessoa
+entraria na conta da vítima aqui dentro. É a verificação mais importante do
+arquivo inteiro.
+
+Guardamos o `sub` do Google (`users.google_id`), e não só o e-mail: e-mail o
+dono pode trocar, o `sub` nunca muda.
+
+### O `state`
+
+Sorteado na ida, guardado num cookie assinado com o mesmo HMAC da sessão (10
+minutos, httpOnly) e conferido na volta em tempo constante. É o que impede um
+terceiro de induzir seu navegador a completar um login que ele começou.
+
+O destino pretendido viaja junto no state, e só aceita caminho interno —
+`destino` absoluto viraria redirecionamento aberto, prato feito para phishing
+hospedado no nosso próprio domínio.
+
+### O botão só existe quando dá para usar
+
+`NEXT_PUBLIC_GOOGLE_CLIENT_ID` decide se a tela mostra o botão. O ID do cliente
+não é segredo (aparece na própria URL do Google), então ele pode ser público — e
+a mesma variável serve para as duas coisas. **Botão de login que leva a erro é
+pior que botão nenhum**, e antes das credenciais existirem era isso que ele
+seria. A chave secreta nunca sai do servidor.
+
+### Endereço da página de quem nasce pelo Google
+
+O cadastro normal pergunta o endereço; aqui não há formulário. Ele é derivado do
+nome, com sufixo aleatório se já estiver tomado — aleatório e não contador, que
+entregaria quantas pessoas já pegaram aquele nome. O onboarding deixa trocar
+antes de publicar: melhor um endereço provisório e uma conta pronta do que um
+formulário no meio de um login de um clique.

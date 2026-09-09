@@ -47,7 +47,7 @@ recriar, copie o `.env.example` e preencha.
 
 ## O que já funciona
 
-Testado ponta a ponta em 08/09/2026 — 146 verificações, todas passando
+Testado ponta a ponta em 08/09/2026 — 168 verificações, todas passando
 (`npm run teste`):
 
 - [x] Landing page completa
@@ -91,6 +91,8 @@ Testado ponta a ponta em 08/09/2026 — 146 verificações, todas passando
       conta — três abas (link, QR Code e WhatsApp), código personalizado,
       redirecionamento e QR funcionando na hora. O link nasce com 30 dias de
       prazo e entra na conta assim que ele se cadastra ou faz login
+- [x] **Entrar com o Google** (OAuth próprio): liga com a conta que já existir
+      no mesmo e-mail, cria a página sozinho e só aparece quando configurado
 - [x] **Recuperação de senha**: link por e-mail que vale 30 minutos e uma vez
       só, token guardado apenas como hash, resposta idêntica exista ou não a
       conta, e troca de senha que derruba as sessões abertas

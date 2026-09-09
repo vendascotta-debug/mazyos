@@ -1162,6 +1162,72 @@ if (!linkSenha) {
 
 
 
+// --- ENTRAR COM O GOOGLE ----------------------------------------------------
+
+// As verificacoes valem nos dois mundos, com e sem credenciais configuradas.
+// O que se afirma aqui e o contrato: a rota SEMPRE redireciona, nunca estoura,
+// e nenhum retorno forjado entra em conta nenhuma.
+
+r = await fetch(`${BASE}/api/auth/google`, { redirect: "manual" });
+const idaGoogle = r.headers.get("location") ?? "";
+const googleLigado = idaGoogle.includes("accounts.google.com");
+checa("a ida do Google redireciona", r.status === 307, `status ${r.status}`);
+checa(
+  googleLigado
+    ? "com credenciais, leva ao Google"
+    : "sem credenciais, volta ao login com recado",
+  googleLigado || idaGoogle.includes("/entrar?erro=google-indisponivel"),
+  idaGoogle,
+);
+
+if (googleLigado) {
+  const u = new URL(idaGoogle);
+  checa(
+    "o endereco de retorno aponta para este site",
+    (u.searchParams.get("redirect_uri") ?? "").startsWith(BASE),
+    u.searchParams.get("redirect_uri") ?? "",
+  );
+  checa("pede so os escopos necessarios", u.searchParams.get("scope") === "openid email profile");
+  checa("manda um state", (u.searchParams.get("state") ?? "").length >= 16);
+}
+
+// Retorno forjado: sem o cookie assinado, nada entra.
+r = await fetch(`${BASE}/api/auth/google/callback?code=inventado&state=forjado`, {
+  redirect: "manual",
+});
+const forjado = r.headers.get("location") ?? "";
+checa("retorno forjado e recusado", forjado.includes("/entrar?erro="), `${r.status} ${forjado}`);
+checa(
+  "retorno forjado NAO cria sessao",
+  !(r.headers.getSetCookie?.() ?? []).some((c) => c.startsWith("linkfive_sessao=")),
+);
+
+// Faltando o codigo, e quando o visitante cancela na tela do Google.
+r = await fetch(`${BASE}/api/auth/google/callback?state=abc`, { redirect: "manual" });
+checa(
+  "retorno sem codigo e recusado",
+  (r.headers.get("location") ?? "").includes("google-incompleto"),
+  r.headers.get("location") ?? "",
+);
+
+r = await fetch(`${BASE}/api/auth/google/callback?error=access_denied`, { redirect: "manual" });
+const cancelou = r.headers.get("location") ?? "";
+checa(
+  "quem cancela no Google volta ao login sem erro",
+  cancelou.endsWith("/entrar"),
+  cancelou,
+);
+
+// A tela de login so mostra o botao quando ha credenciais -- botao de login
+// que leva a erro e pior que botao nenhum.
+r = await fetch(`${BASE}/entrar`);
+const temBotao = (await r.text()).includes("Continuar com o Google");
+checa(
+  googleLigado ? "o botao aparece quando configurado" : "o botao NAO aparece sem credenciais",
+  temBotao === googleLigado,
+  `botao ${temBotao ? "presente" : "ausente"}`,
+);
+
 // --- LANDING: os cinco pilares ---------------------------------------------
 
 // A secao e Server Component, entao o texto vem no HTML e da para conferir sem

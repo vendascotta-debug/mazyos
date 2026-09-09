@@ -380,6 +380,18 @@ CREATE INDEX IF NOT EXISTS idx_reset_user ON password_resets(user_id, created_at
 -- o instante a partir do qual uma sessao vale; tudo emitido antes morre.
 ALTER TABLE users ADD COLUMN IF NOT EXISTS sessoes_desde TEXT;
 
+-- Entrar com o Google (09/09/2026).
+--
+-- google_id e o "sub" do token do Google: o identificador estavel da conta la.
+-- Guardamos ele, e nao so o e-mail, porque e-mail o dono pode trocar -- o sub
+-- nunca muda. O e-mail continua sendo a chave de ligacao entre uma conta que
+-- ja existia aqui e a mesma pessoa chegando pelo Google.
+--
+-- password_hash ja aceitava NULL: quem entra so pelo Google nao tem senha, e
+-- pode criar uma depois pelo "esqueci minha senha".
+ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT;
+CREATE INDEX IF NOT EXISTS idx_users_google ON users(google_id);
+
 CREATE TABLE IF NOT EXISTS short_clicks (
   id TEXT PRIMARY KEY,
   short_id TEXT NOT NULL REFERENCES short_links(id) ON DELETE CASCADE,
