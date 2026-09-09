@@ -9,8 +9,12 @@ import type { PlanId } from "@/lib/types";
 // galinha (precisa ser admin pra promover alguém a admin).
 //
 // A variável não substitui o banco: ela SINCRONIZA o papel no cadastro e no
-// login. Assim o painel funciona na primeira entrada, e tirar o e-mail da
-// variável não deixa ninguém preso como admin por engano.
+// login, e o painel funciona já na primeira entrada.
+//
+// A sincronização só PROMOVE. Tirar um e-mail da variável não rebaixa ninguém:
+// quem já é admin continua admin até outro admin rebaixar pelo painel. É de
+// propósito — perder o acesso ao painel por causa de uma variável editada
+// errado seria pior que o contrário.
 // ---------------------------------------------------------------------------
 
 /** E-mails que viram admin automaticamente. Separados por vírgula. */
