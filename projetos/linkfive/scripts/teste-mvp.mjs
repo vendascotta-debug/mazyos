@@ -1218,15 +1218,12 @@ checa(
   cancelou,
 );
 
-// A tela de login so mostra o botao quando ha credenciais -- botao de login
-// que leva a erro e pior que botao nenhum.
+// O botao em si nao da para conferir daqui: o /entrar e pre-renderizado e o
+// formulario so monta depois da hidratacao, entao o HTML cru nao traz o texto
+// em nenhum dos dois casos. Ja cai nessa uma vez, com o "Esqueci minha senha".
+// O que se afirma sem navegador e o contrato da rota, que e o que esta acima.
 r = await fetch(`${BASE}/entrar`);
-const temBotao = (await r.text()).includes("Continuar com o Google");
-checa(
-  googleLigado ? "o botao aparece quando configurado" : "o botao NAO aparece sem credenciais",
-  temBotao === googleLigado,
-  `botao ${temBotao ? "presente" : "ausente"}`,
-);
+checa("o login abre com o Google configurado ou nao", r.status === 200, `status ${r.status}`);
 
 // --- LANDING: os cinco pilares ---------------------------------------------
 
