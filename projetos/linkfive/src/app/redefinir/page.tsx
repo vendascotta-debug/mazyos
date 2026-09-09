@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { Loader2, ShieldAlert } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
+import { CampoSenha } from "@/components/ui/CampoSenha";
 
 /**
  * "Esqueci minha senha" — escolher a senha nova.
@@ -98,38 +99,24 @@ function Formulario() {
       </p>
 
       <form onSubmit={enviar} className="mt-6 space-y-4">
-        <div>
-          <label className="label" htmlFor="senha">
-            Senha nova
-          </label>
-          <input
-            id="senha"
-            type="password"
-            className="input"
-            value={senha}
-            onChange={(e) => setSenha(e.target.value)}
-            required
-            minLength={8}
-            autoComplete="new-password"
-            autoFocus
-          />
-          <p className="mt-1 text-[12px] text-ink-400">Pelo menos 8 caracteres.</p>
-        </div>
+        <CampoSenha
+          id="senha"
+          rotulo="Senha nova"
+          valor={senha}
+          aoMudar={setSenha}
+          autoComplete="new-password"
+          minLength={8}
+          autoFocus
+          ajuda="Pelo menos 8 caracteres."
+        />
 
-        <div>
-          <label className="label" htmlFor="repetida">
-            Repita a senha
-          </label>
-          <input
-            id="repetida"
-            type="password"
-            className="input"
-            value={repetida}
-            onChange={(e) => setRepetida(e.target.value)}
-            required
-            autoComplete="new-password"
-          />
-        </div>
+        <CampoSenha
+          id="repetida"
+          rotulo="Repita a senha"
+          valor={repetida}
+          aoMudar={setRepetida}
+          autoComplete="new-password"
+        />
 
         {erro && <p className="erro">{erro}</p>}
 

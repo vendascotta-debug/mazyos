@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Check, Loader2, X } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
+import { CampoSenha } from "@/components/ui/CampoSenha";
 import { normalizarSlug } from "@/lib/slug";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL?.replace(/^https?:\/\//, "") ?? "linkfive.com.br";
@@ -168,22 +169,15 @@ export default function Cadastrar() {
             />
           </div>
 
-          <div>
-            <label className="label" htmlFor="senha">
-              Senha
-            </label>
-            <input
-              id="senha"
-              type="password"
-              className="input"
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-              placeholder="Pelo menos 8 caracteres"
-              minLength={8}
-              required
-              autoComplete="new-password"
-            />
-          </div>
+          <CampoSenha
+            id="senha"
+            rotulo="Senha"
+            valor={senha}
+            aoMudar={setSenha}
+            autoComplete="new-password"
+            minLength={8}
+            ajuda="Pelo menos 8 caracteres."
+          />
 
           {erro && <p className="erro">{erro}</p>}
 

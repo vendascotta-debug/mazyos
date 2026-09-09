@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
+import { CampoSenha } from "@/components/ui/CampoSenha";
 
 function Formulario() {
   const router = useRouter();
@@ -67,30 +68,23 @@ function Formulario() {
           />
         </div>
 
-        <div>
-          <div className="flex items-baseline justify-between gap-3">
-            <label className="label" htmlFor="senha">
-              Senha
-            </label>
-            {/* Fica junto do campo, e nao perdido no rodape: quem procura esse
-                link ja errou a senha e esta olhando exatamente para ca. */}
+        <CampoSenha
+          id="senha"
+          rotulo="Senha"
+          valor={senha}
+          aoMudar={setSenha}
+          autoComplete="current-password"
+          /* Fica junto do campo, e nao perdido no rodape: quem procura esse
+             link ja errou a senha e esta olhando exatamente para ca. */
+          acessorio={
             <Link
               href="/recuperar"
               className="text-[13px] font-medium text-brand-600 hover:underline"
             >
               Esqueci minha senha
             </Link>
-          </div>
-          <input
-            id="senha"
-            type="password"
-            className="input"
-            value={senha}
-            onChange={(e) => setSenha(e.target.value)}
-            required
-            autoComplete="current-password"
-          />
-        </div>
+          }
+        />
 
         {erro && <p className="erro">{erro}</p>}
 
