@@ -43,6 +43,7 @@ recriar, copie o `.env.example` e preencha.
 | `npm run build` | Build de produção |
 | `npm run teste` | Teste ponta a ponta do MVP (precisa do `dev` rodando) |
 | `npm run db:status` | Mostra em qual schema está e quantas linhas tem cada tabela |
+| `npm run email:testar <e-mail>` | Confere o envio de e-mail e diz o que falta configurar |
 
 ## O que já funciona
 

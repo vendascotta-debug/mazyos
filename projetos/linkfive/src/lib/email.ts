@@ -32,6 +32,18 @@ function remetente(): string {
 }
 
 /**
+ * Para onde vai a resposta, se o cliente responder.
+ *
+ * O remetente é um `nao-responda@` que não tem caixa de entrada — é assim
+ * porque o domínio só precisa estar verificado para ENVIAR, não para receber.
+ * Mas gente responde e-mail automático o tempo todo, e sem isso a resposta
+ * sumiria. Aqui ela cai numa caixa que existe de verdade.
+ */
+function respostaPara(): string | undefined {
+  return process.env.EMAIL_RESPOSTA?.trim() || undefined;
+}
+
+/**
  * Manda o e-mail. Devolve como ele saiu — quem chama decide o que fazer.
  *
  * Nunca lança: uma falha de e-mail não pode derrubar a requisição que o
@@ -53,6 +65,7 @@ export async function enviarEmail(
         body: JSON.stringify({
           from: remetente(),
           to: [email.para],
+          ...(respostaPara() ? { reply_to: respostaPara() } : {}),
           subject: email.assunto,
           html: email.html,
           text: email.texto,
@@ -83,6 +96,7 @@ export async function enviarEmail(
       await transporte.sendMail({
         from: remetente(),
         to: email.para,
+        replyTo: respostaPara(),
         subject: email.assunto,
         html: email.html,
         text: email.texto,

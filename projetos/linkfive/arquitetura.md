@@ -507,3 +507,19 @@ exatamente no estado em que o site está hoje.
 E-mail automático saindo de `@gmail.com` para o cliente é barrado ou vai para
 spam: o Gmail não autoriza outro serviço a assinar em nome dele.
 
+E o domínio verificado não é detalhe de capricho: **sem ele o Resend só entrega
+para o e-mail dono da conta.** O QuatroCar, o outro app, funciona sem verificar
+nada porque lá a mensagem vai para o próprio dono — aqui o destinatário é o
+cliente, e o mesmo arranjo seria recusado. Vale registrar porque é o tipo de
+diferença que só aparece depois, com o cliente reclamando que não recebeu.
+
+O `nao-responda@` não precisa existir como caixa de entrada — domínio
+verificado serve para enviar, não para receber. Mas gente responde e-mail
+automático o tempo todo, então `EMAIL_RESPOSTA` manda a resposta para uma caixa
+que existe de verdade.
+
+`npm run email:testar seu@email.com` confere a configuração inteira e traduz as
+duas recusas que de fato acontecem (domínio não verificado e chave inválida).
+Ele importa o `lib/email.ts` de verdade, e não uma cópia: uma segunda
+implementação no script passaria no teste enquanto o cliente não recebe nada.
+
