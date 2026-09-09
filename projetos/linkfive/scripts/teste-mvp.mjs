@@ -1225,6 +1225,24 @@ checa(
 r = await fetch(`${BASE}/entrar`);
 checa("o login abre com o Google configurado ou nao", r.status === 200, `status ${r.status}`);
 
+// --- UM HOST SO ------------------------------------------------------------
+
+// O site respondendo em dois enderecos quebrou o login do Google: o cookie
+// gravado em www nao volta para o apex. A sessao tinha o mesmo problema.
+// So da para conferir contra producao -- em desenvolvimento nao existe www.
+if (BASE.includes("linkfive.com.br")) {
+  r = await fetch("https://www.linkfive.com.br/entrar", { redirect: "manual" });
+  const paraOApex = (r.headers.get("location") ?? "").startsWith("https://linkfive.com.br/");
+  checa("www redireciona para o apex", r.status === 308 && paraOApex, `${r.status} ${r.headers.get("location") ?? ""}`);
+
+  r = await fetch("https://www.linkfive.com.br/api/auth/google", { redirect: "manual" });
+  checa(
+    "www NAO comeca o login do Google",
+    !(r.headers.get("location") ?? "").includes("accounts.google.com"),
+    r.headers.get("location") ?? "",
+  );
+}
+
 // --- LANDING: os cinco pilares ---------------------------------------------
 
 // A secao e Server Component, entao o texto vem no HTML e da para conferir sem

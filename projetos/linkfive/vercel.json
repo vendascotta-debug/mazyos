@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    {
+      "source": "/:caminho*",
+      "has": [{ "type": "host", "value": "www.linkfive.com.br" }],
+      "destination": "https://linkfive.com.br/:caminho*",
+      "permanent": true
+    }
+  ]
+}
