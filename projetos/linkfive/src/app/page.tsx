@@ -18,6 +18,7 @@ import { HeroCelular } from "@/components/landing/HeroCelular";
 import { GeradorHero } from "@/components/landing/GeradorHero";
 import { Revelar } from "@/components/landing/Revelar";
 import { BarraNumeros } from "@/components/landing/BarraNumeros";
+import { Analytics } from "@/components/ui/Analytics";
 import { CincoPilares } from "@/components/landing/CincoPilares";
 
 // ---------------------------------------------------------------------------
@@ -183,6 +184,7 @@ export default function Landing() {
 
   return (
     <div className="bg-white">
+      <Analytics />
       {/* ---------------------------------------------------------------------
           TOPO E HERO — fundo escuro.
 

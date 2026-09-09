@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
+import { Analytics } from "@/components/ui/Analytics";
 import { CampoSenha } from "@/components/ui/CampoSenha";
 import { BotaoGoogle } from "@/components/ui/BotaoGoogle";
 
@@ -121,6 +122,7 @@ function Formulario() {
 export default function Entrar() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-ink-50 px-5 py-10">
+      <Analytics />
       <Link href="/" className="mb-8">
         <Logo />
       </Link>
