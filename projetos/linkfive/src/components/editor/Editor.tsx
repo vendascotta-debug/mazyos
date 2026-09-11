@@ -248,6 +248,27 @@ export function Editor({
                 </span>
               )}
             </div>
+
+            {/*
+              Salvar nao poe no ar, e isso confunde: a pessoa preenche tudo,
+              clica em "Salvar perfil", ve "Salvo" e vai embora achando que
+              acabou. O aviso do preview existia, mas fica no alto da coluna da
+              direita — fora da tela pra quem rolou ate aqui. Entao ele tambem
+              mora aqui, junto do botao que a pessoa acabou de clicar, e com o
+              publicar do lado pra ninguem precisar procurar.
+            */}
+            {!page.published && (
+              <div className="flex flex-wrap items-center gap-3 rounded-[14px] border border-accent-300 bg-accent-100 px-4 py-3.5">
+                <p className="flex-1 text-sm text-ink-800">
+                  <strong className="font-semibold">Salvar não põe no ar.</strong> Depois de
+                  preencher o perfil e os links, clique em publicar — só então{" "}
+                  linkfive.com.br/{page.slug} abre para as outras pessoas.
+                </p>
+                <button onClick={publicar} className="btn-accent" disabled={salvando}>
+                  Publicar página
+                </button>
+              </div>
+            )}
           </div>
         </section>
 
