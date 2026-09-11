@@ -173,6 +173,25 @@ export function Editor({
     router.refresh();
   }
 
+  /**
+   * Liga e desliga a pagina nas buscas do Google.
+   *
+   * Desligada, a pagina sai do sitemap e responde com `noindex`. Otimista como
+   * o ativar/desativar do link: esperar a resposta faria a chave parecer
+   * travada.
+   */
+  async function alternarBusca() {
+    const antes = page.indexavel;
+    setPage((p) => ({ ...p, indexavel: !antes }));
+    const r = await fetch("/api/pagina", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ pageId: page.id, indexavel: !antes }),
+    });
+    if (!r.ok) setPage((p) => ({ ...p, indexavel: antes }));
+    else router.refresh();
+  }
+
   async function publicar() {
     setSalvando(true);
     try {
@@ -376,6 +395,50 @@ export function Editor({
                 );
               })}
             </ul>
+          )}
+        </section>
+
+        {/* --- Configuracoes --- */}
+        <section className="card p-5">
+          <h2 className="font-semibold">Configurações da página</h2>
+          <p className="mt-1 text-sm text-ink-500">
+            Ajustes que valem para a página inteira.
+          </p>
+
+          <div className="mt-4 flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-ink-800">Aparecer nas buscas do Google</p>
+              <p className="mt-0.5 text-sm text-ink-500">
+                {page.indexavel
+                  ? "Sua página pode ser encontrada por quem pesquisa no Google."
+                  : "Sua página abre normalmente para quem tem o link — ela só não aparece em buscas."}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              role="switch"
+              aria-checked={page.indexavel}
+              onClick={alternarBusca}
+              className={`relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors ${
+                page.indexavel ? "bg-brand-500" : "bg-ink-200"
+              }`}
+            >
+              <span className="sr-only">Aparecer nas buscas do Google</span>
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
+                  page.indexavel ? "left-[22px]" : "left-0.5"
+                }`}
+              />
+            </button>
+          </div>
+
+          {page.indexavel && (
+            <p className="mt-3 rounded-[14px] bg-ink-50 px-4 py-3 text-xs text-ink-500">
+              O Google leva de alguns dias a algumas semanas para encontrar uma página nova.
+              Desligar tira a página do nosso mapa do site, mas o que o Google já guardou pode
+              demorar para sumir.
+            </p>
           )}
         </section>
       </div>

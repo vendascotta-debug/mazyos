@@ -38,6 +38,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: titulo,
     description: descricao,
+    // A pagina do cliente fica fora da busca por padrao: o link existe pra ele
+    // divulgar nas redes, nao pra ser varrido pelo Google. `follow` continua
+    // ligado — os links que ele aponta seguem valendo pros sites de destino.
+    robots: page.indexavel ? undefined : { index: false, follow: true },
     openGraph: {
       title: titulo,
       description: descricao,

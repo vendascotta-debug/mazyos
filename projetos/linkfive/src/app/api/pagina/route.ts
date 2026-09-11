@@ -20,6 +20,7 @@ const Corpo = z.object({
   avatarUrl: z.string().trim().max(500).nullish(),
   themeId: z.string().trim().optional(),
   slug: z.string().trim().optional(),
+  indexavel: z.boolean().optional(),
   seoTitle: z.string().trim().max(70).nullish(),
   seoDescription: z.string().trim().max(160).nullish(),
 });

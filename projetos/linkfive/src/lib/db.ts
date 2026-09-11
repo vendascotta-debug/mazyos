@@ -400,6 +400,14 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT;
 -- ar para o visitante; a conta pausada impede o dono de entrar no painel. Um
 -- caso e sobre o que o mundo ve, o outro e sobre quem pode mexer.
 ALTER TABLE users ADD COLUMN IF NOT EXISTS suspenso_em TEXT;
+
+-- A pagina do cliente aparece no Google?
+--
+-- Nasce DESLIGADO, e de proposito: o link existe pro cliente divulgar nas
+-- redes, nao pra ser achado por busca. Quem publica uma pagina nao esta
+-- pedindo pra ter o nome varrido pelo Google, e impor isso seria decidir pelo
+-- cliente algo que e dele. Quem quiser ser achado liga a chave no editor.
+ALTER TABLE pages ADD COLUMN IF NOT EXISTS indexavel INTEGER NOT NULL DEFAULT 0;
 CREATE INDEX IF NOT EXISTS idx_users_google ON users(google_id);
 
 CREATE TABLE IF NOT EXISTS short_clicks (

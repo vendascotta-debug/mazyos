@@ -30,6 +30,7 @@ interface PageRow {
   theme_overrides: string;
   published: number;
   suspended: number;
+  indexavel: number;
   seo_title: string | null;
   seo_description: string | null;
   created_at: string;
@@ -58,6 +59,7 @@ function toPage(r: PageRow): Page {
     themeOverrides: parseJson<Record<string, string>>(r.theme_overrides, {}),
     published: Boolean(r.published),
     suspended: Boolean(r.suspended),
+    indexavel: Boolean(r.indexavel),
     seoTitle: r.seo_title,
     seoDescription: r.seo_description,
     createdAt: r.created_at,
@@ -147,7 +149,10 @@ export async function paginaDoDono(userId: string, pageId: string): Promise<Page
 }
 
 export type CamposPagina = Partial<
-  Pick<Page, "title" | "bio" | "avatarUrl" | "themeId" | "seoTitle" | "seoDescription">
+  Pick<
+    Page,
+    "title" | "bio" | "avatarUrl" | "themeId" | "seoTitle" | "seoDescription" | "indexavel"
+  >
 > & { themeOverrides?: Record<string, string> };
 
 export async function atualizarPagina(
@@ -169,6 +174,8 @@ export async function atualizarPagina(
     theme_id: campos.themeId,
     seo_title: campos.seoTitle,
     seo_description: campos.seoDescription,
+    // Boolean vira 0/1: a coluna e INTEGER, como as outras chaves da tabela.
+    indexavel: campos.indexavel === undefined ? undefined : campos.indexavel ? 1 : 0,
     theme_overrides: campos.themeOverrides ? JSON.stringify(campos.themeOverrides) : undefined,
   };
   for (const [col, val] of Object.entries(mapa)) {
@@ -556,7 +563,7 @@ export async function paginaPublica(slug: string): Promise<Page | null> {
 export async function paginasIndexaveis(): Promise<{ slug: string; updatedAt: string }[]> {
   const rows = await q<{ slug: string; updated_at: string }>(
     `SELECT slug, updated_at FROM pages
-      WHERE published = 1 AND suspended = 0
+      WHERE published = 1 AND suspended = 0 AND indexavel = 1
       ORDER BY updated_at DESC
       LIMIT 40000`,
   );

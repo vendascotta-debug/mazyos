@@ -87,6 +87,8 @@ export interface Page {
   themeOverrides: Record<string, string>;
   published: boolean;
   suspended: boolean;
+  /** A página aparece nas buscas do Google. Desligado por padrão. */
+  indexavel: boolean;
   seoTitle: string | null;
   seoDescription: string | null;
   createdAt: string;

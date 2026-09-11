@@ -1257,6 +1257,40 @@ checa(
 r = await fetch(`${BASE}/entrar`);
 checa("o login abre com o Google configurado ou nao", r.status === 200, `status ${r.status}`);
 
+// --- APARECER (OU NAO) NO GOOGLE -------------------------------------------
+
+// O link existe pro cliente divulgar nas redes, nao pra ser varrido pela
+// busca. Entao a pagina nasce fora do Google, e quem quiser ser achado liga.
+let paginaHtml = await (await fetch(`${BASE}/${slugA}`)).text();
+checa("a pagina publicada pede noindex por padrao", /name="robots"[^>]*noindex/.test(paginaHtml));
+
+let sitemap = await (await fetch(`${BASE}/sitemap.xml`)).text();
+checa("e fica fora do sitemap", !sitemap.includes(`/${slugA}`));
+
+r = await a("/api/pagina", {
+  method: "PATCH",
+  body: JSON.stringify({ pageId: infoA.pageId, indexavel: true }),
+});
+checa("o dono liga a busca", r.ok, `status ${r.status}`);
+
+paginaHtml = await (await fetch(`${BASE}/${slugA}`, { cache: "no-store" })).text();
+checa("e o noindex sai", !/name="robots"[^>]*noindex/.test(paginaHtml));
+
+sitemap = await (await fetch(`${BASE}/sitemap.xml`, { cache: "no-store" })).text();
+checa("e a pagina entra no sitemap", sitemap.includes(`/${slugA}`));
+
+r = await b("/api/pagina", {
+  method: "PATCH",
+  body: JSON.stringify({ pageId: infoA.pageId, indexavel: true }),
+});
+checa("B NAO mexe na busca da pagina de A", r.status === 404, `status ${r.status}`);
+
+// Volta pro padrao: a bateria nao pode deixar pagina de teste no sitemap.
+await a("/api/pagina", {
+  method: "PATCH",
+  body: JSON.stringify({ pageId: infoA.pageId, indexavel: false }),
+});
+
 // --- CATALOGO EM PDF -------------------------------------------------------
 
 // Hospedar o PDF e pago por causa da banda: guardar e barato, servir nao. Quem
