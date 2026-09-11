@@ -5,7 +5,7 @@ import { atualizarLink, excluirLink, linkDoDono } from "@/lib/repo";
 import { montarUrl } from "@/lib/links";
 
 const Corpo = z.object({
-  title: z.string().trim().min(1).optional(),
+  title: z.string().trim().min(1).max(40, "O texto do botão cabe em 40 caracteres.").optional(),
   url: z.string().trim().optional(),
   icon: z.string().trim().nullish(),
   active: z.boolean().optional(),

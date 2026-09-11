@@ -13,7 +13,7 @@ const TIPOS = [
 const Corpo = z.object({
   pageId: z.string().min(1),
   type: z.enum(TIPOS),
-  title: z.string().trim().min(1, "Dê um título ao botão."),
+  title: z.string().trim().min(1, "Dê um título ao botão.").max(40, "O texto do botão cabe em 40 caracteres."),
   url: z.string().trim().optional(),
   icon: z.string().trim().nullish(),
   config: z.record(z.unknown()).optional(),

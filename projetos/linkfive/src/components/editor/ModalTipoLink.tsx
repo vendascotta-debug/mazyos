@@ -137,6 +137,19 @@ export function ModalTipoLink({
                 onChange={(e) => setTitulo(e.target.value)}
                 placeholder={TIPOS[tipo].label}
               />
+              {/* O contador existe porque o corte era silencioso: a pessoa
+                  digitava e as letras simplesmente paravam de aparecer. E o
+                  aviso dos 28 vem antes do limite porque o botao trunca com
+                  reticencias muito antes dos 40 — em celular estreito, texto
+                  longo vira "Comunidade Vip de ofertas Pa…". */}
+              <p
+                className={`mt-1 text-xs ${
+                  titulo.length > 28 ? "text-warn-500" : "text-ink-400"
+                }`}
+              >
+                {titulo.length}/40
+                {titulo.length > 28 && " · textos longos ficam cortados no botão"}
+              </p>
             </div>
 
             {!ehForm && (
