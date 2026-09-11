@@ -112,6 +112,26 @@ for (const u of checkouts) {
   );
 }
 
+// --- A capa de compartilhamento -------------------------------------------
+
+// O WhatsApp descarta a miniatura acima de ~300 KB: mostra o texto e desiste
+// da figura. Foi o que aconteceu ate 11/09/2026, quando a capa era a logo crua
+// do cliente (a do Cotta tinha 589 KB). Link sem previa recebe menos clique,
+// entao isso e receita, nao estetica.
+for (const pagina of ["/cottafoodservice", "/oficinadocarlos"]) {
+  const html = await (await pegar(pagina)).text();
+  const capa = html.match(/og:image" content="([^"]+)"/)?.[1];
+  checa(`${pagina} declara capa`, Boolean(capa));
+  checa(`${pagina} declara o tamanho da capa`, /og:image:width" content="1200"/.test(html));
+
+  if (capa) {
+    const img = await fetch(capa.startsWith("http") ? capa : BASE + capa);
+    const kb = (await img.arrayBuffer()).byteLength / 1024;
+    checa(`a capa de ${pagina} responde`, img.ok, `status ${img.status}`);
+    checa(`e cabe na miniatura do WhatsApp`, kb < 300, `${kb.toFixed(0)} KB`);
+  }
+}
+
 // --- A demonstração continua de pé ------------------------------------------
 r = await pegar("/oficinadocarlos");
 checa("a página de demonstração abre", r.status === 200, `status ${r.status}`);

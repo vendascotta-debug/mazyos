@@ -41,7 +41,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: titulo,
       description: descricao,
-      images: page.avatarUrl ? [page.avatarUrl] : undefined,
+      // Sem `images` aqui de proposito: quem desenha a capa e o
+      // opengraph-image.tsx ao lado. Apontar a logo crua aqui venceria ele.
       type: "profile",
     },
   };
