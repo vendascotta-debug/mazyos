@@ -41,7 +41,8 @@ recriar, copie o `.env.example` e preencha.
 |---|---|
 | `npm run dev` | Sobe o servidor de desenvolvimento |
 | `npm run build` | Build de produção |
-| `npm run teste` | Teste ponta a ponta do MVP (precisa do `dev` rodando) |
+| `npm run teste` | Teste ponta a ponta do MVP (precisa do `dev` rodando). **Escreve no banco** — só roda contra o servidor local |
+| `npm run teste:producao` | Confere produção **sem escrever nada** |
 | `npm run db:status` | Mostra em qual schema está e quantas linhas tem cada tabela |
 | `npm run email:testar <e-mail>` | Confere o envio de e-mail e diz o que falta configurar |
 
@@ -135,13 +136,15 @@ A Deployment Protection foi desligada: a Vercel liga por padrão em projeto novo
 e ela redireciona todo visitante para o login da Vercel — o que faz sentido num
 painel interno e inviabiliza um SaaS público.
 
-Para rodar a bateria de testes contra produção:
+**Produção e desenvolvimento estão separados** desde 11/09/2026: produção usa o
+schema `linkfive`, sua máquina usa `linkfive_dev`. A bateria completa tem trava
+e recusa rodar contra qualquer endereço que não seja o local.
+
+Para conferir produção depois de publicar:
 
 ```bash
-LINKFIVE_URL=https://linkfive.com.br node scripts/teste-mvp.mjs
+npm run teste:producao
 ```
 
-⚠️ **Produção e desenvolvimento dividem o mesmo banco.** Rodar o teste cria
-contas de verdade no banco de produção. Enquanto não houver usuário real isso é
-inofensivo, mas é o primeiro motivo para separar os bancos quando o produto
-lançar.
+Ele só lê: telas abrindo, caminhos privados fechados, preços na tela batendo com
+a tabela, e os quatro links de cobrança aceitando compra.

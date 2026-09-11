@@ -1,10 +1,39 @@
 import fs from "node:fs";
 
-// Teste ponta a ponta do MVP do LINKFIVE, contra o servidor de dev.
+// Teste ponta a ponta do MVP do LINKFIVE, contra o servidor de DESENVOLVIMENTO.
 // Cobre: cadastro, isolamento entre contas, criacao de link, limite de plano,
 // publicacao, pagina publica, registro de view e clique.
+//
+// ESTA BATERIA ESCREVE NO BANCO. Ela cria contas, paginas, links e leads de
+// mentira -- e por isso nao pode rodar contra producao.
+//
+// A trava abaixo existe porque a alternativa ja falhou: em 09/09/2026 a
+// bateria foi apontada para producao quatro vezes no mesmo dia. O painel de
+// clientes encheu de "Padaria Teste", e uma das rodadas chegou a colocar duas
+// paginas de teste no sitemap que o Google le. Lembrar nao funcionou; impedir
+// funciona.
+//
+// Para conferir producao existe `npm run teste:producao`, que so LE.
 
 const BASE = process.env.LINKFIVE_URL ?? "http://localhost:3000";
+
+const local = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(BASE);
+if (!local) {
+  console.error(`
+Esta bateria escreve no banco e so roda contra o servidor local.
+
+  Voce apontou para: ${BASE}
+
+  Para testar o codigo:      npm run teste
+  Para conferir producao:    npm run teste:producao
+
+Se precisar mesmo rodar a bateria completa contra outro endereco --
+tipico de um ambiente de homologacao proprio, nunca de producao --
+use DEIXA_ESCREVER=sim, e saiba que ela vai criar contas de verdade la.
+`);
+  if (process.env.DEIXA_ESCREVER !== "sim") process.exit(1);
+  console.error("DEIXA_ESCREVER=sim: seguindo assim mesmo.");
+}
 
 let falhas = 0;
 function checa(nome, condicao, extra = "") {

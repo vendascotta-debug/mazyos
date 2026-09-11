@@ -576,3 +576,51 @@ nome, com sufixo aleatório se já estiver tomado — aleatório e não contador
 entregaria quantas pessoas já pegaram aquele nome. O onboarding deixa trocar
 antes de publicar: melhor um endereço provisório e uma conta pronta do que um
 formulário no meio de um login de um clique.
+
+---
+
+## 16. Produção e desenvolvimento separados (11/09/2026)
+
+Durante o desenvolvimento os dois dividiam o mesmo schema. Enquanto não havia
+cliente, isso parecia inofensivo. Em 09/09/2026 deixou de ser:
+
+- o painel de clientes encheu de "Padaria Teste" e "Impostor" — quatro vezes no
+  mesmo dia, cada uma exigindo limpeza manual;
+- uma das rodadas pôs **duas páginas de teste no sitemap** que o Google lê;
+- e a primeira compra de verdade aconteceu no mesmo banco onde os testes
+  escreviam.
+
+### O que mudou
+
+`DB_SCHEMA=linkfive_dev` na máquina de desenvolvimento. O schema e as tabelas
+nascem sozinhos na primeira conexão — `ensureSchema()` já emitia
+`CREATE SCHEMA IF NOT EXISTS`, então não houve migração: foi trocar uma linha.
+
+A separação por schema, e não por banco, é a mesma decisão que já isolava o
+LINKFIVE do Prospecta. Custa nada, e o isolamento das tabelas é completo.
+
+### A trava, que é a parte que importa
+
+Separar o banco resolve metade. A outra metade é que a bateria era **apontada
+para produção** com `LINKFIVE_URL=https://linkfive.com.br` — e aí o banco de
+desenvolvimento não protege ninguém.
+
+`scripts/teste-mvp.mjs` agora recusa rodar contra qualquer endereço que não seja
+local, e explica o que usar no lugar. Existe uma saída (`DEIXA_ESCREVER=sim`)
+para um ambiente de homologação próprio, mas ela é deliberadamente
+desconfortável de digitar.
+
+**Lembrar não funcionou; impedir funciona.** Foram quatro esquecimentos num dia
+só.
+
+### O que confere produção agora
+
+`npm run teste:producao` — só leitura. Telas abrindo, caminhos privados
+fechados, sitemap sem link curto nem resquício de teste, `www` redirecionando,
+webhook recusando assinatura forjada, e os preços na tela batendo com a tabela
+de planos.
+
+A verificação mais valiosa é a última: ele **abre os quatro links de cobrança e
+confirma que aceitam compra**. Link de checkout desativado por engano é venda
+perdida que não gera erro em lugar nenhum — o cliente clica, vê "este link não
+está mais ativo", e vai embora sem avisar.

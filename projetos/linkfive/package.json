@@ -10,7 +10,8 @@
     "db:status": "node -e \"fetch('http://localhost:3000/api/status').then(r=>r.json()).then(r=>console.log(r)).catch(()=>console.error('O servidor precisa estar rodando (npm run dev).'))\"",
     "teste": "node scripts/teste-mvp.mjs",
     "teste:animacao": "node scripts/teste-animacao.mjs",
-    "email:testar": "node --no-warnings=MODULE_TYPELESS_PACKAGE_JSON scripts/testar-email.mjs"
+    "email:testar": "node --no-warnings=MODULE_TYPELESS_PACKAGE_JSON scripts/testar-email.mjs",
+    "teste:producao": "node --no-warnings=MODULE_TYPELESS_PACKAGE_JSON scripts/teste-producao.mjs"
   },
   "dependencies": {
     "@types/nodemailer": "^8.0.1",
