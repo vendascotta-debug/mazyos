@@ -1254,6 +1254,43 @@ checa(
 r = await fetch(`${BASE}/entrar`);
 checa("o login abre com o Google configurado ou nao", r.status === 200, `status ${r.status}`);
 
+// --- EDITAR LINK -----------------------------------------------------------
+
+// Ate 11/09/2026 nao havia como editar: quem errava o numero excluia e
+// refazia, e perdia a posicao na lista, porque o novo nasce no fim.
+r = await a("/api/links", {
+  method: "POST",
+  body: JSON.stringify({
+    pageId: infoA.pageId,
+    type: "whatsapp",
+    title: "Falar agora",
+    config: { numero: "11988887777", mensagem: "Ola!" },
+  }),
+});
+const linkEditavel = (await r.json()).link;
+checa("link criado para editar", r.ok && linkEditavel?.url.includes("5511988887777"));
+
+r = await a(`/api/links/${linkEditavel.id}`, {
+  method: "PATCH",
+  body: JSON.stringify({ config: { numero: "11977776666", mensagem: "Ola!" } }),
+});
+const linkTrocado = (await r.json()).link;
+checa("trocar o numero remonta o endereco", linkTrocado?.url.includes("5511977776666"), linkTrocado?.url);
+checa("o numero antigo some", !linkTrocado?.url.includes("988887777"));
+checa("a posicao na lista e mantida", linkTrocado?.position === linkEditavel.position);
+
+r = await a(`/api/links/${linkEditavel.id}`, {
+  method: "PATCH",
+  body: JSON.stringify({ title: "Comunidade Vip de ofertas Para Restaurantes" }),
+});
+checa("texto longo demais e recusado na edicao", r.status === 400, `status ${r.status}`);
+
+r = await b(`/api/links/${linkEditavel.id}`, {
+  method: "PATCH",
+  body: JSON.stringify({ title: "Invadido" }),
+});
+checa("B NAO edita link de A", r.status === 404, `status ${r.status}`);
+
 // --- A LOGO DA PAGINA -------------------------------------------------------
 
 // O caso real que quebrou uma pagina: o dono colou o endereco do SITE no campo

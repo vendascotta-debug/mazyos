@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ArrowLeft, Loader2, X } from "lucide-react";
-import type { LeadField, LinkConfig, LinkType } from "@/lib/types";
+import type { LeadField, LinkConfig, LinkType, PageLink } from "@/lib/types";
 import {
   MENSAGEM_PADRAO,
   ORDEM_TIPOS,
@@ -31,22 +31,49 @@ const CAMPOS_LEAD: { id: LeadField; label: string; fixo?: boolean }[] = [
   { id: "message", label: "Mensagem" },
 ];
 
+/**
+ * Reconstrói o que a pessoa digitou, a partir do que foi guardado.
+ *
+ * O banco guarda a URL pronta (`https://instagram.com/perfil`), porque o
+ * redirecionamento não pode depender de remontar nada a cada clique. Para
+ * editar, é preciso o caminho de volta — senão o campo abriria vazio e a
+ * pessoa teria de digitar tudo outra vez, que é exatamente o que ela já fazia
+ * excluindo e recriando.
+ */
+function entradaDoLink(link: PageLink): string {
+  if (link.type === "whatsapp") return link.config.numero ?? "";
+  if (link.type === "form") return "";
+  if (link.type === "phone") return link.url.replace(/^tel:\+?/, "");
+  if (link.type === "email") return link.url.replace(/^mailto:/, "");
+  // Os demais aceitam a URL inteira de volta: `montarUrl` devolve igual
+  // quando já vem com http.
+  return link.url;
+}
+
 export function ModalTipoLink({
   onFechar,
   onCriar,
+  link,
 }: {
   onFechar: () => void;
   onCriar: (tipo: LinkType, titulo: string, entrada: string, config: LinkConfig) => Promise<boolean>;
+  /** Quando vem preenchido, o modal edita em vez de criar. */
+  link?: PageLink | null;
   podeTema?: boolean;
 }) {
-  const [tipo, setTipo] = useState<LinkType | null>(null);
-  const [titulo, setTitulo] = useState("");
-  const [entrada, setEntrada] = useState("");
-  const [mensagem, setMensagem] = useState(MENSAGEM_PADRAO);
+  const editando = Boolean(link);
+
+  // O tipo já vem escolhido na edição, e não muda: trocar o tipo de um link
+  // existente mudaria o significado do endereço guardado. Quem quer outro tipo
+  // cria outro botão.
+  const [tipo, setTipo] = useState<LinkType | null>(link?.type ?? null);
+  const [titulo, setTitulo] = useState(link?.title ?? "");
+  const [entrada, setEntrada] = useState(link ? entradaDoLink(link) : "");
+  const [mensagem, setMensagem] = useState(link?.config.mensagem ?? MENSAGEM_PADRAO);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   // Nome e WhatsApp por padrão: é o mínimo pra conseguir responder alguém.
-  const [campos, setCampos] = useState<LeadField[]>(["name", "whatsapp"]);
+  const [campos, setCampos] = useState<LeadField[]>(link?.config.campos ?? ["name", "whatsapp"]);
 
   function escolher(t: LinkType) {
     setTipo(t);
@@ -80,7 +107,7 @@ export function ModalTipoLink({
     const ok = await onCriar(tipo, titulo.trim() || TIPOS[tipo].label, entrada, config);
     setSalvando(false);
     if (ok) onFechar();
-    else setErro("Não foi possível criar o link.");
+    else setErro(editando ? "Não foi possível salvar." : "Não foi possível criar o link.");
   }
 
   return (
@@ -93,13 +120,18 @@ export function ModalTipoLink({
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex items-center gap-3 border-b border-ink-200 px-5 py-4">
-          {tipo && (
+          {/* Na edição não há para onde voltar: o tipo está fixo. */}
+          {tipo && !editando && (
             <button onClick={() => setTipo(null)} className="text-ink-400 hover:text-ink-900">
               <ArrowLeft size={18} />
             </button>
           )}
           <h2 className="flex-1 font-semibold">
-            {tipo ? TIPOS[tipo].label : "O que você quer adicionar?"}
+            {editando
+              ? `Editar ${TIPOS[link!.type].label}`
+              : tipo
+                ? TIPOS[tipo].label
+                : "O que você quer adicionar?"}
           </h2>
           <button onClick={onFechar} className="text-ink-400 hover:text-ink-900">
             <X size={18} />
@@ -249,7 +281,7 @@ export function ModalTipoLink({
               </button>
               <button onClick={salvar} className="btn-brand flex-1" disabled={salvando}>
                 {salvando && <Loader2 size={16} className="animate-spin" />}
-                Adicionar
+                {editando ? "Salvar" : "Adicionar"}
               </button>
             </div>
           </div>

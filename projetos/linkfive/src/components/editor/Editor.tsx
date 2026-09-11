@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Eye, GripVertical, Loader2, Plus, Trash2 } from "lucide-react";
+import { Check, Eye, GripVertical, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import type { Page, PageLink, LinkType, LinkConfig } from "@/lib/types";
 import { TIPOS } from "@/lib/links";
 import { PreviewCelular } from "@/components/editor/PreviewCelular";
@@ -40,6 +40,7 @@ export function Editor({
   const [salvo, setSalvo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [modalAberto, setModalAberto] = useState(false);
+  const [editando, setEditando] = useState<PageLink | null>(null);
   const [arrastando, setArrastando] = useState<string | null>(null);
 
   const noLimite = maxLinks !== null && links.length >= maxLinks;
@@ -90,6 +91,38 @@ export function Editor({
       return false;
     }
     setLinks((ls) => [...ls, d.link]);
+    router.refresh();
+    return true;
+  }
+
+  /**
+   * Salva a edição de um link que já existe.
+   *
+   * Antes não havia caminho para isso na tela: quem errava o número ou o texto
+   * tinha de excluir e refazer — e perdia a posição na lista, porque o novo
+   * nasce no fim. A rota de edição já existia; faltava a porta.
+   */
+  async function editarLink(
+    _tipo: LinkType,
+    titulo: string,
+    entrada: string,
+    config: LinkConfig,
+  ) {
+    if (!editando) return false;
+    // O tipo não vai no corpo: o servidor remonta a URL a partir do tipo que
+    // já está gravado, e mudar o tipo de um link existente mudaria o
+    // significado do endereço. O modal também não deixa trocá-lo na edição.
+    const r = await fetch(`/api/links/${editando.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ title: titulo, url: entrada, config }),
+    });
+    const d = await r.json();
+    if (!r.ok) {
+      setErro(d.erro ?? "Não foi possível salvar o link.");
+      return false;
+    }
+    setLinks((ls) => ls.map((l) => (l.id === editando.id ? d.link : l)));
     router.refresh();
     return true;
   }
@@ -276,13 +309,27 @@ export function Editor({
                       aria-hidden="true"
                     />
 
-                    <div className="min-w-0 flex-1">
+                    {/* A linha inteira abre a edição: é onde a pessoa clica
+                        por instinto quando quer mudar alguma coisa. */}
+                    <button
+                      onClick={() => setEditando(l)}
+                      className="min-w-0 flex-1 text-left"
+                      title="Editar"
+                    >
                       <p className="truncate text-sm font-medium">{l.title}</p>
                       <p className="truncate text-xs text-ink-400">
                         {info.label}
                         {l.url ? ` · ${l.url.replace(/^https?:\/\//, "")}` : ""}
                       </p>
-                    </div>
+                    </button>
+
+                    <button
+                      onClick={() => setEditando(l)}
+                      className="shrink-0 text-ink-300 hover:text-brand-600"
+                      title="Editar"
+                    >
+                      <Pencil size={15} />
+                    </button>
 
                     <button
                       onClick={() => alternarAtivo(l)}
@@ -337,6 +384,16 @@ export function Editor({
         <ModalTipoLink
           onFechar={() => setModalAberto(false)}
           onCriar={criarLink}
+          podeTema={podeTema}
+        />
+      )}
+
+      {editando && (
+        <ModalTipoLink
+          key={editando.id}
+          link={editando}
+          onFechar={() => setEditando(null)}
+          onCriar={editarLink}
           podeTema={podeTema}
         />
       )}
