@@ -91,9 +91,9 @@ export const PLANOS: Record<PlanId, Plano> = {
   starter: {
     id: "starter",
     nome: "Starter",
-    precoCents: 1990,
+    precoCents: 1090,
     // 12 meses sairiam R$ 238,80 — o anual desconta ~16%.
-    precoAnualCents: 19990,
+    precoAnualCents: 9700,
     maxLinks: null,
     maxCurtos: 10000,
     maxCurtosMes: 300,
@@ -113,8 +113,8 @@ export const PLANOS: Record<PlanId, Plano> = {
   pro: {
     id: "pro",
     nome: "Pro",
-    precoCents: 3990,
-    precoAnualCents: 39990,
+    precoCents: 1990,
+    precoAnualCents: 19700,
     maxLinks: null,
     maxCurtos: null,
     maxCurtosMes: null,
