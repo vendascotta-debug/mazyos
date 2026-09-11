@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { upload } from "@vercel/blob/client";
 import { ArrowLeft, FileText, Loader2, Upload, X } from "lucide-react";
 import type { LeadField, LinkConfig, LinkType, PageLink } from "@/lib/types";
 import {
@@ -23,6 +24,9 @@ import {
  */
 /** Campos possíveis do formulário. Nome e WhatsApp são fixos: sem contato o
  *  lead não serve para nada. */
+/** Dez megabytes, o mesmo teto que o servidor assina. */
+const LIMITE_PDF = 10 * 1024 * 1024;
+
 const CAMPOS_LEAD: { id: LeadField; label: string; fixo?: boolean }[] = [
   { id: "name", label: "Nome", fixo: true },
   { id: "whatsapp", label: "WhatsApp", fixo: true },
@@ -100,20 +104,32 @@ export function ModalTipoLink({
    */
   async function enviarPdf(arquivo: File) {
     setErro(null);
+
+    // Confere o tamanho ANTES de subir: o servidor também recusa, mas aí o
+    // usuário teria esperado o arquivo inteiro atravessar a internet pra
+    // descobrir. E é o erro mais comum — catálogo costuma ser pesado.
+    if (arquivo.size > LIMITE_PDF) {
+      const mb = (arquivo.size / 1024 / 1024).toFixed(1);
+      setErro(
+        `Esse catálogo tem ${mb} MB e o limite é 10 MB. Comprima o PDF no link acima e envie de novo.`,
+      );
+      return;
+    }
+
     setEnviando(true);
     try {
-      const dados = new FormData();
-      dados.append("arquivo", arquivo);
-      const r = await fetch("/api/upload", { method: "POST", body: dados });
-      const corpo = await r.json().catch(() => null);
-      if (!r.ok) {
-        setErro(corpo?.erro ?? "Não foi possível enviar o catálogo.");
-        return;
-      }
-      setEntrada(corpo.url);
+      // Vai do navegador direto pro armazenamento. Passar pelo nosso servidor
+      // não funciona: a Vercel recusa requisição acima de ~4,5 MB antes do
+      // código rodar, e o usuário recebia um erro genérico sem saber por quê.
+      const enviado = await upload(`catalogos/${Date.now()}.pdf`, arquivo, {
+        access: "public",
+        contentType: "application/pdf",
+        handleUploadUrl: "/api/upload/catalogo",
+      });
+      setEntrada(enviado.url);
       if (!titulo.trim()) setTitulo("Catálogo");
-    } catch {
-      setErro("Não foi possível enviar o catálogo. Verifique a conexão.");
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Não foi possível enviar o catálogo.");
     } finally {
       setEnviando(false);
     }
@@ -253,10 +269,18 @@ export function ModalTipoLink({
                         : "Enviar o PDF do catálogo (até 10 MB)"}
                   </span>
                 </label>
-                <p className="mt-1.5 text-xs text-ink-400">
-                  Maior que 10 MB? Comprima o PDF num site gratuito (procure por
-                  &ldquo;comprimir PDF&rdquo;) — ou guarde no Google Drive e cole o endereço
-                  abaixo.
+                <p className="mt-1.5 text-xs text-ink-600">
+                  Maior que 10 MB?{" "}
+                  <a
+                    href="https://www.ilovepdf.com/pt/comprimir_pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-brand-600 underline"
+                  >
+                    Comprima o PDF aqui
+                  </a>{" "}
+                  — é gratuito e não precisa instalar nada. Um catálogo de 30 MB costuma cair
+                  para 5 MB.
                 </p>
               </div>
             )}

@@ -1293,48 +1293,49 @@ await a("/api/pagina", {
 
 // --- CATALOGO EM PDF -------------------------------------------------------
 
-// Hospedar o PDF e pago por causa da banda: guardar e barato, servir nao. Quem
-// nao paga continua podendo apontar pra um catalogo hospedado fora.
-const pdfFalso = Buffer.from(
-  ["%PDF-1.4", "1 0 obj", "<< /Type /Catalog >>", "endobj", "trailer", "<< /Root 1 0 R >>", "%%EOF"].join(
-    String.fromCharCode(10),
-  ),
-);
-const formPdf = (corpo = pdfFalso, nome = "catalogo.pdf") => {
-  const fd = new FormData();
-  fd.append("arquivo", new File([corpo], nome, { type: "application/pdf" }));
-  return fd;
-};
+// O arquivo vai do navegador DIRETO pro armazenamento: a Vercel recusa
+// requisicao acima de ~4,5 MB antes do nosso codigo rodar, e catalogo costuma
+// ser maior (o primeiro catalogo real que tentaram enviar tinha mais que isso
+// e o usuario recebeu um erro generico). Entao o que a bateria confere aqui e
+// quem o servidor AUTORIZA a enviar — a transferencia em si e do Blob.
+const pedidoToken = (pathname) => ({
+  method: "POST",
+  body: JSON.stringify({
+    type: "blob.generate-client-token",
+    payload: { pathname, callbackUrl: `${BASE}/api/upload/catalogo`, multipart: false },
+  }),
+});
 
-// A conta A e Free neste ponto da bateria.
-r = await a("/api/upload", { method: "POST", body: formPdf() });
-const recusaPdf = await r.json();
-checa("plano Free NAO hospeda PDF", r.status === 402, `status ${r.status}`);
-checa("e a recusa oferece o Starter", /Starter/.test(recusaPdf.erro ?? ""));
+r = await a("/api/upload/catalogo", pedidoToken("catalogos/x.pdf"));
+let corpoToken = await r.json();
+checa("plano Free NAO recebe autorizacao pra PDF", !r.ok, `status ${r.status}`);
+checa("e a recusa oferece o Starter", /Starter/.test(corpoToken.erro ?? ""), corpoToken.erro);
 
-// B ja e Cortesia (o admin concedeu acima), entao pode enviar.
-r = await b("/api/upload", { method: "POST", body: formPdf() });
-const envioPdf = await r.json();
-checa("plano pago envia o PDF", r.ok, r.ok ? "enviado" : JSON.stringify(envioPdf));
-checa("guardado na pasta de catalogos", (envioPdf.url ?? "").includes("/catalogos/"), envioPdf.url);
+// B ja e Cortesia (o admin concedeu acima).
+r = await b("/api/upload/catalogo", pedidoToken("catalogos/x.pdf"));
+corpoToken = await r.json();
+checa("plano pago recebe autorizacao", r.ok, r.ok ? "autorizado" : JSON.stringify(corpoToken));
+// As regras viajam DENTRO da autorizacao assinada, nao no JSON: e isso que
+// impede o navegador de pedir mais do que o servidor concedeu.
+// O teto e o formato permitido viajam DENTRO do token assinado, que e opaco
+// de proposito — nao da pra conferir daqui sem depender do formato interno da
+// biblioteca, que muda sem aviso. O que a bateria garante e QUEM recebe
+// autorizacao; que o Blob recusa arquivo grande demais e responsabilidade
+// dele, e foi conferido no navegador com um PDF de 6 MB.
 
-const baixado = await fetch(envioPdf.url);
-checa("o catalogo abre publicamente", baixado.ok, `status ${baixado.status}`);
-checa(
-  "e chega como PDF",
-  (baixado.headers.get("content-type") ?? "").includes("pdf"),
-  baixado.headers.get("content-type"),
-);
+// O caminho vem do navegador: sem conferencia, daria pra escrever por cima
+// da pasta das logos.
+r = await b("/api/upload/catalogo", pedidoToken("avatares/vitima.pdf"));
+checa("caminho fora da pasta de catalogos e recusado", !r.ok, `status ${r.status}`);
 
-// Onze megabytes: acima do teto de 10 MB.
-const pdfGrande = Buffer.alloc(11 * 1024 * 1024, 0x20);
-pdfGrande.set(pdfFalso, 0);
-r = await b("/api/upload", { method: "POST", body: formPdf(pdfGrande, "grande.pdf") });
-const recusaTamanho = await r.json();
-checa("PDF acima de 10 MB e recusado", r.status === 400, `status ${r.status}`);
-checa("e a recusa ensina a comprimir", /comprim/i.test(recusaTamanho.erro ?? ""));
+r = await fetch(`${BASE}/api/upload/catalogo`, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  ...pedidoToken("catalogos/x.pdf"),
+});
+checa("deslogado NAO recebe autorizacao", !r.ok, `status ${r.status}`);
 
-// O buraco de seguranca que o SVG abriria continua fechado.
+// A rota de imagem voltou a ser so de imagem.
 const formSvg = new FormData();
 formSvg.append("arquivo", new File(["<svg onload=alert(1)>"], "x.svg", { type: "image/svg+xml" }));
 r = await b("/api/upload", { method: "POST", body: formSvg });
