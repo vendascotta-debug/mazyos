@@ -20,6 +20,7 @@ export default async function MinhaPagina() {
       links={links}
       maxLinks={p.maxLinks}
       podeTema={p.temas}
+      podePdf={p.catalogoPdf}
       nomePlano={p.nome}
     />
   );

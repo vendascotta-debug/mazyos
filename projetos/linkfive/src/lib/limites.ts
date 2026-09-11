@@ -54,6 +54,15 @@ export interface Plano {
   gestaoLinks: boolean;
   /** Escolher tema. */
   temas: boolean;
+  /**
+   * Enviar o PDF do catalogo pra dentro do LINKFIVE.
+   *
+   * Fica fora do Gratis por causa da banda: guardar PDF e barato, servir nao.
+   * Um catalogo de 20 MB aberto 500 vezes no mes passa de 10 GB de trafego —
+   * mais do que a mensalidade cobre. Quem nao paga continua podendo apontar
+   * pra um catalogo hospedado fora (Drive, site proprio).
+   */
+  catalogoPdf: boolean;
   /** Editar cor, fonte e formato de botão além do tema. */
   personalizacaoAvancada: boolean;
   /** Assinatura "Feito com LINKFIVE" no rodapé da página pública. */
@@ -84,6 +93,7 @@ export const PLANOS: Record<PlanId, Plano> = {
     metricasGeo: false,
     gestaoLinks: false,
     temas: false,
+    catalogoPdf: false,
     personalizacaoAvancada: false,
     marca: true,
     equipe: false,
@@ -105,6 +115,7 @@ export const PLANOS: Record<PlanId, Plano> = {
     metricasGeo: false,
     gestaoLinks: true,
     temas: true,
+    catalogoPdf: true,
     personalizacaoAvancada: true,
     marca: false,
     equipe: true,
@@ -126,6 +137,7 @@ export const PLANOS: Record<PlanId, Plano> = {
     metricasGeo: true,
     gestaoLinks: true,
     temas: true,
+    catalogoPdf: true,
     personalizacaoAvancada: true,
     marca: false,
     equipe: true,
@@ -146,6 +158,7 @@ export const PLANOS: Record<PlanId, Plano> = {
     metricasGeo: true,
     gestaoLinks: true,
     temas: true,
+    catalogoPdf: true,
     personalizacaoAvancada: true,
     marca: false,
     equipe: true,

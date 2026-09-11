@@ -49,7 +49,10 @@ function sessao() {
     const r = await fetch(BASE + caminho, {
       ...opcoes,
       headers: {
-        "content-type": "application/json",
+        // Envio de arquivo vai como FormData, e ai quem tem de escrever o
+        // content-type e o proprio fetch: ele precisa acrescentar o boundary.
+        // Forcar json aqui faria o servidor ler um corpo vazio.
+        ...(opcoes.body instanceof FormData ? {} : { "content-type": "application/json" }),
         ...(cookie ? { cookie } : {}),
         ...(opcoes.headers ?? {}),
       },
@@ -1253,6 +1256,55 @@ checa(
 // O que se afirma sem navegador e o contrato da rota, que e o que esta acima.
 r = await fetch(`${BASE}/entrar`);
 checa("o login abre com o Google configurado ou nao", r.status === 200, `status ${r.status}`);
+
+// --- CATALOGO EM PDF -------------------------------------------------------
+
+// Hospedar o PDF e pago por causa da banda: guardar e barato, servir nao. Quem
+// nao paga continua podendo apontar pra um catalogo hospedado fora.
+const pdfFalso = Buffer.from(
+  ["%PDF-1.4", "1 0 obj", "<< /Type /Catalog >>", "endobj", "trailer", "<< /Root 1 0 R >>", "%%EOF"].join(
+    String.fromCharCode(10),
+  ),
+);
+const formPdf = (corpo = pdfFalso, nome = "catalogo.pdf") => {
+  const fd = new FormData();
+  fd.append("arquivo", new File([corpo], nome, { type: "application/pdf" }));
+  return fd;
+};
+
+// A conta A e Free neste ponto da bateria.
+r = await a("/api/upload", { method: "POST", body: formPdf() });
+const recusaPdf = await r.json();
+checa("plano Free NAO hospeda PDF", r.status === 402, `status ${r.status}`);
+checa("e a recusa oferece o Starter", /Starter/.test(recusaPdf.erro ?? ""));
+
+// B ja e Cortesia (o admin concedeu acima), entao pode enviar.
+r = await b("/api/upload", { method: "POST", body: formPdf() });
+const envioPdf = await r.json();
+checa("plano pago envia o PDF", r.ok, r.ok ? "enviado" : JSON.stringify(envioPdf));
+checa("guardado na pasta de catalogos", (envioPdf.url ?? "").includes("/catalogos/"), envioPdf.url);
+
+const baixado = await fetch(envioPdf.url);
+checa("o catalogo abre publicamente", baixado.ok, `status ${baixado.status}`);
+checa(
+  "e chega como PDF",
+  (baixado.headers.get("content-type") ?? "").includes("pdf"),
+  baixado.headers.get("content-type"),
+);
+
+// Onze megabytes: acima do teto de 10 MB.
+const pdfGrande = Buffer.alloc(11 * 1024 * 1024, 0x20);
+pdfGrande.set(pdfFalso, 0);
+r = await b("/api/upload", { method: "POST", body: formPdf(pdfGrande, "grande.pdf") });
+const recusaTamanho = await r.json();
+checa("PDF acima de 10 MB e recusado", r.status === 400, `status ${r.status}`);
+checa("e a recusa ensina a comprimir", /comprim/i.test(recusaTamanho.erro ?? ""));
+
+// O buraco de seguranca que o SVG abriria continua fechado.
+const formSvg = new FormData();
+formSvg.append("arquivo", new File(["<svg onload=alert(1)>"], "x.svg", { type: "image/svg+xml" }));
+r = await b("/api/upload", { method: "POST", body: formSvg });
+checa("SVG continua recusado", r.status === 400, `status ${r.status}`);
 
 // --- EDITAR LINK -----------------------------------------------------------
 

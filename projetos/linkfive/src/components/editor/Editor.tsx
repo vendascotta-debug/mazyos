@@ -25,12 +25,15 @@ export function Editor({
   links: linksIniciais,
   maxLinks,
   podeTema,
+  podePdf,
   nomePlano,
 }: {
   page: Page;
   links: PageLink[];
   maxLinks: number | null;
   podeTema: boolean;
+  /** O plano permite hospedar o PDF do catálogo aqui. */
+  podePdf: boolean;
   nomePlano: string;
 }) {
   const router = useRouter();
@@ -406,6 +409,7 @@ export function Editor({
           onFechar={() => setModalAberto(false)}
           onCriar={criarLink}
           podeTema={podeTema}
+          podePdf={podePdf}
         />
       )}
 
@@ -416,6 +420,7 @@ export function Editor({
           onFechar={() => setEditando(null)}
           onCriar={editarLink}
           podeTema={podeTema}
+          podePdf={podePdf}
         />
       )}
     </div>

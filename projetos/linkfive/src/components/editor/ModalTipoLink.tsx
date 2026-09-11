@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Loader2, X } from "lucide-react";
+import { ArrowLeft, FileText, Loader2, Upload, X } from "lucide-react";
 import type { LeadField, LinkConfig, LinkType, PageLink } from "@/lib/types";
 import {
   MENSAGEM_PADRAO,
@@ -54,12 +54,15 @@ export function ModalTipoLink({
   onFechar,
   onCriar,
   link,
+  podePdf = false,
 }: {
   onFechar: () => void;
   onCriar: (tipo: LinkType, titulo: string, entrada: string, config: LinkConfig) => Promise<boolean>;
   /** Quando vem preenchido, o modal edita em vez de criar. */
   link?: PageLink | null;
   podeTema?: boolean;
+  /** O plano permite hospedar o PDF do catálogo aqui. */
+  podePdf?: boolean;
 }) {
   const editando = Boolean(link);
 
@@ -84,6 +87,37 @@ export function ModalTipoLink({
 
   const ehWhats = tipo === "whatsapp";
   const ehForm = tipo === "form";
+  const ehCatalogo = tipo === "catalog";
+  const [enviando, setEnviando] = useState(false);
+
+  /**
+   * Envia o PDF e usa o endereço devolvido como destino do botão.
+   *
+   * O catálogo é o caso em que "cole o endereço" mais falha: o arquivo está no
+   * celular ou no computador da pessoa, não publicado em lugar nenhum. Quem
+   * tiver catálogo grande demais continua podendo apontar pra um endereço de
+   * fora — por isso o campo de endereço não sai da tela.
+   */
+  async function enviarPdf(arquivo: File) {
+    setErro(null);
+    setEnviando(true);
+    try {
+      const dados = new FormData();
+      dados.append("arquivo", arquivo);
+      const r = await fetch("/api/upload", { method: "POST", body: dados });
+      const corpo = await r.json().catch(() => null);
+      if (!r.ok) {
+        setErro(corpo?.erro ?? "Não foi possível enviar o catálogo.");
+        return;
+      }
+      setEntrada(corpo.url);
+      if (!titulo.trim()) setTitulo("Catálogo");
+    } catch {
+      setErro("Não foi possível enviar o catálogo. Verifique a conexão.");
+    } finally {
+      setEnviando(false);
+    }
+  }
 
   async function salvar() {
     if (!tipo) return;
@@ -184,10 +218,57 @@ export function ModalTipoLink({
               </p>
             </div>
 
+            {ehCatalogo && podePdf && (
+              <div>
+                <label className="label">Arquivo do catálogo</label>
+                <label
+                  className={`flex cursor-pointer items-center gap-3 rounded-[14px] border border-dashed px-4 py-4 transition-colors ${
+                    enviando ? "border-ink-200 opacity-60" : "border-ink-300 hover:border-brand-500"
+                  }`}
+                >
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    className="hidden"
+                    disabled={enviando}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      // Limpa o campo pra reenviar o mesmo arquivo depois de um erro.
+                      e.target.value = "";
+                      if (f) enviarPdf(f);
+                    }}
+                  />
+                  {enviando ? (
+                    <Loader2 size={20} className="animate-spin text-ink-500" />
+                  ) : entrada.includes("/catalogos/") ? (
+                    <FileText size={20} className="text-ok-500" />
+                  ) : (
+                    <Upload size={20} className="text-ink-500" />
+                  )}
+                  <span className="text-sm text-ink-700">
+                    {enviando
+                      ? "Enviando o catálogo…"
+                      : entrada.includes("/catalogos/")
+                        ? "Catálogo enviado — toque para trocar o arquivo"
+                        : "Enviar o PDF do catálogo (até 10 MB)"}
+                  </span>
+                </label>
+                <p className="mt-1.5 text-xs text-ink-400">
+                  Maior que 10 MB? Comprima o PDF num site gratuito (procure por
+                  &ldquo;comprimir PDF&rdquo;) — ou guarde no Google Drive e cole o endereço
+                  abaixo.
+                </p>
+              </div>
+            )}
+
             {!ehForm && (
               <div>
                 <label className="label" htmlFor="entrada">
-                  {ehWhats ? "Número do WhatsApp (com DDD)" : "Endereço"}
+                  {ehWhats
+                    ? "Número do WhatsApp (com DDD)"
+                    : ehCatalogo && podePdf
+                      ? "Ou o endereço de um catálogo já publicado"
+                      : "Endereço"}
                 </label>
                 <input
                   id="entrada"

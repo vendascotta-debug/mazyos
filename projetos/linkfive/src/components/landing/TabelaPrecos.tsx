@@ -134,7 +134,11 @@ export function TabelaPrecos({
                 {p.gestaoLinks && <Item>Expiração, senha e troca de destino</Item>}
                 {p.formularios && <Item>Formulário e captura de leads</Item>}
                 {p.temas && <Item>Temas e personalização</Item>}
-                {!p.marca && <Item>Sem a marca LINKFIVE</Item>}
+                {p.catalogoPdf && <Item>Catálogo em PDF até 10 MB</Item>}
+                {/* Desde 11/09/2026 a capa de compartilhamento leva a marca em
+                    todo plano. Prometer "sem a marca" seco viraria promessa que
+                    a gente nao cumpre — aqui a frase diz onde ela sai. */}
+                {!p.marca && <Item>Sem a marca no rodapé da página</Item>}
                 {p.equipe && <Item>Acesso para equipe</Item>}
                 <Item>
                   <strong>Nunca exibimos anúncios</strong>

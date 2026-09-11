@@ -3,6 +3,7 @@ import {
   BarChart3,
   Check,
   ChevronDown,
+  FileText,
   MessageCircle,
   MousePointerClick,
   Palette,
@@ -78,6 +79,12 @@ const RECURSOS = [
     titulo: "Link direto, sem página no meio",
     texto:
       "Endereços curtos que abrem a conversa na hora. Um pro anúncio, um pro cartão, um pra vitrine — e você vê qual deles trouxe gente.",
+  },
+  {
+    icone: FileText,
+    titulo: "Catálogo em PDF, aberto no link",
+    texto:
+      "Envie o PDF e o cliente abre direto do celular — sem pedir por WhatsApp, sem anexo de 20 MB, sem tela do Drive no meio do caminho.",
   },
   {
     icone: BarChart3,
