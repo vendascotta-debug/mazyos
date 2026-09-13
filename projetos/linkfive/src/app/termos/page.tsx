@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 
-export const metadata = {
-  title: "Termos de Uso — LINKFIVE",
-  description: "As regras de uso da plataforma LINKFIVE.",
+export const metadata: Metadata = {
+  title: "Termos de Uso",
+  description:
+    "As regras de uso da plataforma LINKFIVE: conta, páginas publicadas, links diretos e captura de leads.",
+  alternates: { canonical: "/termos" },
 };
 
 /**

@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 
-export const metadata = {
-  title: "Política de Privacidade — LINKFIVE",
-  description: "Como o LINKFIVE trata os dados de quem usa a plataforma e de quem visita as páginas.",
+export const metadata: Metadata = {
+  title: "Política de Privacidade",
+  description:
+    "Como o LINKFIVE trata os dados de quem usa a plataforma e de quem visita as páginas, conforme a LGPD.",
+  alternates: { canonical: "/privacidade" },
 };
 
 /**

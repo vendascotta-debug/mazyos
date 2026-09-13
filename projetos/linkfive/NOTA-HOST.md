@@ -44,3 +44,23 @@ Se um dia aparecer outro host servindo a aplicação — um domínio novo, um
 `app.`, um endereço de pré-visualização usado como oficial — o mesmo problema
 volta, e volta calado: tudo funciona até alguém trocar de host no meio do
 caminho.
+
+---
+
+## Adendo — 13/09/2026: a raiz não estava redirecionando
+
+Auditoria de SEO encontrou o redirect funcionando em `/termos` e em todo o
+resto, mas **não em `/`**:
+
+    https://www.linkfive.com.br/termos  ->  https://linkfive.com.br/termos   OK
+    https://www.linkfive.com.br/        ->  respondia 200 no proprio www     FALHA
+
+O `source: "/:caminho*"` sozinho não estava pegando a raiz. E a raiz é
+justamente a URL que o Google indexou — ou seja, o único endereço onde o
+problema realmente custava caro era o único que escapava.
+
+Corrigido com uma segunda regra, `source: "/"`, antes da genérica. A ordem
+importa: a Vercel usa a primeira que casar.
+
+**Como conferir depois de cada deploy:** abrir `https://www.linkfive.com.br/`
+e confirmar que a barra de endereço perde o `www`.

@@ -2,6 +2,12 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "redirects": [
     {
+      "source": "/",
+      "has": [{ "type": "host", "value": "www.linkfive.com.br" }],
+      "destination": "https://linkfive.com.br/",
+      "permanent": true
+    },
+    {
       "source": "/:caminho*",
       "has": [{ "type": "host", "value": "www.linkfive.com.br" }],
       "destination": "https://linkfive.com.br/:caminho*",

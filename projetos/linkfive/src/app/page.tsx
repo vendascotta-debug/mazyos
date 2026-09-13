@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   BarChart3,
@@ -21,6 +22,9 @@ import { Revelar } from "@/components/landing/Revelar";
 import { BarraNumeros } from "@/components/landing/BarraNumeros";
 import { Analytics } from "@/components/ui/Analytics";
 import { CincoPilares } from "@/components/landing/CincoPilares";
+import { FAQ } from "@/lib/faq";
+import { FaqJsonLd, ProdutoJsonLd } from "@/components/seo/JsonLd";
+import { TITULO_HOME, DESCRICAO_HOME } from "@/lib/seo";
 
 // ---------------------------------------------------------------------------
 // POSICIONAMENTO (revisto em 07/09/2026).
@@ -34,10 +38,15 @@ import { CincoPilares } from "@/components/landing/CincoPilares";
 // fim é cliente.
 // ---------------------------------------------------------------------------
 
-export const metadata = {
-  title: "LINKFIVE — Seu link. Sua marca. Seus clientes.",
-  description:
-    "Uma página que transforma quem chega em contato: WhatsApp com mensagem pronta, formulário de captura e os leads organizados no seu painel.",
+export const metadata: Metadata = {
+  // O título vem de lib/seo porque og:title e twitter:title precisam do
+  // mesmo texto. "Seu link. Sua marca. Seus clientes." continua sendo a
+  // promessa no H1 — só saiu do <title>, onde precisa haver termo de busca.
+  title: TITULO_HOME,
+  description: DESCRICAO_HOME,
+  // Canonical da home. Sem ele, qualquer endereço que sirva este conteúdo
+  // (com parâmetro de campanha, por exemplo) compete com ela no índice.
+  alternates: { canonical: "/" },
 };
 
 const COMO_FUNCIONA = [
@@ -144,42 +153,6 @@ const EXEMPLOS = [
   },
 ];
 
-const FAQ = [
-  {
-    p: "Preciso saber mexer com site?",
-    r: "Não. Você preenche quatro campos e sua página está no ar. Se souber usar o WhatsApp, sabe usar o LINKFIVE.",
-  },
-  {
-    p: "Posso usar de graça?",
-    // Os números saem de PLANOS, não escritos à mão: um limite alterado lá
-    // corrigiria a tabela de preços e deixaria esta resposta mentindo.
-    r:
-      `Sim, e sem prazo para acabar. O plano gratuito dá ${PLANOS.free.maxPaginas} páginas, ` +
-      `${PLANOS.free.maxCurtosMes} links diretos novos por mês, QR Code e código personalizado. ` +
-      `As métricas ficam disponíveis por ${PLANOS.free.analyticsDias} dias — nos planos pagos, ` +
-      `o histórico é bem maior. Sem cartão de crédito.`,
-  },
-  {
-    p: "Vocês colocam anúncio nos meus links?",
-    r: "Nunca, em nenhum plano — inclusive no gratuito. O link é seu e a página é sua; quem clica vê o que você colocou lá, e mais nada.",
-  },
-  {
-    p: "Qual a diferença entre a página e o link direto?",
-    r: "A página reúne todos os seus canais num endereço só — serve pra bio do Instagram e pro cartão. O link direto abre a conversa no WhatsApp na hora, sem tela no meio — serve pro anúncio e pro QR Code do balcão. Você usa os dois, cada um no seu lugar.",
-  },
-  {
-    p: "Consigo mudar o endereço da página depois?",
-    r: "Consegue, mas pense antes: o endereço antigo para de funcionar e os QR Codes já impressos deixam de abrir.",
-  },
-  {
-    p: "Os contatos que eu receber são meus?",
-    r: "São seus. Os leads ficam na sua conta, só você enxerga, e você pode exportar quando quiser.",
-  },
-  {
-    p: "Funciona bem no celular?",
-    r: "É onde a página mais é aberta, então é onde ela foi desenhada primeiro. O painel também funciona no celular.",
-  },
-];
 
 export default function Landing() {
   // Os links de checkout saem do servidor: as URLs do Lastlink ficam em
@@ -192,6 +165,9 @@ export default function Landing() {
   return (
     <div className="bg-white">
       <Analytics />
+      {/* Produto, planos e FAQ em linguagem de máquina. Ver components/seo. */}
+      <ProdutoJsonLd />
+      <FaqJsonLd />
       {/* ---------------------------------------------------------------------
           TOPO E HERO — fundo escuro.
 

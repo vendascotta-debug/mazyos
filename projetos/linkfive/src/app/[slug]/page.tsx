@@ -49,6 +49,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       // opengraph-image.tsx ao lado. Apontar a logo crua aqui venceria ele.
       type: "profile",
     },
+    // O `twitter` PRECISA ser redeclarado aqui, mesmo parecendo repeticao do
+    // bloco acima. O layout define um cartao de Twitter/X com o titulo e a
+    // capa do LINKFIVE, e no App Router o campo do filho substitui o do pai —
+    // mas o filho que nao declara HERDA. Sem estas linhas, a pagina da oficina
+    // compartilhada no X sairia com "Link na bio com WhatsApp e captura de
+    // leads" e a nossa imagem, anunciando o LINKFIVE no lugar do cliente.
+    // Sem `images` pela mesma razao do openGraph: o opengraph-image.tsx ao
+    // lado e quem desenha a capa desta pagina.
+    twitter: {
+      card: "summary_large_image",
+      title: titulo,
+      description: descricao,
+    },
   };
 }
 
