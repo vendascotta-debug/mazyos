@@ -364,6 +364,9 @@ export default function GeradorLinkWhatsApp() {
             <Link href="/" className="hover:text-white">
               Início
             </Link>
+            <Link href="/precos" className="hover:text-white">
+              Preços
+            </Link>
             <Link href="/termos" className="hover:text-white">
               Termos de uso
             </Link>

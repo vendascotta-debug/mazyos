@@ -34,6 +34,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.9,
     },
+    // "linkfive preco" e "quanto custa" sao buscas de quem ja decidiu avaliar.
+    {
+      url: `${base}/precos`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
     { url: `${base}/termos`, changeFrequency: "yearly", priority: 0.3 },
     { url: `${base}/privacidade`, changeFrequency: "yearly", priority: 0.3 },
   ];

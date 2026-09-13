@@ -1,5 +1,6 @@
 import { FAQ } from "@/lib/faq";
 import { FAQ_WHATSAPP } from "@/lib/faq-whatsapp";
+import { FAQ_PRECOS } from "@/lib/faq-precos";
 import { ORDEM_PLANOS, PLANOS } from "@/lib/limites";
 import { SITE, SITE_URL, abs } from "@/lib/seo";
 
@@ -194,6 +195,93 @@ export function FerramentaWhatsAppJsonLd() {
           "@type": "FAQPage",
           "@id": `${url}#faq`,
           mainEntity: FAQ_WHATSAPP.map((f) => ({
+            "@type": "Question",
+            name: f.p,
+            acceptedAnswer: { "@type": "Answer", text: f.r },
+          })),
+        }}
+      />
+    </>
+  );
+}
+
+/**
+ * Pagina /precos.
+ *
+ * O `Product` com `offers` e o que faz o Google entender preco em real,
+ * ciclo e disponibilidade — e e o que alimenta resposta de IA sobre "quanto
+ * custa o LINKFIVE". Os valores saem de PLANOS: preco no schema divergindo do
+ * preco na tela e motivo de acao manual.
+ */
+export function PrecosJsonLd() {
+  const url = `${SITE_URL}/precos`;
+
+  const ofertas = ORDEM_PLANOS.filter((id) => !PLANOS[id].oculto).flatMap((id) => {
+    const plano = PLANOS[id];
+    const base = {
+      "@type": "Offer" as const,
+      name: `${SITE.nome} ${plano.nome}`,
+      priceCurrency: "BRL",
+      url,
+      availability: "https://schema.org/InStock",
+    };
+    // O gratuito tem um preco so. Os pagos tem dois ciclos, e a pagina mostra
+    // os dois — entao o schema tambem mostra.
+    if (plano.precoAnualCents === null) {
+      return [{ ...base, price: (plano.precoCents / 100).toFixed(2) }];
+    }
+    return [
+      {
+        ...base,
+        name: `${base.name} (mensal)`,
+        price: (plano.precoCents / 100).toFixed(2),
+      },
+      {
+        ...base,
+        name: `${base.name} (anual)`,
+        price: (plano.precoAnualCents / 100).toFixed(2),
+      },
+    ];
+  });
+
+  return (
+    <>
+      <Bloco
+        dados={{
+          "@context": "https://schema.org",
+          "@type": "Product",
+          "@id": `${url}#produto`,
+          name: SITE.nome,
+          description:
+            "Pagina de links com botao de WhatsApp, captura de leads, links diretos, QR Code e metricas.",
+          image: abs(SITE.ogImage),
+          brand: { "@id": `${SITE_URL}/#organizacao` },
+          offers: {
+            "@type": "AggregateOffer",
+            priceCurrency: "BRL",
+            lowPrice: "0",
+            highPrice: (PLANOS.pro.precoAnualCents! / 100).toFixed(2),
+            offerCount: ofertas.length,
+            offers: ofertas,
+          },
+        }}
+      />
+      <Bloco
+        dados={{
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Início", item: SITE_URL },
+            { "@type": "ListItem", position: 2, name: "Preços", item: url },
+          ],
+        }}
+      />
+      <Bloco
+        dados={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "@id": `${url}#faq`,
+          mainEntity: FAQ_PRECOS.map((f) => ({
             "@type": "Question",
             name: f.p,
             acceptedAnswer: { "@type": "Answer", text: f.r },

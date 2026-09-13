@@ -374,6 +374,18 @@ export default function Landing() {
           </p>
 
           <TabelaPrecos checkouts={checkouts} cta="Assinar" />
+
+          {/* A comparacao linha a linha mora em /precos, nao aqui: na home ela
+              roubaria a atencao de quem ainda nao sabe o que o produto faz. */}
+          <p className="mt-7 text-center text-[15px] text-ink-600">
+            <Link
+              href="/precos"
+              className="font-medium text-brand-600 underline underline-offset-2 hover:text-brand-700"
+            >
+              Ver a comparação completa dos planos
+            </Link>{" "}
+            — e as perguntas sobre cobrança, cancelamento e reembolso.
+          </p>
         </div>
       </section>
 
@@ -432,6 +444,9 @@ export default function Landing() {
         <div className="mx-auto flex max-w-[1120px] flex-wrap items-center justify-between gap-4 px-5">
           <Logo size={24} mono />
           <nav className="flex flex-wrap items-center gap-4 text-sm text-ink-400">
+            <Link href="/precos" className="hover:text-white">
+              Preços
+            </Link>
             <Link href="/gerador-de-link-whatsapp" className="hover:text-white">
               Gerador de link do WhatsApp
             </Link>
