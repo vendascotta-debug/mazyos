@@ -254,6 +254,20 @@ export default function Landing() {
             </p>
 
             <GeradorHero />
+
+            {/* Link para a ferramenta com endereco proprio. E contextual de
+                proposito: link no meio do conteudo vale mais que link de
+                rodape, e aqui ele aparece exatamente para quem veio pelo
+                assunto. */}
+            <p className="mt-3 text-[14px] text-ink-400">
+              Só precisa do link do WhatsApp?{" "}
+              <Link
+                href="/gerador-de-link-whatsapp"
+                className="font-medium text-accent-500 underline underline-offset-2 hover:text-white"
+              >
+                Use o gerador de link do WhatsApp
+              </Link>
+            </p>
           </div>
 
           {/* O celular flutua devagar: dá vida sem competir com o gerador,
@@ -418,6 +432,9 @@ export default function Landing() {
         <div className="mx-auto flex max-w-[1120px] flex-wrap items-center justify-between gap-4 px-5">
           <Logo size={24} mono />
           <nav className="flex flex-wrap items-center gap-4 text-sm text-ink-400">
+            <Link href="/gerador-de-link-whatsapp" className="hover:text-white">
+              Gerador de link do WhatsApp
+            </Link>
             <Link href="/termos" className="hover:text-white">
               Termos de uso
             </Link>

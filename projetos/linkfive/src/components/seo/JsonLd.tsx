@@ -1,4 +1,5 @@
 import { FAQ } from "@/lib/faq";
+import { FAQ_WHATSAPP } from "@/lib/faq-whatsapp";
 import { ORDEM_PLANOS, PLANOS } from "@/lib/limites";
 import { SITE, SITE_URL, abs } from "@/lib/seo";
 
@@ -132,5 +133,73 @@ export function FaqJsonLd() {
         })),
       }}
     />
+  );
+}
+
+/**
+ * Pagina /gerador-de-link-whatsapp.
+ *
+ * Nao espere resultado enriquecido do FAQPage: o Google encerrou os rich
+ * results de FAQ em 07/05/2026 e tirou o relatorio do Search Console em
+ * junho. O bloco fica por outro motivo — o Google continua lendo o markup
+ * para entender a pagina, e AI Overviews, ChatGPT e Perplexity extraem
+ * resposta de conteudo estruturado. Custa nada e nao some do HTML.
+ */
+export function FerramentaWhatsAppJsonLd() {
+  const url = `${SITE_URL}/gerador-de-link-whatsapp`;
+
+  return (
+    <>
+      <Bloco
+        dados={{
+          "@context": "https://schema.org",
+          "@type": "WebApplication",
+          "@id": `${url}#ferramenta`,
+          name: "Gerador de Link do WhatsApp",
+          url,
+          applicationCategory: "UtilitiesApplication",
+          operatingSystem: "Web",
+          inLanguage: "pt-BR",
+          browserRequirements: "Requer JavaScript",
+          description:
+            "Cria o link que abre a conversa no WhatsApp com a mensagem ja digitada, com QR Code e link curto proprio. Sem cadastro.",
+          publisher: { "@id": `${SITE_URL}/#organizacao` },
+          isPartOf: { "@id": `${SITE_URL}/#site` },
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "BRL",
+            availability: "https://schema.org/InStock",
+          },
+        }}
+      />
+      <Bloco
+        dados={{
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Início", item: SITE_URL },
+            {
+              "@type": "ListItem",
+              position: 2,
+              name: "Gerador de link do WhatsApp",
+              item: url,
+            },
+          ],
+        }}
+      />
+      <Bloco
+        dados={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "@id": `${url}#faq`,
+          mainEntity: FAQ_WHATSAPP.map((f) => ({
+            "@type": "Question",
+            name: f.p,
+            acceptedAnswer: { "@type": "Answer", text: f.r },
+          })),
+        }}
+      />
+    </>
   );
 }

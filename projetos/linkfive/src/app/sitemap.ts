@@ -25,6 +25,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const fixas: MetadataRoute.Sitemap = [
     { url: base, lastModified: new Date(), changeFrequency: "weekly", priority: 1 },
+    // Ferramenta gratuita com endereco proprio: e a porta de entrada organica
+    // do site, e vale mais do que a landing numa busca de quem esta com o
+    // problema na mao agora.
+    {
+      url: `${base}/gerador-de-link-whatsapp`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
     { url: `${base}/termos`, changeFrequency: "yearly", priority: 0.3 },
     { url: `${base}/privacidade`, changeFrequency: "yearly", priority: 0.3 },
   ];

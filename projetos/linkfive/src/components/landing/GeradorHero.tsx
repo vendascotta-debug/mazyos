@@ -49,8 +49,22 @@ const MODELOS = [
   { label: "Suporte", texto: "Olá! Preciso de ajuda com uma compra que fiz." },
 ];
 
-export function GeradorHero() {
-  const [aba, setAba] = useState<Aba>("url");
+/**
+ * `abaInicial`, `titulo` e `subtitulo` existem por causa da pagina
+ * /gerador-de-link-whatsapp: la o visitante chegou do Google digitando "gerar
+ * link do whatsapp", e abrir na aba de encurtador o obrigaria a procurar o que
+ * ele ja pediu. Mesmo componente, mesma API, so a porta de entrada muda.
+ */
+export function GeradorHero({
+  abaInicial = "url",
+  titulo = "Encurtador de link grátis",
+  subtitulo,
+}: {
+  abaInicial?: Aba;
+  titulo?: string;
+  subtitulo?: React.ReactNode;
+} = {}) {
+  const [aba, setAba] = useState<Aba>(abaInicial);
 
   const [endereco, setEndereco] = useState("");
   const [numero, setNumero] = useState("");
@@ -143,11 +157,15 @@ export function GeradorHero() {
       {/* O que o produto é, em letra grande. Quem chega pelo Google procurando
           "encurtador de link" precisa achar a palavra na primeira dobra. */}
       <h2 className="text-[22px] font-bold leading-tight tracking-tight text-ink-900 sm:text-[26px]">
-        Encurtador de link grátis
+        {titulo}
       </h2>
       <p className="mt-1 text-[15px] text-ink-600">
-        Cole o endereço e receba o link curto e o QR Code na hora.{" "}
-        <strong className="text-ink-900">Sem criar conta.</strong>
+        {subtitulo ?? (
+          <>
+            Cole o endereço e receba o link curto e o QR Code na hora.{" "}
+            <strong className="text-ink-900">Sem criar conta.</strong>
+          </>
+        )}
       </p>
 
       <div className="mt-4 flex flex-wrap gap-1.5" role="tablist" aria-label="O que você quer criar">
@@ -259,6 +277,8 @@ export function GeradorHero() {
               <>
                 <QrCode size={16} /> Gerar QR Code
               </>
+            ) : aba === "whatsapp" ? (
+              <>Gerar link do WhatsApp</>
             ) : (
               <>Encurtar link</>
             )}
