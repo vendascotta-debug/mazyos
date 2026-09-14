@@ -111,6 +111,22 @@ export function TabelaPrecos({
                     : ""}
               </p>
 
+              {/* O preço do OUTRO ciclo, sempre na tela, qualquer que seja o
+                  seletor. Sem esta linha o valor mensal só existia depois de um
+                  clique em "Mensal" — e o schema de preços declara os dois
+                  ciclos, então os dois têm de estar visíveis sem interação.
+                  Altura fixa em todos os cartões, inclusive o gratuito, para os
+                  preços continuarem alinhados lado a lado. */}
+              <p className="h-5 text-[13px] text-ink-400">
+                {gratuito
+                  ? ""
+                  : ciclo === "anual"
+                    ? `ou ${precoFormatado(p, "mensal")}/mês no plano mensal`
+                    : p.precoAnualCents
+                      ? `ou ${precoFormatado(p, "anual")}/ano no plano anual`
+                      : ""}
+              </p>
+
               <ul className={`mt-5 flex-1 space-y-2 text-[14px] ${p.destaque ? "text-ink-200" : "text-ink-600"}`}>
                 <Item>
                   {p.maxPaginas === 1 ? "1 página" : `${p.maxPaginas.toLocaleString("pt-BR")} páginas`}
