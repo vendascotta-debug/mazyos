@@ -148,7 +148,14 @@ function entidadeProduto() {
 
   return {
     "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
+    // Product, e não SoftwareApplication. Para o Google, o snippet de produto
+    // é elegível com name + offers, sem nota nem avaliação; o de aplicativo de
+    // software EXIGE aggregateRating ou review. Como não publicamos avaliações
+    // reais — e não vamos inventar —, SoftwareApplication como tipo principal
+    // tornaria a entidade inelegível. A natureza de software fica declarada em
+    // additionalType e nas propriedades abaixo, que ajudam a leitura por IA.
+    "@type": "Product",
+    additionalType: "https://schema.org/SoftwareApplication",
     "@id": ID_PRODUTO,
     name: SITE.nome,
     applicationCategory: "BusinessApplication",
@@ -158,7 +165,7 @@ function entidadeProduto() {
     inLanguage: "pt-BR",
     description:
       "Página de links com botão de WhatsApp com mensagem pronta, formulário de captura de leads, links diretos, QR Code e métricas de cliques.",
-    publisher: { "@id": `${SITE_URL}/#organizacao` },
+    brand: { "@id": `${SITE_URL}/#organizacao` },
     featureList: [
       "Página de links (link na bio)",
       "Botão de WhatsApp com mensagem pronta",
