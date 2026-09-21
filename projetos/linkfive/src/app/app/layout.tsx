@@ -4,6 +4,7 @@ import { paginaDoUsuario } from "@/lib/repo";
 import { plano } from "@/lib/limites";
 import { Sidebar } from "@/components/app/Sidebar";
 import { Topbar } from "@/components/app/Topbar";
+import { EventoCadastroGoogle } from "@/components/ui/EventoCadastroGoogle";
 
 /**
  * Casca da área logada.
@@ -19,6 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen bg-ink-50">
+      <EventoCadastroGoogle />
       <Sidebar />
 
       <div className="flex min-w-0 flex-1 flex-col">

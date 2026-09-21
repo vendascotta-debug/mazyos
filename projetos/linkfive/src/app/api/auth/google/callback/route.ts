@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { setSessionCookie, usuarioDoGoogle } from "@/lib/auth";
 import { conferirEstado, googleConfigurado, trocarCodigoPorConta } from "@/lib/google";
 import { adotarCurtos, criarPagina, paginaDoUsuario, slugDisponivel } from "@/lib/repo";
@@ -85,6 +86,19 @@ export async function GET(req: Request) {
   }
 
   await setSessionCookie(user.id);
+
+  // Recado para o navegador contar o cadastro no GA4 (ver EventoCadastroGoogle).
+  // Só conta nova: `novo` é falso para quem já tinha conta, com Google ou com
+  // e-mail e senha. Não é httpOnly de propósito — o JavaScript precisa ler.
+  if (novo) {
+    (await cookies()).set("linkfive_novo", "google", {
+      httpOnly: false,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 10 * 60,
+    });
+  }
 
   const destino = conferido.destino || (user.onboarded ? "/app" : "/onboarding");
   return NextResponse.redirect(new URL(destino, req.url), 307);

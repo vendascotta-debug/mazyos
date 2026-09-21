@@ -71,6 +71,8 @@ export default function Cadastrar() {
         setErro(d.erro ?? "Não foi possível criar a conta.");
         return;
       }
+      const { gtag } = window as unknown as { gtag?: (...args: unknown[]) => void };
+      if (typeof gtag === "function") gtag("event", "sign_up", { method: "email" });
       router.push(d.destino ?? "/onboarding");
     } catch {
       setErro("Falha de conexão. Tente de novo.");

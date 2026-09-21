@@ -4,6 +4,7 @@ import { linksDaPagina, paginaDoUsuario } from "@/lib/repo";
 import { plano } from "@/lib/limites";
 import { TEMAS } from "@/lib/temas";
 import { Onboarding } from "@/components/onboarding/Onboarding";
+import { EventoCadastroGoogle } from "@/components/ui/EventoCadastroGoogle";
 
 export const dynamic = "force-dynamic";
 
@@ -18,12 +19,15 @@ export default async function PaginaOnboarding() {
   const p = plano(user.plan);
 
   return (
-    <Onboarding
-      page={page}
-      links={links}
-      temas={Object.values(TEMAS)}
-      podeTema={p.temas}
-      site={process.env.NEXT_PUBLIC_SITE_URL ?? ""}
-    />
+    <>
+      <EventoCadastroGoogle />
+      <Onboarding
+        page={page}
+        links={links}
+        temas={Object.values(TEMAS)}
+        podeTema={p.temas}
+        site={process.env.NEXT_PUBLIC_SITE_URL ?? ""}
+      />
+    </>
   );
 }
