@@ -1,6 +1,14 @@
 import type { Company, DecisionMaker, LeadScore, ScoreTier } from "@/lib/types";
 import { getSegment, getSubsegment } from "@/lib/segments";
 
+/**
+ * Versão do motor de score + decisores. A busca usa o score gravado em
+ * `companies.rank_*`; mudou regra de score, fator de segmento ou o motor de
+ * decisores? Suba este número — as empresas passam a ser recalculadas
+ * (aos poucos pela própria busca, ou de uma vez via /api/admin/scores).
+ */
+export const SCORE_VERSION = 1;
+
 export function tierOf(total: number): ScoreTier {
   if (total >= 75) return "A";
   if (total >= 55) return "B";

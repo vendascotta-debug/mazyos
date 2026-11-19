@@ -1,5 +1,5 @@
 import { nowIso, q, q1, uid } from "@/lib/db";
-import { saveLead } from "@/lib/repo";
+import { atualizarScores, saveLead } from "@/lib/repo";
 import { getSegment } from "@/lib/segments";
 import type { PublicRecords } from "@/lib/decisores";
 
@@ -209,6 +209,8 @@ async function criarEmpresaPrivada(userId: string, l: LeadManual, op: OpcoesImpo
       JSON.stringify(fonte), JSON.stringify(records), agora, agora,
     ],
   );
+  // Score gravado já na criação, para a empresa entrar ordenada na busca.
+  await atualizarScores({ ids: [id], limite: 1 });
   return id;
 }
 

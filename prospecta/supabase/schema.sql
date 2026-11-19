@@ -29,6 +29,12 @@ ALTER TABLE companies ADD COLUMN IF NOT EXISTS linkedin TEXT;
 -- Empresa cadastrada à mão ou importada: só o dono enxerga. NULL = base pública.
 ALTER TABLE companies ADD COLUMN IF NOT EXISTS owner_user_id TEXT;
 CREATE INDEX IF NOT EXISTS idx_companies_owner ON companies(owner_user_id) WHERE owner_user_id IS NOT NULL;
+-- Score pré-calculado (ver SCORE_VERSION em src/lib/scoring.ts).
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS rank_score INTEGER;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS rank_tier TEXT;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS rank_has_dm BOOLEAN;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS rank_version INTEGER;
+CREATE INDEX IF NOT EXISTS idx_companies_rank ON companies(segment_slug, rank_score DESC);
 
 CREATE TABLE IF NOT EXISTS leads (
   id TEXT PRIMARY KEY,

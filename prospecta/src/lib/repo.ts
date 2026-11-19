@@ -1,6 +1,6 @@
 import { nowIso, q, q1, uid } from "@/lib/db";
 import { derivarDecisores, type PublicRecords } from "@/lib/decisores";
-import { calcularScore } from "@/lib/scoring";
+import { calcularScore, SCORE_VERSION } from "@/lib/scoring";
 import { SEGMENTS, getSegment } from "@/lib/segments";
 import {
   STAGES,
@@ -214,12 +214,99 @@ function condicoesBusca(query: string, params: unknown[]): string[] {
   });
 }
 
+declare global {
+  // eslint-disable-next-line no-var
+  var __prospectaScoresOk: Map<string, number> | undefined;
+}
+
+// --- Score pré-calculado -------------------------------------------------------
+
+/**
+ * Recalcula e grava o score das empresas desatualizadas (rank_version diferente
+ * de SCORE_VERSION). Devolve quantas atualizou.
+ *
+ * Roda em lotes: cada lote lê as linhas, aplica o mesmo motor da tela
+ * (`enrich`) e grava tudo num único UPDATE ... FROM (VALUES ...).
+ */
+export async function atualizarScores(opts: {
+  segment?: string | null;
+  ids?: string[];
+  limite?: number;
+  lote?: number;
+} = {}): Promise<number> {
+  const limite = opts.limite ?? 2000;
+  const lote = Math.min(opts.lote ?? 500, limite);
+  let feitas = 0;
+
+  while (feitas < limite) {
+    const where = ["rank_version IS DISTINCT FROM ?"];
+    const params: unknown[] = [SCORE_VERSION];
+    if (opts.segment) { where.push("segment_slug = ?"); params.push(opts.segment); }
+    if (opts.ids?.length) {
+      where.push(`id IN (${opts.ids.map(() => "?").join(",")})`);
+      params.push(...opts.ids);
+    }
+    params.push(Math.min(lote, limite - feitas));
+    const rows = await q<Row>(`SELECT * FROM companies WHERE ${where.join(" AND ")} LIMIT ?`, params);
+    if (!rows.length) break;
+
+    const valores: unknown[] = [];
+    const tuplas = rows.map((row) => {
+      const { score, decisionMakers } = enrich(row);
+      valores.push(row.id, score.total, score.tier, decisionMakers.some((d) => d.name && !d.inferred));
+      return "(?, ?::int, ?, ?::boolean)";
+    });
+    await q(
+      `UPDATE companies AS c
+       SET rank_score = v.s, rank_tier = v.t, rank_has_dm = v.h, rank_version = ?
+       FROM (VALUES ${tuplas.join(",")}) AS v(id, s, t, h)
+       WHERE c.id = v.id`,
+      [SCORE_VERSION, ...valores],
+    );
+    feitas += rows.length;
+    if (rows.length < lote) break;
+  }
+  return feitas;
+}
+
+/** Quantas empresas ainda estão com score desatualizado. */
+export async function scoresPendentes(segment?: string | null): Promise<number> {
+  const r = await q1<{ n: number }>(
+    `SELECT COUNT(*)::int AS n FROM companies WHERE rank_version IS DISTINCT FROM ?${segment ? " AND segment_slug = ?" : ""}`,
+    segment ? [SCORE_VERSION, segment] : [SCORE_VERSION],
+  );
+  return r?.n ?? 0;
+}
+
+// --- Busca -----------------------------------------------------------------
+
 export async function searchCompanies(f: SearchFilters, userId: string): Promise<SearchOutcome> {
   const segment = getSegment(f.segment);
 
-  // `allSegments` existe porque procurar uma empresa pelo nome é uma pergunta
-  // sobre a base inteira: quem digita "juarez" quer achar o Bar do Juarez, não
-  // descobrir que ele estava filtrado fora por um subsegmento aberto na tela.
+  // Autocura: empresas sem score gravado (base recém-importada, ou motor com
+  // versão nova) são calculadas aos poucos, um lote por busca. O grosso deve
+  // ser feito antes por /api/admin/scores — aqui é só a rede de segurança.
+  const chave = f.allSegments ? "*" : f.segment;
+  const visto = globalThis.__prospectaScoresOk?.get(chave);
+  if (!visto || Date.now() - visto > 10 * 60_000) {
+    const n = await atualizarScores({ segment: f.allSegments ? null : f.segment, limite: 1000 });
+    // Só memoriza "está em dia" quando não sobrou nada para calcular.
+    if (n < 1000) (globalThis.__prospectaScoresOk ??= new Map()).set(chave, Date.now());
+  }
+
+  const center =
+    f.centerLat != null && f.centerLng != null
+      ? { lat: f.centerLat, lng: f.centerLng }
+      : // Distância só faz sentido a partir de um ponto de verdade. Sem cidade,
+        // o "centro" virava a média do estado inteiro (um ponto no interior) e
+        // toda empresa da capital aparecia a ~70 km.
+        f.city
+        ? await centerOf(f.segment, f.city, f.neighborhood)
+        : null;
+
+  // Recorte comum às quatro consultas (página, total, facetas, mapa). Tudo
+  // roda no Postgres: antes, o segmento inteiro (~70 mil linhas) vinha para a
+  // memória a cada busca só para mostrar 20.
   const where: string[] = [];
   const params: unknown[] = [];
 
@@ -227,10 +314,12 @@ export async function searchCompanies(f: SearchFilters, userId: string): Promise
   where.push("(c.owner_user_id IS NULL OR c.owner_user_id = ?)");
   params.push(userId);
 
+  // `allSegments` existe porque procurar uma empresa pelo nome é uma pergunta
+  // sobre a base inteira: quem digita "juarez" quer achar o Bar do Juarez, não
+  // descobrir que ele estava filtrado fora por um subsegmento aberto na tela.
   if (!f.allSegments) {
     where.push("c.segment_slug = ?");
     params.push(f.segment);
-
     if (f.subsegments.length) {
       where.push(`c.subsegment_slug IN (${f.subsegments.map(() => "?").join(",")})`);
       params.push(...f.subsegments);
@@ -243,60 +332,92 @@ export async function searchCompanies(f: SearchFilters, userId: string): Promise
     for (const cond of condicoesBusca(f.query, params)) where.push(cond);
   }
   if (f.onlyWithPhone) where.push("(c.phone IS NOT NULL OR c.whatsapp IS NOT NULL)");
-
   if (f.porte.length) {
     where.push(`c.porte IN (${f.porte.map(() => "?").join(",")})`);
     params.push(...f.porte);
   }
+  if (f.minScore > 0) { where.push("c.rank_score >= ?"); params.push(f.minScore); }
+  if (f.onlyWithDecisionMaker) where.push("c.rank_has_dm IS TRUE");
+  if (f.hideSaved) where.push("l.id IS NULL");
 
-  const [rows, center] = await Promise.all([
+  // Distância (haversine) calculada no próprio Postgres.
+  const distSql = center
+    ? `(6371 * 2 * asin(sqrt(power(sin(radians(c.lat - ?) / 2), 2) + cos(radians(?)) * cos(radians(c.lat)) * power(sin(radians(c.lng - ?) / 2), 2))))`
+    : "NULL::float8";
+  const distParams = center ? [center.lat, center.lat, center.lng] : [];
+
+  // CTE `base`: só as colunas leves. O LEFT JOIN é escopado ao usuário — "já
+  // salvei essa empresa?" é pergunta pessoal; o lead do vizinho não aparece.
+  const baseSql = `WITH base AS (
+      SELECT c.id, c.name, c.lat, c.lng, c.subsegment_slug, c.rank_score, c.rank_tier,
+             c.reviews_count, c.opened_at, l.id AS lead_id, l.stage AS lead_stage,
+             ${distSql} AS dist_km
+      FROM companies c
+      LEFT JOIN leads l ON l.company_id = c.id AND l.user_id = ?
+      WHERE ${where.join(" AND ")}
+    )`;
+  const baseParams = [...distParams, userId, ...params];
+  const raio = f.radiusKm != null && center ? { sql: " WHERE dist_km <= ?", p: [f.radiusKm] } : { sql: "", p: [] };
+
+  const ordem: Record<SearchFilters["sort"], string> = {
+    score: "b.rank_score DESC NULLS LAST, b.reviews_count DESC NULLS LAST",
+    // Sem acento e sem caixa, como o localeCompare pt-BR de antes: a collation
+    // padrão do Postgres (C) jogaria "Açaí" depois de "Alimentos".
+    name: "translate(lower(b.name), 'áàâãäéèêëíìîïóòôõöúùûüçñ', 'aaaaaeeeeiiiiooooouuuucn') ASC",
+    reviews: "b.reviews_count DESC NULLS LAST",
+    distance: "b.dist_km ASC NULLS LAST",
+    recent: "b.opened_at DESC NULLS LAST",
+  };
+  const orderBy = `${ordem[f.sort] ?? ordem.score}, b.id`;
+  const start = (f.page - 1) * f.pageSize;
+
+  const [pagina, totalRow, facetRows, pontos] = await Promise.all([
     q<Row>(
-      // O LEFT JOIN é escopado ao usuário: "já salvei essa empresa?" é uma
-      // pergunta pessoal — o lead do vizinho não pode aparecer aqui.
-      `SELECT c.*, l.id AS lead_id, l.stage AS lead_stage
-       FROM companies c
-       LEFT JOIN leads l ON l.company_id = c.id AND l.user_id = ?
-       WHERE ${where.length ? where.join(" AND ") : "1=1"}`,
-      [userId, ...params],
+      `${baseSql}
+       SELECT c.*, b.lead_id, b.lead_stage, b.dist_km
+       FROM base b JOIN companies c ON c.id = b.id${raio.sql.replace("dist_km", "b.dist_km")}
+       ORDER BY ${orderBy} LIMIT ? OFFSET ?`,
+      [...baseParams, ...raio.p, f.pageSize, start],
     ),
-    // Distância só faz sentido a partir de um ponto de verdade. Sem cidade, o
-    // "centro" virava a média do estado inteiro (um ponto no interior) e toda
-    // empresa da capital aparecia a ~70 km.
-    f.centerLat != null && f.centerLng != null
-      ? Promise.resolve({ lat: f.centerLat, lng: f.centerLng })
-      : f.city
-        ? centerOf(f.segment, f.city, f.neighborhood)
-        : Promise.resolve(null),
+    q1<{ n: number }>(`${baseSql} SELECT COUNT(*)::int AS n FROM base${raio.sql}`, [...baseParams, ...raio.p]),
+    q<{ slug: string; n: number }>(
+      `${baseSql} SELECT subsegment_slug AS slug, COUNT(*)::int AS n FROM base${raio.sql} GROUP BY subsegment_slug`,
+      [...baseParams, ...raio.p],
+    ),
+    q<Row>(
+      `${baseSql}
+       SELECT b.id, b.name, b.lat, b.lng, b.rank_score, b.rank_tier, b.lead_id
+       FROM base b${raio.sql.replace("dist_km", "b.dist_km")}
+       ORDER BY ${orderBy} LIMIT 400`,
+      [...baseParams, ...raio.p],
+    ),
   ]);
 
-  // Score e decisores são derivados (dependem do motor, não do banco), então
-  // filtros que dependem deles rodam em memória, depois do recorte SQL.
-  let enriched: CompanyResult[] = rows.map((row) => {
+  // Score e decisores completos (com fatores e evidências) só para a página.
+  const results: CompanyResult[] = pagina.map((row) => {
     const { company, decisionMakers, score } = enrich(row);
-    const distanceKm = center ? haversineKm(center.lat, center.lng, company.lat, company.lng) : null;
+    const dist = row.dist_km == null ? null : toNum(row.dist_km);
     return {
       company,
       score,
       decisionMakers,
-      distanceKm: distanceKm == null ? null : Math.round(distanceKm * 100) / 100,
+      distanceKm: dist == null ? null : Math.round(dist * 100) / 100,
       savedLeadId: (row.lead_id as string) ?? null,
       savedStage: (row.lead_stage as Stage) ?? null,
     };
   });
 
-  if (f.radiusKm != null && center) {
-    enriched = enriched.filter((e) => e.distanceKm != null && e.distanceKm <= f.radiusKm!);
-  }
-  if (f.minScore > 0) enriched = enriched.filter((e) => e.score.total >= f.minScore);
-  if (f.onlyWithDecisionMaker) {
-    enriched = enriched.filter((e) => e.decisionMakers.some((d) => d.name && !d.inferred));
-  }
-  if (f.hideSaved) enriched = enriched.filter((e) => !e.savedLeadId);
+  const mapPoints = pontos.map((p) => ({
+    id: p.id as string,
+    name: p.name as string,
+    lat: toNum(p.lat),
+    lng: toNum(p.lng),
+    score: toNum(p.rank_score),
+    tier: (p.rank_tier as string) ?? "D",
+    saved: !!p.lead_id,
+  }));
 
-  const facetMap = new Map<string, number>();
-  for (const e of enriched) {
-    facetMap.set(e.company.subsegmentSlug, (facetMap.get(e.company.subsegmentSlug) ?? 0) + 1);
-  }
+  const facetMap = new Map(facetRows.map((r) => [r.slug, toNum(r.n)]));
   // Na busca global o resultado mistura segmentos, então as facetas precisam
   // conhecer os subsegmentos de todos eles.
   const catalogo = f.allSegments ? SEGMENTS.flatMap((s) => s.subsegments) : segment.subsegments;
@@ -306,27 +427,7 @@ export async function searchCompanies(f: SearchFilters, userId: string): Promise
       .filter((s) => s.count > 0 || f.subsegments.includes(s.slug)),
   };
 
-  const sorters: Record<SearchFilters["sort"], (a: CompanyResult, b: CompanyResult) => number> = {
-    score: (a, b) => b.score.total - a.score.total,
-    name: (a, b) => a.company.name.localeCompare(b.company.name, "pt-BR"),
-    reviews: (a, b) => (b.company.reviewsCount ?? 0) - (a.company.reviewsCount ?? 0),
-    distance: (a, b) => (a.distanceKm ?? 1e9) - (b.distanceKm ?? 1e9),
-    recent: (a, b) => (b.company.openedAt ?? "").localeCompare(a.company.openedAt ?? ""),
-  };
-  enriched.sort(sorters[f.sort] ?? sorters.score);
-
-  const mapPoints = enriched.slice(0, 400).map((e) => ({
-    id: e.company.id,
-    name: e.company.name,
-    lat: e.company.lat,
-    lng: e.company.lng,
-    score: e.score.total,
-    tier: e.score.tier,
-    saved: !!e.savedLeadId,
-  }));
-
-  const total = enriched.length;
-  const start = (f.page - 1) * f.pageSize;
+  const total = toNum(totalRow?.n);
 
   // Busca por nome sem resultado: vale conferir se o texto existe fora deste
   // recorte antes de dizer ao usuário que não há nada.
@@ -343,14 +444,7 @@ export async function searchCompanies(f: SearchFilters, userId: string): Promise
     }
   }
 
-  return {
-    results: enriched.slice(start, start + f.pageSize),
-    total,
-    center,
-    mapPoints,
-    facets,
-    emOutrosSegmentos,
-  };
+  return { results, total, center, mapPoints, facets, emOutrosSegmentos };
 }
 
 export async function getCompany(id: string, userId: string) {

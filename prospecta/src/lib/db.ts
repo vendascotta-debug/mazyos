@@ -165,6 +165,14 @@ ALTER TABLE companies ADD COLUMN IF NOT EXISTS linkedin TEXT;
 -- cadastrou e não aparece para mais ninguém. NULL = base pública (Receita).
 ALTER TABLE companies ADD COLUMN IF NOT EXISTS owner_user_id TEXT;
 CREATE INDEX IF NOT EXISTS idx_companies_owner ON companies(owner_user_id) WHERE owner_user_id IS NOT NULL;
+-- Score pré-calculado: a busca ordena, filtra e pagina no Postgres em vez de
+-- carregar o segmento inteiro na memória. Prefixo rank_ para não colidir com
+-- leads.score/leads.tier em joins. rank_version != SCORE_VERSION = desatualizado.
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS rank_score INTEGER;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS rank_tier TEXT;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS rank_has_dm BOOLEAN;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS rank_version INTEGER;
+CREATE INDEX IF NOT EXISTS idx_companies_rank ON companies(segment_slug, rank_score DESC);
 CREATE INDEX IF NOT EXISTS idx_companies_seg ON companies(segment_slug, subsegment_slug);
 CREATE INDEX IF NOT EXISTS idx_companies_city ON companies(city, neighborhood);
 

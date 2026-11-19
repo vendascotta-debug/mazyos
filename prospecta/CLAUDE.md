@@ -39,6 +39,12 @@ Documentação de produto e arquitetura: `README.md` (nesta pasta).
   basta: o da Receita costuma ser o do contador.
 - Distância só é calculada com cidade escolhida (ou ponto explícito). Sem
   cidade não há centro que faça sentido.
+- A busca ordena/filtra/pagina no Postgres usando o score gravado em
+  `companies.rank_score/rank_tier/rank_has_dm`. Mudou regra de score, fator de
+  segmento ou motor de decisores? Suba `SCORE_VERSION` (scoring.ts) e rode
+  `POST /api/admin/scores` (header `x-seed-token`) até `pendentes: 0`. Depois
+  de importar a base da Receita, idem. Nunca voltar a carregar o segmento
+  inteiro na memória para ordenar.
 
 ## Testar local
 
