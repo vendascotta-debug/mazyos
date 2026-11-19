@@ -18,7 +18,7 @@ export function PedidoPrivacidade() {
   const [mensagem, setMensagem] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
-  const [ok, setOk] = useState<{ protocolo: string; suprimido: boolean } | null>(null);
+  const [ok, setOk] = useState<{ protocolo: string } | null>(null);
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
@@ -32,7 +32,7 @@ export function PedidoPrivacidade() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Não foi possível enviar.");
-      setOk({ protocolo: data.protocolo, suprimido: data.suprimido });
+      setOk({ protocolo: data.protocolo });
     } catch (e) {
       setErro((e as Error).message);
     } finally {
@@ -47,9 +47,8 @@ export function PedidoPrivacidade() {
           <CheckCircle2 size={18} className="text-emerald-600" /> Pedido recebido
         </p>
         <p className="text-sm text-ink-700">
-          {ok.suprimido
-            ? "Seu nome deixou de ser exibido no Prospecta. Pode levar alguns minutos para sumir de todas as telas."
-            : "Vamos responder pelo e-mail informado em até 15 dias."}
+          Vamos responder pelo e-mail informado em até 15 dias. Em pedidos de remoção, podemos pedir uma confirmação
+          de que você é o titular antes de remover — é o que impede que outra pessoa apague seus dados por você.
         </p>
         <p className="text-xs text-ink-500">Protocolo: {ok.protocolo}</p>
       </div>

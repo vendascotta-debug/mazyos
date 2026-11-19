@@ -44,7 +44,7 @@ function Nav() {
   );
 }
 
-export function Sidebar({ userName }: { userName: string }) {
+export function Sidebar({ userName, admin = false }: { userName: string; admin?: boolean }) {
   return (
     <aside className="hidden lg:flex w-60 shrink-0 bg-ink-950 flex-col py-5 sticky top-0 h-screen">
       <Link href="/buscar" className="px-5 mb-7 flex items-center gap-2.5">
@@ -75,6 +75,12 @@ export function Sidebar({ userName }: { userName: string }) {
           Dados de fontes públicas: Receita Federal, mapas abertos, sites e
           perfis públicos do LinkedIn.{" "}
           <Link href="/privacidade" className="underline hover:text-white">Privacidade</Link>
+          {admin && (
+            <>
+              {" · "}
+              <Link href="/admin/privacidade" className="underline hover:text-white">Pedidos LGPD</Link>
+            </>
+          )}
         </p>
       </div>
     </aside>

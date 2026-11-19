@@ -4,10 +4,10 @@ import type { PublicRecords } from "@/lib/decisores";
 // ---------------------------------------------------------------------------
 // LGPD — pedidos de titulares e supressão de nomes.
 //
-// Pedido de remoção vale na hora: o nome some do quadro societário e das
-// menções exibidas (busca, ficha, leads, exportação). A supressão é por nome
-// normalizado, restrita ao CNPJ quando o titular informa um. O pedido fica
-// registrado para a resposta formal ao titular (prazo da LGPD: 15 dias).
+// O pedido entra como "recebido". Um admin confere e aprova em
+// /admin/privacidade; só então o nome some do quadro societário e das menções
+// exibidas (busca, ficha, leads, exportação). Supressão por nome normalizado,
+// restrita ao CNPJ quando o titular informa um. Prazo da LGPD: 15 dias.
 // ---------------------------------------------------------------------------
 
 export const normalizarNome = (s: string) =>
@@ -66,26 +66,47 @@ export async function registrarPedido(p: {
   cnpj: string | null;
   mensagem: string | null;
   ip: string;
-}): Promise<{ id: string; suprimido: boolean }> {
+}): Promise<{ id: string }> {
   const id = uid("lgpd-");
   const cnpj = soDigitos(p.cnpj);
+  // Nada é aplicado aqui: o formulário é público e não prova que quem pede é o
+  // titular. Sem essa conferência, qualquer um (até um concorrente) poderia
+  // apagar sócios da base. O pedido fica "recebido" até um admin aprovar.
   await q(
     "INSERT INTO privacy_requests (id, kind, name, email, cnpj, message, ip) VALUES (?,?,?,?,?,?,?)",
     [id, p.tipo, p.nome.trim(), p.email.trim().toLowerCase(), cnpj.length === 14 ? cnpj : null, p.mensagem, p.ip],
   );
+  return { id };
+}
 
-  if (p.tipo !== "remocao") return { id, suprimido: false };
+/** Sem acento, maiúsculas — a mesma forma de `normalizarNome`, em SQL. */
+const SQL_SEM_ACENTO = (col: string) =>
+  `translate(UPPER(${col}), 'ÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑ', 'AAAAAEEEEIIIIOOOOOUUUUCN')`;
 
-  const nome = normalizarNome(p.nome);
+/**
+ * Admin aprovou um pedido de remoção: o nome some da busca, ficha, leads e
+ * exportação. Com CNPJ, só naquela empresa; sem CNPJ, em toda a base.
+ */
+export async function aprovarRemocao(id: string): Promise<{ ok: boolean; erro?: string }> {
+  const pedido = (await q<{ kind: string; name: string; cnpj: string | null }>(
+    "SELECT kind, name, cnpj FROM privacy_requests WHERE id = ?",
+    [id],
+  ))[0];
+  if (!pedido) return { ok: false, erro: "Pedido não encontrado." };
+
+  const nome = normalizarNome(pedido.name);
+  const cnpj = soDigitos(pedido.cnpj);
   await q(
     "INSERT INTO privacy_suppressions (id, name_norm, cnpj, request_id) VALUES (?,?,?,?)",
     [uid("sup-"), nome, cnpj.length === 14 ? cnpj : null, id],
   );
+  await q("UPDATE privacy_requests SET status = 'aprovado' WHERE id = ?", [id]);
+
   // O score gravado conta "tem decisor com nome": as empresas afetadas são
-  // recalculadas na próxima busca.
+  // recalculadas na próxima busca. Comparação sem acento dos dois lados.
   const palavras = nome.split(" ").filter((w) => w.length >= 3);
   if (palavras.length) {
-    const cond = palavras.map(() => "UPPER(public_records) LIKE ?").join(" AND ");
+    const cond = palavras.map(() => `${SQL_SEM_ACENTO("public_records")} LIKE ?`).join(" AND ");
     const params: unknown[] = palavras.map((w) => `%${w}%`);
     let sql = `UPDATE companies SET rank_version = NULL WHERE ${cond}`;
     if (cnpj.length === 14) {
@@ -95,5 +116,12 @@ export async function registrarPedido(p: {
     await q(sql, params);
   }
   await carregarSupressoes(true);
-  return { id, suprimido: true };
+  return { ok: true };
+}
+
+/** Desfaz uma aprovação (pedido falso descoberto depois). */
+export async function desfazerRemocao(id: string) {
+  await q("DELETE FROM privacy_suppressions WHERE request_id = ?", [id]);
+  await q("UPDATE privacy_requests SET status = 'recusado' WHERE id = ?", [id]);
+  await carregarSupressoes(true);
 }

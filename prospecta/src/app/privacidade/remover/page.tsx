@@ -24,7 +24,7 @@ export default function RemoverPage() {
           <h1 className="text-2xl font-semibold tracking-tight text-ink-900">Seus dados no Prospecta</h1>
           <p className="mt-1 text-sm text-ink-600">
             Sócios e administradores aparecem aqui porque constam nos dados públicos da Receita Federal. Se você não
-            quer ser exibido, peça a remoção — vale na hora. Para acesso ou correção, respondemos em até 15 dias.
+            quer ser exibido, peça a remoção. Conferimos que o pedido é seu e respondemos em até 15 dias.
             Veja a <Link href="/privacidade" className="text-brand-600 underline">Política de Privacidade</Link>.
           </p>
         </div>

@@ -46,10 +46,12 @@ Documentação de produto e arquitetura: `README.md` (nesta pasta).
   de importar a base da Receita, idem. Nunca voltar a carregar o segmento
   inteiro na memória para ordenar.
 - LGPD: toda exibição de decisor passa por `enrich()`, que aplica
-  `aplicarSupressoes()` (nomes que pediram remoção em `/privacidade/remover`).
+  `aplicarSupressoes()`. Pedido de `/privacidade/remover` NÃO vale sozinho (o
+  formulário é público, sem prova de identidade): só depois que um admin
+  (`ADMIN_EMAILS`) aprova em `/admin/privacidade`.
   Função nova que monte decisores precisa chamar `await carregarSupressoes()`
   antes. Pedidos ficam em `privacy_requests` (prazo de resposta: 15 dias) —
-  consulta em `GET /api/admin/privacidade` com `x-seed-token`.
+  tela `/admin/privacidade` ou `GET /api/admin/privacidade` com `x-seed-token`.
 - Dados do controlador (razão social, CNPJ, e-mail do encarregado) ficam em
   `src/lib/legal.ts` e aparecem na Política de Privacidade pública.
 - Login tem limite de tentativas (`src/lib/limite.ts`, tabela `auth_attempts`):
@@ -93,7 +95,8 @@ Duas armadilhas já pagas, para não repetir:
 ## Deploy
 
 Vercel + Neon (não Supabase). Variáveis na Vercel: `DATABASE_URL`, `DB_SCHEMA`,
-`AUTH_SECRET`, `SEED_TOKEN`, `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`.
+`AUTH_SECRET`, `SEED_TOKEN`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` e
+`ADMIN_EMAILS` (e-mails de admin, separados por vírgula).
 Endereço: prospecta-two-beta.vercel.app
 
 O seed de demonstração só serve para banco vazio — a base real vem do script

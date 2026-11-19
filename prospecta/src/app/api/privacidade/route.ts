@@ -34,7 +34,7 @@ export async function POST(req: Request) {
       mensagem: parsed.data.mensagem ?? null,
       ip,
     });
-    return NextResponse.json({ ok: true, protocolo: r.id, suprimido: r.suprimido });
+    return NextResponse.json({ ok: true, protocolo: r.id });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

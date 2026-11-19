@@ -90,9 +90,8 @@ export default function PrivacidadePage() {
               oposição ao tratamento e informações sobre compartilhamento.</p>
             <p>
               <b>Se você é sócio ou administrador de uma empresa e não quer aparecer no Prospecta</b>, use o{" "}
-              <Link className="text-brand-600 underline" href="/privacidade/remover">formulário de remoção</Link>. O
-              seu nome deixa de ser exibido assim que o pedido é enviado. Os demais pedidos são respondidos em até
-              15 dias pelo e-mail informado. Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).
+              <Link className="text-brand-600 underline" href="/privacidade/remover">formulário de remoção</Link>.
+              Conferimos que o pedido é do próprio titular e respondemos em até 15 dias pelo e-mail informado. Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).
             </p>
           </Secao>
 

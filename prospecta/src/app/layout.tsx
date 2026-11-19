@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { DemoBanner } from "@/components/DemoBanner";
 import { currentUser } from "@/lib/auth";
+import { isAdmin } from "@/lib/admin";
 
 export const metadata: Metadata = {
   title: "Prospecta — prospecção B2B com decisor identificado",
@@ -38,7 +39,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="min-h-screen">
         <div className="flex min-h-screen">
           {/* Menu lateral só no desktop; no celular, barra em cima e abas embaixo. */}
-          <Sidebar userName={nome} />
+          <Sidebar userName={nome} admin={isAdmin(user)} />
 
           <main className="min-w-0 flex-1">
             <MobileNav userName={nome} />
