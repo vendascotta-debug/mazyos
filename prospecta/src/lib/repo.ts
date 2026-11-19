@@ -1,6 +1,7 @@
 import { nowIso, q, q1, uid } from "@/lib/db";
 import { derivarDecisores, type PublicRecords } from "@/lib/decisores";
 import { calcularScore, SCORE_VERSION } from "@/lib/scoring";
+import { aplicarSupressoes, carregarSupressoes } from "@/lib/privacidade";
 import { SEGMENTS, getSegment } from "@/lib/segments";
 import {
   STAGES,
@@ -106,7 +107,8 @@ export function enrich(row: Row): {
   records: PublicRecords;
 } {
   const company = toCompany(row);
-  const records = publicRecordsOf(row);
+  // LGPD: quem pediu remoção não aparece (cache carregado por carregarSupressoes).
+  const records = aplicarSupressoes(publicRecordsOf(row), company.cnpj);
   const decisionMakers = derivarDecisores(company, records);
   const score = calcularScore(company, decisionMakers, records.employeesEstimate);
   return { company, decisionMakers, score, records };
@@ -234,6 +236,7 @@ export async function atualizarScores(opts: {
   limite?: number;
   lote?: number;
 } = {}): Promise<number> {
+  await carregarSupressoes();
   const limite = opts.limite ?? 2000;
   const lote = Math.min(opts.lote ?? 500, limite);
   let feitas = 0;
@@ -282,6 +285,7 @@ export async function scoresPendentes(segment?: string | null): Promise<number> 
 
 export async function searchCompanies(f: SearchFilters, userId: string): Promise<SearchOutcome> {
   const segment = getSegment(f.segment);
+  await carregarSupressoes();
 
   // Autocura: empresas sem score gravado (base recém-importada, ou motor com
   // versão nova) são calculadas aos poucos, um lote por busca. O grosso deve
@@ -448,6 +452,7 @@ export async function searchCompanies(f: SearchFilters, userId: string): Promise
 }
 
 export async function getCompany(id: string, userId: string) {
+  await carregarSupressoes();
   const row = await q1<Row>(
     "SELECT * FROM companies WHERE id = ? AND (owner_user_id IS NULL OR owner_user_id = ?)",
     [id, userId],
@@ -587,6 +592,7 @@ export async function listLeads(
   userId: string,
   opts: { segment?: string; stage?: Stage | null; listId?: string | null; query?: string | null } = {},
 ): Promise<LeadWithCompany[]> {
+  await carregarSupressoes();
   const where: string[] = ["l.user_id = ?"];
   const params: unknown[] = [];
   if (opts.listId) params.push(opts.listId); // entra no JOIN, antes do WHERE

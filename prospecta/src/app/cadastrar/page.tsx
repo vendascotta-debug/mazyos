@@ -39,6 +39,11 @@ export default async function CadastrarPage() {
             </Link>
           </p>
         </div>
+        <p className="mt-4 text-center text-xs text-ink-400">
+          Ao criar a conta, você concorda com a <Link href="/privacidade" className="underline hover:text-white">Política de Privacidade</Link>
+          {" · "}
+          <Link href="/privacidade/remover" className="underline hover:text-white">Remover meus dados</Link>
+        </p>
       </div>
     </div>
   );

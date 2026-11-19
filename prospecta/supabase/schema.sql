@@ -83,3 +83,36 @@ CREATE TABLE IF NOT EXISTS contacts_confirmed (
   name TEXT, role TEXT, phone TEXT, email TEXT, linkedin TEXT,
   confirmed_at TEXT NOT NULL
 );
+
+-- Tentativas de login/cadastro (limite contra força bruta).
+CREATE TABLE IF NOT EXISTS auth_attempts (
+  id BIGSERIAL PRIMARY KEY,
+  kind TEXT NOT NULL,
+  email TEXT,
+  ip TEXT,
+  ok BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_auth_attempts_email ON auth_attempts(kind, email, created_at);
+CREATE INDEX IF NOT EXISTS idx_auth_attempts_ip ON auth_attempts(kind, ip, created_at);
+
+-- LGPD: pedidos de titulares e nomes suprimidos.
+CREATE TABLE IF NOT EXISTS privacy_requests (
+  id TEXT PRIMARY KEY,
+  kind TEXT NOT NULL,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  cnpj TEXT,
+  message TEXT,
+  ip TEXT,
+  status TEXT NOT NULL DEFAULT 'recebido',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS privacy_suppressions (
+  id TEXT PRIMARY KEY,
+  name_norm TEXT NOT NULL,
+  cnpj TEXT,
+  request_id TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_privacy_suppr_name ON privacy_suppressions(name_norm);

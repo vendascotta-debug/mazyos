@@ -33,6 +33,9 @@ export function hashPassword(senha: string): string {
   return `scrypt$${salt}$${hash}`;
 }
 
+/** Hash de uma senha qualquer, só para igualar o tempo do login sem conta. */
+const HASH_FICTICIO = `scrypt$${"0".repeat(32)}$${"0".repeat(128)}`;
+
 export function verifyPassword(senha: string, armazenado: string): boolean {
   const [algo, salt, hash] = armazenado.split("$");
   if (algo !== "scrypt" || !salt || !hash) return false;
@@ -153,9 +156,12 @@ export async function authenticate(email: string, senha: string): Promise<User |
     "SELECT * FROM users WHERE email = ?",
     [NORMALIZE_EMAIL(email)],
   );
-  if (!row) return null;
-  // Conta criada pelo Google não tem senha — só entra pelo Google.
-  if (!row.password_hash) return null;
+  // Sem conta (ou conta só do Google): ainda gasta o mesmo scrypt, para o
+  // tempo de resposta não revelar quais e-mails estão cadastrados.
+  if (!row || !row.password_hash) {
+    verifyPassword(senha, HASH_FICTICIO);
+    return null;
+  }
   if (!verifyPassword(senha, row.password_hash)) return null;
   return { id: row.id, email: row.email, name: row.name, createdAt: row.created_at };
 }

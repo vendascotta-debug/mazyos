@@ -21,7 +21,8 @@ export const config = {
   // Protege as telas. As rotas de API ficam de fora porque cada uma já checa a
   // sessão e responde 401 — redirecionar um fetch para HTML de login faria o
   // front receber uma página onde esperava JSON.
+  // `privacidade` é pública: o titular dos dados não tem conta (LGPD).
   matcher: [
-    "/((?!entrar|cadastrar|api|_next/static|_next/image|favicon.ico).*)",
+    "/((?!entrar|cadastrar|privacidade|api|_next/static|_next/image|favicon.ico).*)",
   ],
 };

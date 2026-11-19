@@ -45,6 +45,15 @@ Documentação de produto e arquitetura: `README.md` (nesta pasta).
   `POST /api/admin/scores` (header `x-seed-token`) até `pendentes: 0`. Depois
   de importar a base da Receita, idem. Nunca voltar a carregar o segmento
   inteiro na memória para ordenar.
+- LGPD: toda exibição de decisor passa por `enrich()`, que aplica
+  `aplicarSupressoes()` (nomes que pediram remoção em `/privacidade/remover`).
+  Função nova que monte decisores precisa chamar `await carregarSupressoes()`
+  antes. Pedidos ficam em `privacy_requests` (prazo de resposta: 15 dias) —
+  consulta em `GET /api/admin/privacidade` com `x-seed-token`.
+- Dados do controlador (razão social, CNPJ, e-mail do encarregado) ficam em
+  `src/lib/legal.ts` e aparecem na Política de Privacidade pública.
+- Login tem limite de tentativas (`src/lib/limite.ts`, tabela `auth_attempts`):
+  5 erros por e-mail ou 30 por IP em 15 min. Cadastro: 5 por IP por hora.
 
 ## Testar local
 

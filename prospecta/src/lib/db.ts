@@ -38,6 +38,9 @@ const TABLES = [
   "lead_list_items",
   "activities",
   "contacts_confirmed",
+  "auth_attempts",
+  "privacy_requests",
+  "privacy_suppressions",
 ] as const;
 
 /**
@@ -232,6 +235,39 @@ CREATE TABLE IF NOT EXISTS activities (
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_activities_lead ON activities(lead_id, created_at);
+
+-- Tentativas de login/cadastro, para limitar força bruta sem Redis.
+CREATE TABLE IF NOT EXISTS auth_attempts (
+  id BIGSERIAL PRIMARY KEY,
+  kind TEXT NOT NULL,
+  email TEXT,
+  ip TEXT,
+  ok BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_auth_attempts_email ON auth_attempts(kind, email, created_at);
+CREATE INDEX IF NOT EXISTS idx_auth_attempts_ip ON auth_attempts(kind, ip, created_at);
+
+-- LGPD: pedidos de titulares (remoção, acesso, correção) e nomes suprimidos.
+CREATE TABLE IF NOT EXISTS privacy_requests (
+  id TEXT PRIMARY KEY,
+  kind TEXT NOT NULL,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  cnpj TEXT,
+  message TEXT,
+  ip TEXT,
+  status TEXT NOT NULL DEFAULT 'recebido',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS privacy_suppressions (
+  id TEXT PRIMARY KEY,
+  name_norm TEXT NOT NULL,
+  cnpj TEXT,
+  request_id TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_privacy_suppr_name ON privacy_suppressions(name_norm);
 
 CREATE TABLE IF NOT EXISTS contacts_confirmed (
   id TEXT PRIMARY KEY,

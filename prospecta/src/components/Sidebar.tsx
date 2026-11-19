@@ -73,7 +73,8 @@ export function Sidebar({ userName }: { userName: string }) {
         </form>
         <p className="mt-3 px-2 text-[11px] leading-relaxed text-ink-500">
           Dados de fontes públicas: Receita Federal, mapas abertos, sites e
-          perfis públicos do LinkedIn.
+          perfis públicos do LinkedIn.{" "}
+          <Link href="/privacidade" className="underline hover:text-white">Privacidade</Link>
         </p>
       </div>
     </aside>
