@@ -42,7 +42,7 @@ export async function POST(req: Request) {
 
   if (acao === "aprovar") {
     const r = await aprovarRemocao(id);
-    return NextResponse.json(r, { status: r.ok ? 200 : 404 });
+    return NextResponse.json(r.ok ? r : { error: r.erro }, { status: r.ok ? 200 : 400 });
   }
   if (acao === "desfazer") {
     await desfazerRemocao(id);

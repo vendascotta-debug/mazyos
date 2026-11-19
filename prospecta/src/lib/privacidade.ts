@@ -80,19 +80,23 @@ export async function registrarPedido(p: {
 }
 
 /** Sem acento, maiúsculas — a mesma forma de `normalizarNome`, em SQL. */
+// Acentos em maiúscula E minúscula: com collation C, o UPPER do Postgres não
+// converte "é" em "É", então os dois lados entram no translate.
 const SQL_SEM_ACENTO = (col: string) =>
-  `translate(UPPER(${col}), 'ÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑ', 'AAAAAEEEEIIIIOOOOOUUUUCN')`;
+  `UPPER(translate(${col}, 'ÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑáàâãäéèêëíìîïóòôõöúùûüçñ', 'AAAAAEEEEIIIIOOOOOUUUUCNaaaaaeeeeiiiiooooouuuucn'))`;
 
 /**
  * Admin aprovou um pedido de remoção: o nome some da busca, ficha, leads e
  * exportação. Com CNPJ, só naquela empresa; sem CNPJ, em toda a base.
  */
 export async function aprovarRemocao(id: string): Promise<{ ok: boolean; erro?: string }> {
-  const pedido = (await q<{ kind: string; name: string; cnpj: string | null }>(
-    "SELECT kind, name, cnpj FROM privacy_requests WHERE id = ?",
+  const pedido = (await q<{ kind: string; name: string; cnpj: string | null; status: string }>(
+    "SELECT kind, name, cnpj, status FROM privacy_requests WHERE id = ?",
     [id],
   ))[0];
   if (!pedido) return { ok: false, erro: "Pedido não encontrado." };
+  if (pedido.kind !== "remocao") return { ok: false, erro: "Só pedidos de remoção podem ser aprovados." };
+  if (pedido.status === "aprovado") return { ok: true }; // já aprovado: não duplica
 
   const nome = normalizarNome(pedido.name);
   const cnpj = soDigitos(pedido.cnpj);

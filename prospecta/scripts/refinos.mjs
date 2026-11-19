@@ -51,6 +51,14 @@ export const REFINOS = {
   "importadora-utensilios": {
     exigeNome: ["IMPORT", "UTENSILIO", "COZINHA", "INOX", "CASA", "TRADING"],
   },
+  // "Aluguel de móveis, utensílios..." (7729-2) pega de locadora de cadeira de
+  // escritório a licenciamento de marca. Só interessam as de festa/evento.
+  "locacao-festas": {
+    exigeNome: [
+      "FESTA", "EVENTO", "LOUCA", "RECHAUD", "BUFFET", "TALHER", "TACAS", "CRISTAL",
+      "CASAMENTO", "CERIMONIA", "DECORA", "RECEPC", "SOUSPLAT", "PORCELANA", "MESA POSTA",
+    ],
+  },
   // Ambulantes: volume alto e ticket baixo, fora do foco inicial.
   "food-truck": {
     ignorar: true,

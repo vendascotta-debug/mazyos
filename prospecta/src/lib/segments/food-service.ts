@@ -85,6 +85,26 @@ export const foodService: SegmentConfig = {
       demandWeight: 0.7,
     },
     {
+      // Espaços que recebem festas e eventos corporativos — muitos com cozinha
+      // e buffet próprios (ex.: hubs como a PHD Eventos).
+      slug: "espaco-eventos",
+      name: "Casa e espaço de eventos",
+      cnaes: ["8230-0/02"],
+      keywords: ["espaço de eventos", "casa de festas", "salão de festas", "eventos corporativos"],
+      demandWeight: 0.6,
+    },
+    {
+      // Locadoras de louça, talheres, rechaud e taças para festas: repõem
+      // estoque o tempo todo (quebra e perda) e compram em volume. O CNAE é
+      // amplo (aluguel de móveis em geral) — refinos.mjs exige termos de festa
+      // no nome.
+      slug: "locacao-festas",
+      name: "Locação de louças e itens para festas",
+      cnaes: ["7729-2/02", "7729-2/99"],
+      keywords: ["locação de louças", "aluguel de rechaud", "material para festas", "locação para eventos"],
+      demandWeight: 0.8,
+    },
+    {
       slug: "dark-kitchen",
       name: "Dark kitchen / delivery",
       cnaes: ["5620-1/04"],

@@ -11,8 +11,10 @@ import { classificarPorNome } from "./classificador.mjs";
 // ---------------------------------------------------------------------------
 // Carga direto dos Dados Abertos da Receita Federal — sem BigQuery, sem cota.
 //
-//   node scripts/receita.mjs               carga completa
-//   node scripts/receita.mjs utensilios    só um segmento
+//   node scripts/receita.mjs                              carga completa
+//   node scripts/receita.mjs utensilios                   só um segmento
+//   node scripts/receita.mjs utensilios,locacao-festas    segmentos e/ou
+//                                                         subsegmentos (vírgula)
 //
 // Baixa os ZIPs e lê em streaming: nada de descompactar 100 GB no disco. Filtra
 // São Paulo nos CNAEs dos segmentos e grava no Postgres. Pode rodar quantas
@@ -115,12 +117,13 @@ async function lerZip(url, aoLer) {
 
 // --- passos ----------------------------------------------------------------
 
-async function alvos(apenasSegmento) {
+async function alvos(filtro) {
   const mapa = await mapaCnae();
   const cnaes = new Map();
   for (const [cnae, alvo] of mapa) {
     if (ignorado(alvo.subsegmento)) continue;
-    if (apenasSegmento && alvo.segmento !== apenasSegmento) continue;
+    // Filtro aceita segmento ("utensilios") e/ou subsegmento ("locacao-festas").
+    if (filtro && !filtro.has(alvo.segmento) && !filtro.has(alvo.subsegmento)) continue;
     cnaes.set(cnae, alvo);
   }
   return cnaes;
@@ -151,8 +154,17 @@ async function baixarEstabelecimentos(cnaes, exige) {
       const cnae = c[11];
       if (!cnaes.has(cnae)) return;
 
+      // CNAE amplo: exige termo no nome. Sem nome fantasia, a decisão fica
+      // para a razão social (que só chega no passo das Empresas) — antes,
+      // essas empresas eram descartadas sem nem olhar o nome registrado.
       const termos = exige.get(cnae);
-      if (termos && !termos.some((t) => semAcento(c[4]).includes(t))) return;
+      let conferirRazao = null;
+      if (termos) {
+        const fantasia = semAcento(c[4]).trim();
+        if (fantasia) {
+          if (!termos.some((t) => fantasia.includes(t))) return;
+        } else conferirRazao = termos;
+      }
 
       escolhidos.push({
         basico: c[0], ordem: c[1], dv: c[2], fantasia: c[4],
@@ -160,6 +172,7 @@ async function baixarEstabelecimentos(cnaes, exige) {
         tipoLogradouro: c[13], logradouro: c[14], numero: c[15],
         bairro: c[17], cep: c[18], municipio: c[20],
         ddd: c[21], fone: c[22], email: c[27],
+        conferirRazao,
       });
       basicos.add(c[0]);
     });
@@ -311,23 +324,38 @@ function montarRegistro(e, emp, qsa, municipios, coords, alvo, agora) {
 
 // --- principal -------------------------------------------------------------
 
-const apenasSegmento = process.argv[2] || null;
+const filtroArg = process.argv[2] || null;
+const filtro = filtroArg ? new Set(filtroArg.split(",").map((x) => x.trim()).filter(Boolean)) : null;
 const inicio = Date.now();
 
-console.log(`Carga direto da Receita Federal${apenasSegmento ? ` — segmento ${apenasSegmento}` : ""}\n`);
+console.log(`Carga direto da Receita Federal${filtroArg ? ` — ${filtroArg}` : ""}\n`);
 
-const cnaes = await alvos(apenasSegmento);
+const cnaes = await alvos(filtro);
+if (!cnaes.size) {
+  console.log("Nenhum CNAE para esse filtro. Confira o slug do segmento/subsegmento em src/lib/segments/.");
+  process.exit(1);
+}
 console.log(`${cnaes.size} CNAEs alvo\n`);
 
 console.log("  Municípios");
 const municipios = await nomesDeMunicipio();
 console.log(`     ${municipios.size} municípios\n`);
 
-const { escolhidos, basicos } = await baixarEstabelecimentos(cnaes, exigencias(cnaes));
+let { escolhidos, basicos } = await baixarEstabelecimentos(cnaes, exigencias(cnaes));
 console.log(`\n${escolhidos.length.toLocaleString("pt-BR")} estabelecimentos ativos de ${UF} nos CNAEs alvo\n`);
 
 const empresas = await baixarEmpresas(basicos);
 console.log(`\n${empresas.size.toLocaleString("pt-BR")} com razão social\n`);
+
+// Os que entraram sem nome fantasia: agora dá para conferir a razão social.
+const antesRazao = escolhidos.length;
+escolhidos = escolhidos.filter(
+  (e) => !e.conferirRazao || e.conferirRazao.some((t) => semAcento(empresas.get(e.basico)?.razao).includes(t)),
+);
+if (escolhidos.length !== antesRazao) {
+  basicos = new Set(escolhidos.map((e) => e.basico));
+  console.log(`${(antesRazao - escolhidos.length).toLocaleString("pt-BR")} descartados pela razão social (CNAE amplo sem termo no nome)\n`);
+}
 
 const socios = await baixarSocios(basicos);
 console.log(`\n${socios.size.toLocaleString("pt-BR")} com quadro societário\n`);
@@ -377,4 +405,6 @@ const dist = await db`SELECT segment_slug s, COUNT(*)::int n FROM ${db(SCHEMA)}.
 console.log(`\n\nBase: ${Number(n).toLocaleString("pt-BR")} empresas · ${tamanho}`);
 for (const d of dist) console.log(`   ${String(d.n).padStart(7)}  ${d.s}`);
 console.log(`\nTempo total: ${Math.round((Date.now() - inicio) / 60000)} min`);
+console.log("\nPróximo passo: calcular o score das empresas novas —");
+console.log('  POST /api/admin/scores com o header x-seed-token, até "pendentes": 0');
 await db.end({ timeout: 10 });

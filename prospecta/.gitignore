@@ -8,3 +8,6 @@ next-env.d.ts
 # Chave de servico do Google (BigQuery) - NUNCA versionar
 google-bigquery.json
 *-service-account*.json
+
+# Token de admin (SEED_TOKEN de producao) - NUNCA versionar
+.seed-token

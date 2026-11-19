@@ -82,9 +82,17 @@ O caminho atual é `scripts/receita.mjs`, que baixa os ZIPs da Receita e lê em
 streaming, sem descompactar nada em disco:
 
 ```bash
-node --max-old-space-size=6144 scripts/receita.mjs             # tudo
-node --max-old-space-size=6144 scripts/receita.mjs utensilios  # um segmento
+node --max-old-space-size=6144 scripts/receita.mjs                              # tudo
+node --max-old-space-size=6144 scripts/receita.mjs utensilios                   # um segmento
+node --max-old-space-size=6144 scripts/receita.mjs utensilios,locacao-festas    # segmentos/subsegmentos
 ```
+
+Depois de qualquer carga, calcular o score das empresas novas:
+`POST /api/admin/scores` (header `x-seed-token`) até `pendentes: 0` — sem isso
+elas aparecem no fim da busca até a autocura alcançar.
+
+CNAE amplo (ex.: 7729-2, aluguel de móveis) precisa de `exigeNome` em
+`refinos.mjs`. Sem nome fantasia, o script confere a razão social.
 
 Duas armadilhas já pagas, para não repetir:
 - Nunca pendurar `on("data")` num stream que também é `pipe`ado: isso liga o
