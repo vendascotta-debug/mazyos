@@ -129,7 +129,7 @@ export function haversineKm(aLat: number, aLng: number, bLat: number, bLng: numb
 export async function listCities(segment: string): Promise<{ city: string; uf: string; count: number }[]> {
   const rows = await q<{ city: string; uf: string; count: number }>(
     `SELECT city, uf, COUNT(*)::int AS count FROM companies
-     WHERE segment_slug = ? GROUP BY city, uf ORDER BY count DESC`,
+     WHERE segment_slug = ? AND owner_user_id IS NULL GROUP BY city, uf ORDER BY count DESC`,
     [segment],
   );
   return rows;
@@ -142,7 +142,7 @@ export async function listNeighborhoods(
   if (!city) return [];
   return q<{ neighborhood: string; count: number }>(
     `SELECT neighborhood, COUNT(*)::int AS count FROM companies
-     WHERE segment_slug = ? AND city = ? GROUP BY neighborhood ORDER BY neighborhood`,
+     WHERE segment_slug = ? AND city = ? AND owner_user_id IS NULL GROUP BY neighborhood ORDER BY neighborhood`,
     [segment, city],
   );
 }
@@ -154,7 +154,8 @@ export async function centerOf(
   neighborhood: string | null,
 ): Promise<{ lat: number; lng: number } | null> {
   const params: unknown[] = [segment];
-  let sql = "SELECT AVG(lat)::float8 AS lat, AVG(lng)::float8 AS lng FROM companies WHERE segment_slug = ?";
+  let sql =
+    "SELECT AVG(lat)::float8 AS lat, AVG(lng)::float8 AS lng FROM companies WHERE segment_slug = ? AND owner_user_id IS NULL";
   if (city) { sql += " AND city = ?"; params.push(city); }
   if (neighborhood) { sql += " AND neighborhood = ?"; params.push(neighborhood); }
   const row = await q1<{ lat: number | null; lng: number | null }>(sql, params);
@@ -222,6 +223,10 @@ export async function searchCompanies(f: SearchFilters, userId: string): Promise
   const where: string[] = [];
   const params: unknown[] = [];
 
+  // Empresa cadastrada à mão é privada: só aparece para quem cadastrou.
+  where.push("(c.owner_user_id IS NULL OR c.owner_user_id = ?)");
+  params.push(userId);
+
   if (!f.allSegments) {
     where.push("c.segment_slug = ?");
     params.push(f.segment);
@@ -254,9 +259,14 @@ export async function searchCompanies(f: SearchFilters, userId: string): Promise
        WHERE ${where.length ? where.join(" AND ") : "1=1"}`,
       [userId, ...params],
     ),
+    // Distância só faz sentido a partir de um ponto de verdade. Sem cidade, o
+    // "centro" virava a média do estado inteiro (um ponto no interior) e toda
+    // empresa da capital aparecia a ~70 km.
     f.centerLat != null && f.centerLng != null
       ? Promise.resolve({ lat: f.centerLat, lng: f.centerLng })
-      : centerOf(f.segment, f.city, f.neighborhood),
+      : f.city
+        ? centerOf(f.segment, f.city, f.neighborhood)
+        : Promise.resolve(null),
   ]);
 
   // Score e decisores são derivados (dependem do motor, não do banco), então
@@ -326,8 +336,8 @@ export async function searchCompanies(f: SearchFilters, userId: string): Promise
     const conds = condicoesBusca(f.query, p).map((c) => c.replace(/c\./g, ""));
     if (conds.length) {
       const r = await q1<{ n: number }>(
-        `SELECT COUNT(*)::int AS n FROM companies WHERE ${conds.join(" AND ")}`,
-        p,
+        `SELECT COUNT(*)::int AS n FROM companies WHERE (owner_user_id IS NULL OR owner_user_id = ?) AND ${conds.join(" AND ")}`,
+        [userId, ...p],
       );
       emOutrosSegmentos = r?.n ?? 0;
     }
@@ -344,7 +354,10 @@ export async function searchCompanies(f: SearchFilters, userId: string): Promise
 }
 
 export async function getCompany(id: string, userId: string) {
-  const row = await q1<Row>("SELECT * FROM companies WHERE id = ?", [id]);
+  const row = await q1<Row>(
+    "SELECT * FROM companies WHERE id = ? AND (owner_user_id IS NULL OR owner_user_id = ?)",
+    [id, userId],
+  );
   if (!row) return null;
   const data = enrich(row);
   const lead = await q1<Row>("SELECT * FROM leads WHERE company_id = ? AND user_id = ?", [id, userId]);
@@ -354,7 +367,7 @@ export async function getCompany(id: string, userId: string) {
 /** Outras unidades da mesma marca na base — sinal de rede. */
 export async function siblingUnits(company: Company): Promise<Company[]> {
   const rows = await q<Row>(
-    "SELECT * FROM companies WHERE segment_slug = ? AND name = ? AND id <> ? LIMIT 8",
+    "SELECT * FROM companies WHERE segment_slug = ? AND name = ? AND id <> ? AND owner_user_id IS NULL LIMIT 8",
     [company.segmentSlug, company.name, company.id],
   );
   return rows.map(toCompany);
@@ -392,7 +405,7 @@ export async function logActivity(leadId: string, type: Activity["type"], messag
 export async function saveLead(
   userId: string,
   companyId: string,
-  opts: { listId?: string | null; note?: string | null } = {},
+  opts: { listId?: string | null; note?: string | null; origem?: string } = {},
 ): Promise<Lead> {
   const existing = await q1<Row>("SELECT * FROM leads WHERE company_id = ? AND user_id = ?", [companyId, userId]);
   if (existing) {
@@ -419,7 +432,11 @@ export async function saveLead(
   const saved = await q1<Row>("SELECT * FROM leads WHERE company_id = ? AND user_id = ?", [companyId, userId]);
   const lead = toLead(saved!);
   if (lead.id === id) {
-    await logActivity(id, "criado", `Lead salvo a partir da busca — score ${data.score.total} (${data.score.tier}).`);
+    await logActivity(
+      id,
+      "criado",
+      `Lead salvo ${opts.origem ?? "a partir da busca"} — score ${data.score.total} (${data.score.tier}).`,
+    );
   }
   if (opts.listId) await addToList(userId, opts.listId, lead.id);
   return lead;
@@ -654,7 +671,10 @@ export interface DashboardMetrics {
 export async function dashboardMetrics(userId: string, segment: string): Promise<DashboardMetrics> {
   const [leads, totalRow, acts] = await Promise.all([
     listLeads(userId, { segment }),
-    q1<{ n: number }>("SELECT COUNT(*)::int AS n FROM companies WHERE segment_slug = ?", [segment]),
+    q1<{ n: number }>(
+      "SELECT COUNT(*)::int AS n FROM companies WHERE segment_slug = ? AND owner_user_id IS NULL",
+      [segment],
+    ),
     q<Row>(
       `SELECT a.*, c.name AS company_name FROM activities a
        JOIN leads l ON l.id = a.lead_id JOIN companies c ON c.id = l.company_id

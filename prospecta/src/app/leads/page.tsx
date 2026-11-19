@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Download, Linkedin, Phone, Search } from "lucide-react";
+import { Download, Linkedin, Phone, Search, Upload } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { listLeads, listLists } from "@/lib/repo";
 import { getSegment, SEGMENTS } from "@/lib/segments";
@@ -51,8 +51,11 @@ export default async function LeadsPage({
             </div>
           )}
           <a className="btn-ghost" href={`/api/export?segment=${segmentSlug}${stage ? `&stage=${stage}` : ""}`}>
-            <Download size={15} /> CSV
+            <Download size={15} /> Exportar CSV
           </a>
+          <Link className="btn-brand" href={`/leads/importar?segment=${segmentSlug}`}>
+            <Upload size={15} /> Adicionar leads
+          </Link>
         </div>
       </PageHeader>
 
@@ -78,11 +81,16 @@ export default async function LeadsPage({
         {leads.length === 0 ? (
           <EmptyState
             title="Nenhum lead salvo ainda"
-            description="Use a busca para encontrar empresas do segmento e salve as que valem a pena trabalhar."
+            description="Use a busca para encontrar empresas do segmento, ou traga a sua própria lista em planilha."
             action={
-              <Link href={`/buscar?segment=${segmentSlug}`} className="btn-brand mt-2">
-                <Search size={15} /> Buscar empresas
-              </Link>
+              <div className="mt-2 flex gap-2">
+                <Link href={`/buscar?segment=${segmentSlug}`} className="btn-brand">
+                  <Search size={15} /> Buscar empresas
+                </Link>
+                <Link href={`/leads/importar?segment=${segmentSlug}`} className="btn-ghost">
+                  <Upload size={15} /> Importar planilha
+                </Link>
+              </div>
             }
           />
         ) : (

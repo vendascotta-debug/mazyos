@@ -30,6 +30,15 @@ Documentação de produto e arquitetura: `README.md` (nesta pasta).
   de qualquer coisa cruzar para Client Component.
 - Agregados do Postgres voltam como string (`int8`, `numeric`): usar `::int` /
   `::float8` na query ou o helper `toNum()` de `repo.ts`.
+- `companies.owner_user_id`: NULL = base pública (Receita); preenchido = empresa
+  cadastrada à mão/importada, visível **só** para o dono. Toda query nova em
+  `companies` precisa filtrar `(owner_user_id IS NULL OR owner_user_id = ?)` —
+  ou `owner_user_id IS NULL` em agregados da base (cidades, contagens).
+- Importação (`src/lib/importacao.ts`) só liga uma linha a uma empresa da base
+  por CNPJ idêntico ou telefone idêntico + nome parecido. Telefone sozinho não
+  basta: o da Receita costuma ser o do contador.
+- Distância só é calculada com cidade escolhida (ou ponto explícito). Sem
+  cidade não há centro que faça sentido.
 
 ## Testar local
 
@@ -40,6 +49,8 @@ npm run dev                  # http://localhost:3000
 npm run seed                 # carrega as 380 empresas de demonstração
 npm run db:status            # estado do banco
 ```
+
+Postgres local sem TLS (só desenvolvimento/teste): `PROSPECTA_DB_SSL=disable`.
 
 O schema se cria sozinho no primeiro acesso (`ensureSchema`). Passo detalhado
 no `README.md`.

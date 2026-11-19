@@ -56,6 +56,25 @@ const semAcento = (s) => (s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUp
 const campos = (linha) => linha.split(";").map((c) => c.replace(/^"|"$/g, ""));
 
 /**
+ * Baixar centenas de MB de uma vez quase sempre encontra uma queda de conexão
+ * no caminho. Sem repetição, uma hora de trabalho vai embora por um ECONNRESET
+ * — foi exatamente o que aconteceu na primeira execução completa.
+ */
+async function lerZipComRepeticao(url, aoLer, tentativas = 5) {
+  for (let t = 1; t <= tentativas; t++) {
+    try {
+      await lerZip(url, aoLer);
+      return;
+    } catch (e) {
+      if (t === tentativas) throw e;
+      const espera = t * 5;
+      console.log(`\n     conexão caiu (${e.message.slice(0, 40)}). Tentativa ${t + 1}/${tentativas} em ${espera}s...`);
+      await new Promise((r) => setTimeout(r, espera * 1000));
+    }
+  }
+}
+
+/**
  * Percorre um ZIP remoto linha a linha, sem gravar nada em disco.
  * Os arquivos vêm em latin-1, que é o padrão da Receita.
  */
@@ -123,7 +142,7 @@ async function baixarEstabelecimentos(cnaes, exige) {
 
   for (let i = 0; i < PARTES; i++) {
     console.log(`  Estabelecimentos ${i + 1}/${PARTES}`);
-    await lerZip(`${ESPELHO}/Estabelecimentos${i}.zip`, (linha) => {
+    await lerZipComRepeticao(`${ESPELHO}/Estabelecimentos${i}.zip`, (linha) => {
       // Filtro barato antes de partir a linha: a maioria morre aqui.
       if (!linha.includes(`;"${UF}";`)) return;
       const c = campos(linha);
@@ -153,7 +172,7 @@ async function baixarEmpresas(basicos) {
   const empresas = new Map();
   for (let i = 0; i < PARTES; i++) {
     console.log(`  Empresas ${i + 1}/${PARTES}`);
-    await lerZip(`${ESPELHO}/Empresas${i}.zip`, (linha) => {
+    await lerZipComRepeticao(`${ESPELHO}/Empresas${i}.zip`, (linha) => {
       const basico = linha.slice(1, linha.indexOf('";'));
       if (!basicos.has(basico)) return;
       const c = campos(linha);
@@ -167,7 +186,7 @@ async function baixarSocios(basicos) {
   const socios = new Map();
   for (let i = 0; i < PARTES; i++) {
     console.log(`  Sócios ${i + 1}/${PARTES}`);
-    await lerZip(`${ESPELHO}/Socios${i}.zip`, (linha) => {
+    await lerZipComRepeticao(`${ESPELHO}/Socios${i}.zip`, (linha) => {
       const basico = linha.slice(1, linha.indexOf('";'));
       if (!basicos.has(basico)) return;
       const lista = socios.get(basico) ?? [];
@@ -187,7 +206,7 @@ async function baixarSocios(basicos) {
 
 async function nomesDeMunicipio() {
   const nomes = new Map();
-  await lerZip(`${ESPELHO}/Municipios.zip`, (linha) => {
+  await lerZipComRepeticao(`${ESPELHO}/Municipios.zip`, (linha) => {
     const c = campos(linha);
     if (c[0]) nomes.set(c[0], titulo(c[1]));
   });

@@ -25,6 +25,10 @@ CREATE TABLE IF NOT EXISTS companies (
 );
 CREATE INDEX IF NOT EXISTS idx_companies_seg ON companies(segment_slug, subsegment_slug);
 CREATE INDEX IF NOT EXISTS idx_companies_city ON companies(city, neighborhood);
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS linkedin TEXT;
+-- Empresa cadastrada à mão ou importada: só o dono enxerga. NULL = base pública.
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS owner_user_id TEXT;
+CREATE INDEX IF NOT EXISTS idx_companies_owner ON companies(owner_user_id) WHERE owner_user_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS leads (
   id TEXT PRIMARY KEY,

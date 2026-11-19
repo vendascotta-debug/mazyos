@@ -113,7 +113,9 @@ function connect() {
     max: Number(process.env.PROSPECTA_DB_MAX ?? 5),
     idle_timeout: 20,
     connect_timeout: 15,
-    ssl: "require",
+    // TLS sempre em produção. `PROSPECTA_DB_SSL=disable` só para Postgres
+    // local de desenvolvimento/teste, que não fala TLS.
+    ssl: process.env.PROSPECTA_DB_SSL === "disable" ? false : "require",
     // O `CREATE TABLE IF NOT EXISTS` do ensureSchema emite um NOTICE por
     // tabela a cada boot ("already exists, skipping"). É esperado e enche o
     // terminal de ruído — só deixamos passar erro de verdade.
@@ -159,6 +161,10 @@ CREATE TABLE IF NOT EXISTS companies (
   updated_at TEXT NOT NULL
 );
 ALTER TABLE companies ADD COLUMN IF NOT EXISTS linkedin TEXT;
+-- Empresa cadastrada à mão ou importada por planilha: pertence a quem
+-- cadastrou e não aparece para mais ninguém. NULL = base pública (Receita).
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS owner_user_id TEXT;
+CREATE INDEX IF NOT EXISTS idx_companies_owner ON companies(owner_user_id) WHERE owner_user_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_companies_seg ON companies(segment_slug, subsegment_slug);
 CREATE INDEX IF NOT EXISTS idx_companies_city ON companies(city, neighborhood);
 
@@ -184,12 +190,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google ON users(google_id);
 
 -- Multiusuário: cada lead e cada lista pertencem a alguém.
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS user_id TEXT;
-ALTER TABLE lead_lists ADD COLUMN IF NOT EXISTS user_id TEXT;
 -- A restrição antiga era global e impedia dois usuários de salvarem a mesma
 -- empresa. Agora a unicidade é por usuário.
 ALTER TABLE leads DROP CONSTRAINT IF EXISTS leads_company_id_key;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_leads_user_company ON leads(user_id, company_id);
-CREATE INDEX IF NOT EXISTS idx_lists_user ON lead_lists(user_id);
 CREATE INDEX IF NOT EXISTS idx_leads_stage ON leads(stage);
 
 CREATE TABLE IF NOT EXISTS lead_lists (
@@ -199,6 +203,11 @@ CREATE TABLE IF NOT EXISTS lead_lists (
   segment_slug TEXT NOT NULL,
   created_at TEXT NOT NULL
 );
+
+-- Multiusuário: a lista também pertence a alguém. Fica depois do CREATE TABLE
+-- para funcionar num banco novo (antes, o ALTER rodava sem a tabela existir).
+ALTER TABLE lead_lists ADD COLUMN IF NOT EXISTS user_id TEXT;
+CREATE INDEX IF NOT EXISTS idx_lists_user ON lead_lists(user_id);
 
 CREATE TABLE IF NOT EXISTS lead_list_items (
   list_id TEXT NOT NULL REFERENCES lead_lists(id) ON DELETE CASCADE,
